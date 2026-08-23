@@ -76,7 +76,6 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-O próximo trabalho de implementação deve começar por `PROT-000`. Embora o
-repositório já possua uma base executável, seus models e migrations ainda
-representam domínios herdados e não podem ser considerados fundação concluída
-do Protege Mais.
+`PROT-000` removeu o domínio herdado e congelou um baseline vazio. O próximo
+trabalho de implementação deve começar por `PROT-001`, que consolidará a
+estrutura do monorepo e criará o shell do worker.

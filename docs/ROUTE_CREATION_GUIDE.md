@@ -17,7 +17,7 @@ Aplicar este guia ao criar ou alterar uma operação de:
 - exclusão;
 - ação específica de um domínio.
 
-Antes de criar arquivos, verificar se existe uma implementação semelhante nos domínios de autenticação, usuário ou saúde. Reutilizar padrões existentes é obrigatório.
+Antes de criar arquivos, verificar o shell de saúde e as implementações concluídas registradas no changelog. Os fluxos removidos em `PROT-000` não são referência arquitetural e não devem ser recuperados por cópia do histórico.
 
 ## ARQUITETURA DO BACKEND
 

@@ -1,10 +1,1 @@
-export * from './country/country.model.js';
-export * from './user/user.model.js';
-export * from './category/category.model.js';
-export * from './question/question.model.js';
-export * from './answer/answer.model.js';
-export * from './player/playerProgress.model.js';
-export * from './game/gameSession.model.js';
-export * from './joker/joker.model.js';
-export * from './score/scoreEvent.model.js';
-export * from './permission/permission.model.js';
+export {};

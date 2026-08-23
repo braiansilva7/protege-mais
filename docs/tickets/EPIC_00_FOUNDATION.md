@@ -10,7 +10,7 @@ executável para um sistema crítico. Todos os tickets estão inicialmente
 
 | Campo        | Valor           |
 | ------------ | --------------- |
-| Status       | Pendente        |
+| Status       | Concluído       |
 | Tipo         | Technical Story |
 | Prioridade   | P0              |
 | Dependências | Nenhuma         |

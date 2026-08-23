@@ -34,9 +34,7 @@
     "create:seed:dev": "ENV=dev docker compose run --rm -T -e ENV -e DB_ATLAS atlas sh -c 'atlas migrate new --env ${ENV} --var DB_ATLAS=${DB_ATLAS}'"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.850.0",
     "@fastify/cors": "^11.2.0",
-    "@fastify/jwt": "^10.1.0",
     "@fastify/multipart": "^9.0.3",
     "@sinclair/typebox": "^0.34.37",
     "dotenv": "^17.4.2",

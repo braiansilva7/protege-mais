@@ -13,28 +13,10 @@ async function swaggerPlugin(fastify: FastifyInstance) {
         description: 'Documentação da API de administração do Protege Mais.',
         version: '0.1.0',
       },
-      components: {
-        securitySchemes: {
-          authenticateJwt: {
-            type: 'apiKey',
-            in: 'header',
-            name: 'Authorization',
-            description: 'Token JWT no formato Bearer <token>.',
-          },
-        },
-      },
       tags: [
-        {
-          name: ETagSwagger.auth,
-          description: 'Endpoints relacionados à autenticação.',
-        },
         {
           name: ETagSwagger.health,
           description: 'Endpoints relacionados à saúde da aplicação.',
-        },
-        {
-          name: ETagSwagger.user,
-          description: 'Endpoints relacionados ao gerenciamento de usuários.',
         },
       ],
     },

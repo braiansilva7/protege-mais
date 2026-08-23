@@ -1,213 +1,111 @@
-# Arquitetura do projeto — Protege Mais
+# Arquitetura atual do Protege Mais
 
-## Objetivo
+## Estado
 
-Este documento registra a organização de pastas e o modelo de dados atual do
-Protege Mais. Deve ser consultado antes de criar domínios, rotas, telas,
-models, migrations ou recursos de autorização.
+Este documento registra somente o que existe após o `PROT-000`. A arquitetura
+futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
+confundida com funcionalidade já entregue.
 
-> **Estado atual:** esta base ainda possui domínios e dados herdados do template
-> anterior. As seções abaixo descrevem o que existe hoje, não a arquitetura final
-> aprovada. A transição começa em `PROT-000`. Consulte também
-> `docs/architecture/TARGET_ARCHITECTURE.md` e
-> `docs/architecture/SECURITY_AND_PRIVACY.md`.
+O baseline atual não possui domínio de negócio, autenticação, autorização,
+tabelas, migrations ou seeds. Os shells compiláveis permitem evoluir uma etapa
+por vez sem dependências do template anterior.
 
-## Estrutura atual de pastas
+## Estrutura executável atual
 
 ```text
 protege-mais/
 ├── apps/
 │   ├── manager_api/
 │   │   └── src/
-│   │       ├── controllers/       # Adaptadores HTTP por domínio
-│   │       ├── permissions/       # Ações exigidas por rota
-│   │       ├── plugins/           # Swagger e integrações da API
-│   │       ├── routes/            # Registro de endpoints Fastify
-│   │       └── types/             # Extensões dos tipos Fastify/JWT
+│   │       ├── controllers/health/
+│   │       ├── plugins/swagger/
+│   │       ├── routes/
+│   │       ├── types/
+│   │       └── server.ts
 │   ├── web/
 │   │   └── src/
-│   │       ├── assets/
-│   │       │   ├── images/
-│   │       │   │   ├── avatars/
-│   │       │   │   ├── brand/
-│   │       │   │   ├── cards/
-│   │       │   │   ├── icons/payments/
-│   │       │   │   ├── illustrations/
-│   │       │   │   ├── misc/
-│   │       │   │   ├── pages/
-│   │       │   │   └── svg/
-│   │       │   └── styles/variables/
-│   │       ├── components/        # Componentes por domínio
-│   │       ├── composables/       # Estado e acesso HTTP reutilizável
-│   │       ├── layouts/           # Estrutura visual compartilhada
-│   │       ├── navigation/        # Itens vertical e horizontal
-│   │       ├── pages/             # Páginas de negócio
-│   │       ├── plugins/i18n/      # Configuração e traduções web
-│   │       ├── types/             # Contratos TypeScript
-│   │       └── utils/             # Funções puras e formatadores
+│   │       ├── assets/styles/
+│   │       ├── plugins/i18n/
+│   │       ├── App.vue
+│   │       └── main.ts
 │   └── mobile/
+│       ├── App.tsx
+│       └── index.ts
 ├── packages/
-│   ├── common/                    # Enums, tipos e funções comuns
-│   ├── config/                    # Leitura e validação de ambiente
-│   ├── interfaces/                # Interfaces de entrada compartilhadas
-│   ├── middlewares/               # JWT e autorização
-│   ├── models/                    # Definição Drizzle das tabelas
-│   ├── plugins/                   # Banco, i18n, S3, CORS e multipart
-│   ├── repositories/              # Persistência por domínio
-│   ├── schema/                    # Contratos Fastify e Swagger
-│   ├── services/                  # Regras reutilizáveis de domínio
-│   └── useCases/                  # Casos de uso por operação
+│   ├── common/
+│   │   ├── enums/ETagSwagger.ts
+│   │   └── functions/uuid.ts
+│   ├── config/environments.ts
+│   ├── models/index.ts
+│   ├── plugins/
+│   │   ├── database/
+│   │   ├── i18next/
+│   │   ├── cors.ts
+│   │   └── multipart/
+│   └── schema/health/
 ├── atlas/
-│   ├── prod/                      # Migrations de estrutura
-│   └── seed/dev/                  # Dados de desenvolvimento
+│   ├── prod/                 # vazio
+│   └── seed/dev/             # vazio
 └── docs/
 ```
 
-## Fluxo de uma rota
+O `apps/worker` e a consolidação dos packages-alvo pertencem ao `PROT-001`.
 
-```text
-Web Page/Component
-        │
-        ▼
-Composable → /api/v1/... → Route → Controller → Use case → Service/Repository → Banco
-                                      │
-                                      ├── Schema Fastify/Swagger
-                                      └── Middleware de permissão
-```
+## API
 
-As interfaces ficam em `packages/interfaces`; schemas em
-`packages/schema`; mensagens visíveis devem estar nos arquivos de tradução
-`pt`, `en` e `es` do backend e do web.
+O bootstrap Fastify registra, nesta ordem:
 
-## Modelo de dados atual — legado a sanear
+1. pool PostgreSQL/Drizzle;
+2. parser multipart;
+3. CORS;
+4. i18n;
+5. Swagger;
+6. `GET /health`;
+7. agregador vazio sob `/api/v1`.
 
-O diagrama abaixo permanece documentado para que o ticket `PROT-000` consiga
-remover ou adaptar cada dependência conscientemente. Novos domínios do Protege
-Mais não devem se acoplar a essas tabelas.
+Não há JWT, middleware de autenticação, usuário autenticado ou permissão no
+baseline. Esses componentes serão redesenhados em seus tickets próprios.
 
-```mermaid
-erDiagram
-  COUNTRIES ||--o{ USERS : "country_id"
-  USERS ||--|| PERMISSION_ASSIGNMENTS : "user_id"
-  PERMISSION_ROLES ||--o{ PERMISSION_ASSIGNMENTS : "permission_role_id"
-  PERMISSION_ROLES ||--o{ PERMISSION_ROLE_ACTIONS : "permission_role_id"
-  PERMISSIONS ||--o{ PERMISSION_ROLE_ACTIONS : "action"
+## Web
 
-  USERS ||--o| PLAYER_PROGRESS : "user_id"
-  USERS ||--o{ GAME_SESSIONS : "user_id"
-  USERS ||--o{ QUESTIONS : "created_by_user_id"
-  CATEGORIES ||--o{ QUESTIONS : "category_id"
-  QUESTIONS ||--o{ QUESTION_TRANSLATIONS : "question_id"
-  QUESTIONS ||--o{ ANSWER_OPTIONS : "question_id"
-  ANSWER_OPTIONS ||--o{ ANSWER_OPTION_TRANSLATIONS : "answer_option_id"
-  GAME_SESSIONS ||--o{ SESSION_QUESTIONS : "game_session_id"
-  QUESTIONS ||--o{ SESSION_QUESTIONS : "question_id"
-  ANSWER_OPTIONS ||--o{ SESSION_QUESTIONS : "selected_answer_option_id"
-  GAME_SESSIONS ||--o{ SESSION_JOKERS : "game_session_id"
-  JOKER_TYPES ||--o{ SESSION_JOKERS : "joker_type_id"
-  SESSION_QUESTIONS ||--o{ JOKER_USAGES : "session_question_id"
-  JOKER_TYPES ||--o{ JOKER_USAGES : "joker_type_id"
-  JOKER_USAGES ||--o{ JOKER_ELIMINATED_OPTIONS : "joker_usage_id"
-  ANSWER_OPTIONS ||--o{ JOKER_ELIMINATED_OPTIONS : "answer_option_id"
-  USERS ||--o{ SCORE_EVENTS : "user_id"
-  GAME_SESSIONS ||--o{ SCORE_EVENTS : "game_session_id"
-  SESSION_QUESTIONS ||--o{ SCORE_EVENTS : "session_question_id"
+O Web contém uma página estática traduzida informando que a fundação está em
+preparação. Não chama API, não persiste token e não oferece login, dashboard ou
+cadastro.
 
-  COUNTRIES {
-    uuid id PK
-    varchar iso_code UK
-    varchar name
-  }
-  USERS {
-    uuid id PK
-    varchar username UK
-    varchar email UK
-    uuid country_id FK
-    varchar language_code
-    boolean active
-  }
-  PERMISSION_ROLES {
-    uuid id PK
-    varchar code UK
-    varchar name UK
-    boolean is_system
-    boolean active
-  }
-  PERMISSIONS {
-    varchar action PK
-  }
-  PERMISSION_ROLE_ACTIONS {
-    uuid permission_role_id FK
-    varchar action FK
-  }
-  PERMISSION_ASSIGNMENTS {
-    uuid user_id PK, FK
-    uuid permission_role_id FK
-  }
-  CATEGORIES {
-    uuid id PK
-    varchar name UK
-  }
-  QUESTIONS {
-    uuid id PK
-    uuid category_id FK
-    uuid created_by_user_id FK
-    varchar status
-  }
-  ANSWER_OPTIONS {
-    uuid id PK
-    uuid question_id FK
-    smallint position
-    boolean is_correct
-  }
-  GAME_SESSIONS {
-    uuid id PK
-    uuid user_id FK
-    varchar status
-  }
-  SESSION_QUESTIONS {
-    uuid id PK
-    uuid game_session_id FK
-    uuid question_id FK
-  }
-```
+## Mobile
 
-## Permissões atuais — legado a sanear
+O Mobile contém somente o shell Expo/React Native. Não chama API, storage ou
+serviços externos e não possui fluxo funcional.
 
-O acesso não depende de `ADMIN` ou `PLAYER` fixos no usuário. Cada usuário
-possui uma atribuição em `permission_assignments`, vinculada a um papel em
-`permission_roles`. As ações do papel são definidas por
-`permission_role_actions`.
+## Banco e Atlas
 
-Catálogo inicial:
+`packages/models/index.ts` exporta um schema vazio. `atlas/prod` e
+`atlas/seed/dev` não contêm SQL nem checksums legados. Portanto, nenhum comando
+de migration ou seed consegue recriar tabelas do produto anterior.
 
-- `dashboard.view`
-- `users.view`, `users.create`, `users.update`, `users.delete`
-- `roles.view`, `roles.create`, `roles.update`, `roles.delete`,
-  `roles.permissions`
+A integração PostgreSQL/Drizzle foi mantida como infraestrutura genérica. Sua
+configuração oficial, conexão verificada, migrations iniciais e convenções
+serão entregues por `PROT-011` a `PROT-013`.
 
-Os papéis de sistema são Administrador e Jogador. Eles são protegidos contra
-remoção e alteração.
+## Capacidades genéricas preservadas
 
-Esse catálogo não é o catálogo final do Protege Mais. A fundação contextual de
-roles e permissions será entregue por `PROT-017`, `PROT-018` e `PROT-030` a
-`PROT-034`.
+- UUID v7 gerado pela aplicação;
+- CORS;
+- internacionalização backend e Web em estrutura `pt`, `en` e `es`;
+- Swagger/OpenAPI da rota de saúde;
+- multipart com limite básico;
+- PostgreSQL, Drizzle, Atlas e MinIO no ambiente local.
 
-## UUIDs e migrations
+Essas capacidades ainda poderão ser consolidadas ou substituídas pelos tickets
+de fundação. Preservação não significa que estejam homologadas para produção.
 
-Todos os identificadores criados pela aplicação devem usar UUID v7, por meio de
-`createUuidV7()` em `packages/common/functions/uuid.ts`. Seeds também devem
-usar UUID v7 estático válido. Nunca introduzir `uuid.v4` ou
-`gen_random_uuid()` em novos models, repositórios ou seeds.
+## Inventário e recuperação
 
-Após alterar a estrutura:
-
-```bash
-pnpm migrate:local
-# Para recriar a base local e reaplicar seeds:
-pnpm seed:local
-```
+A classificação completa do legado está em
+`docs/implementation/PROT-000_LEGACY_INVENTORY.md`. Os arquivos removidos são
+recuperáveis pelo histórico Git; nenhum volume PostgreSQL foi criado ou apagado
+durante este ticket.
 
 ---
 
-Documentação Protege Mais — Arquitetura e banco de dados
+Documentação Protege Mais — Arquitetura atual

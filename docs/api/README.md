@@ -2,9 +2,15 @@
 
 ## Estado atual
 
-As rotas existentes de login, usuário e papéis pertencem à base herdada e serão
-avaliadas em `PROT-000`. A API-alvo usa `/api/v1` para negócio, `/health` para
-liveness e `/ready` para readiness.
+O baseline não possui rotas de autenticação, usuários, papéis ou negócio.
+
+| Rota          | Autenticação | Estado                       | Observação                             |
+| ------------- | ------------ | ---------------------------- | -------------------------------------- |
+| `GET /health` | Não          | Disponível                   | Retorna `{ "status": "ok" }`           |
+| `/swagger/`   | Não          | Disponível no baseline local | Documenta somente o contrato atual     |
+| `/api/v1/*`   | —            | Sem rotas                    | Prefixo reservado para tickets futuros |
+
+`GET /ready` será criado em `PROT-006` e não deve ser simulado antes disso.
 
 ## Regra de atualização
 
@@ -18,13 +24,5 @@ Cada rota implementada deve documentar:
 - efeitos síncronos, eventos e jobs publicados;
 - exemplo fictício sem PII ou segredo.
 
-O OpenAPI gerado em `PROT-007` é o contrato técnico principal. Este catálogo
-explica decisões e fluxos que não cabem no schema.
-
-## Rotas-base planejadas
-
-| Rota                            | Ticket   | Estado                   |
-| ------------------------------- | -------- | ------------------------ |
-| `GET /health`                   | PROT-006 | Pendente de consolidação |
-| `GET /ready`                    | PROT-006 | Pendente                 |
-| `POST /api/v1/emergency-alerts` | PROT-046 | Pendente                 |
+O OpenAPI consolidado em `PROT-007` será o contrato técnico principal. Este
+catálogo explica decisões e fluxos que não cabem no schema.

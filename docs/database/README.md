@@ -2,9 +2,11 @@
 
 ## Estado atual
 
-Os models e migrations ainda refletem o template anterior. Eles permanecem
-registrados em `docs/PROJECT_ARCHITECTURE.md` somente para orientar o saneamento
-de `PROT-000`. Não devem ser usados como base para novos domínios.
+Após `PROT-000`, o schema Drizzle está vazio e não existem migrations ou seeds
+SQL. O banco local não foi recriado. Nenhuma tabela de domínio está disponível.
+
+As pastas `atlas/prod` e `atlas/seed/dev` são mantidas com `.gitkeep` para
+preservar a estrutura sem introduzir dados.
 
 ## Arquitetura-alvo
 
@@ -16,16 +18,11 @@ de `PROT-000`. Não devem ser usados como base para novos domínios.
 - migration estrutural independente de seed;
 - banco em `snake_case` e TypeScript em `camelCase`.
 
-## Atualização obrigatória
+## Próximos responsáveis
 
-Cada ticket de persistência deve adicionar aqui ou em documentos específicos:
+- `PROT-011`: consolidar conexão, Drizzle e Atlas;
+- `PROT-012`: habilitar PostGIS;
+- `PROT-013`: definir convenções e checklist de migration.
 
-- tabela, propósito e classificação dos dados;
-- colunas, constraints, índices e relações;
-- política de atualização, soft delete e retenção;
-- migration correspondente e procedimento de validação;
-- diagrama atualizado;
-- riscos de concorrência, volume e isolamento organizacional.
-
-O dicionário definitivo começa em `PROT-013`; até lá, este arquivo não afirma
-que tabelas-alvo já existam.
+Até esses tickets, nenhum documento deve afirmar que o banco-base do produto
+está implementado.

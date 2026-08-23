@@ -1,43 +1,34 @@
 # Permissões e escopos
 
-## Convenção
+## Estado atual
 
-Permissões usam `<recurso>.<ação>`, por exemplo `victim.view` e
-`emergency_alert.resolve`. Código de papel não substitui verificação de
+Nenhum papel, permissão, atribuição ou middleware de autorização está
+implementado após `PROT-000`. As estruturas do template foram removidas para não
+serem confundidas com o modelo contextual aprovado.
+
+## Convenção futura
+
+Permissões usarão `<recurso>.<ação>`, por exemplo `victim.view` e
+`emergency_alert.resolve`. Código de papel não substituirá verificação de
 permissão.
 
-## Contexto obrigatório
-
-Uma decisão pode considerar conta, organização, unidade, recurso, vínculo e
-modo excepcional. O mesmo usuário pode exercer papéis diferentes em
+Uma decisão poderá considerar conta, organização, unidade, recurso, vínculo e
+modo excepcional. O mesmo usuário poderá exercer papéis diferentes em
 organizações diferentes.
 
-## Catálogo inicial planejado
+## Tickets responsáveis
 
-- `account.list/view/create/update/disable`;
-- `organization.list/view/create/update`;
-- `victim.list/view/create/update`;
-- `case.list/view/create/update/close/transfer`;
-- `aggressor.create/view/update`;
-- `incident.create/view/update`;
-- `protective_order.create/view/update`;
-- `evidence.create/view/download`;
-- `emergency_alert.view/assume/dispatch/resolve`;
-- `risk_assessment.create/view/review`;
-- `audit.view` e `report.view`.
+- `PROT-017`: tabelas de roles e permissions;
+- `PROT-018`: seed inicial do catálogo;
+- `PROT-030`: middleware de permissão;
+- `PROT-031` e `PROT-032`: escopos organizacional e de unidade;
+- `PROT-034`: acesso excepcional break glass.
 
-O catálogo só se torna implementado com `PROT-017`, `PROT-018` e os tickets de
-cada domínio.
+Nenhum código anterior a esses tickets deve introduzir verificações fixas como
+`role === 'ADMIN'`.
 
-## Matriz viva
+## Matriz viva futura
 
-Cada ticket deve acrescentar uma tabela com papel/contexto, permissão, recurso e
-resultado esperado, cobrindo:
-
-- autorizado;
-- não autenticado;
-- sem permissão;
-- organização diferente;
-- unidade diferente;
-- vínculo inativo;
-- break glass, quando permitido.
+Cada ticket de domínio deverá registrar cenários autorizado, não autenticado,
+sem permissão, organização diferente, unidade diferente, vínculo inativo e
+break glass quando permitido.

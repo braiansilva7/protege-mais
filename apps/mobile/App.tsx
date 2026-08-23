@@ -5,7 +5,9 @@ export default function App() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.content}>
         <Text style={styles.title}>Protege Mais</Text>
-        <Text style={styles.subtitle}>O jogo está em preparação.</Text>
+        <Text style={styles.subtitle}>
+          A fundação do aplicativo está em preparação.
+        </Text>
       </View>
       <StatusBar barStyle="dark-content" />
     </SafeAreaView>
