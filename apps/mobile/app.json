@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Protege Mais",
+    "slug": "protege-mais",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.protegemais.mobile"
+    },
+    "android": {
+      "package": "com.protegemais.mobile"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "auth_credentials_required": "El correo electrónico y la contraseña son obligatorios.",
+  "auth_invalid_credentials": "Credenciales no válidas.",
+  "auth_invalid_or_expired_token": "Token no válido o vencido.",
+  "auth_unauthorized_user": "Usuario no autorizado.",
+  "auth_admin_access_only": "El acceso está restringido a administradores.",
+  "auth_permission_denied": "No tienes permiso para realizar esta acción.",
+  "permission_role_not_found": "No se encontró el rol de permisos.",
+  "permission_role_invalid_input": "Indique datos y permisos válidos para el rol.",
+  "permission_role_system_protected": "Los roles del sistema no se pueden modificar.",
+  "permission_role_delete_forbidden": "Este rol no se puede eliminar porque está protegido o tiene usuarios asignados.",
+  "user_create_invalid_input": "Indique un nombre de usuario, correo electrónico válido, contraseña de al menos 8 caracteres, perfil e idioma.",
+  "user_already_exists": "Ya existe un usuario con este nombre o correo electrónico.",
+  "user_update_invalid_input": "Indique al menos un campo válido para editar.",
+  "user_self_admin_change_forbidden": "No puede desactivar ni eliminar el perfil de administrador de su propia cuenta.",
+  "user_not_found": "Usuario no encontrado.",
+  "user_invalid_id": "Identificador de usuario no válido.",
+  "user_self_delete_forbidden": "No puede eliminar su propia cuenta.",
+  "user_delete_has_dependencies": "Este usuario tiene datos vinculados y no puede eliminarse. Desactive la cuenta en su lugar."
+}

@@ -1,0 +1,37 @@
+{
+  "name": "manager_api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --tsconfig tsconfig.json src/server.ts",
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json -f -fe .js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/apps/manager_api/src/server.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.850.0",
+    "@fastify/cors": "^11.2.0",
+    "@fastify/jwt": "^10.1.0",
+    "@fastify/multipart": "^9.0.3",
+    "@fastify/swagger": "^9.8.1",
+    "@fastify/swagger-ui": "^6.1.0",
+    "@sinclair/typebox": "^0.34.37",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.44.3",
+    "fastify": "^5.8.5",
+    "fastify-plugin": "^5.0.1",
+    "i18next": "^26.3.6",
+    "i18next-fs-backend": "^2.6.6",
+    "i18next-http-middleware": "^3.9.7",
+    "pg": "^8.22.0",
+    "reflect-metadata": "^0.2.2",
+    "tsyringe": "^4.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/pg": "^8.20.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}

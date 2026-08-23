@@ -1,0 +1,11 @@
+CREATE TABLE permission_roles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), code varchar(60) UNIQUE, name varchar(120) NOT NULL UNIQUE, description text, is_system boolean NOT NULL DEFAULT false, active boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE permissions (action varchar(100) PRIMARY KEY, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE permission_role_actions (permission_role_id uuid NOT NULL REFERENCES permission_roles(id) ON DELETE CASCADE, action varchar(100) NOT NULL REFERENCES permissions(action) ON DELETE CASCADE, PRIMARY KEY(permission_role_id, action));
+CREATE TABLE permission_assignments (user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, permission_role_id uuid NOT NULL REFERENCES permission_roles(id) ON DELETE RESTRICT, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+INSERT INTO permissions(action) VALUES ('dashboard.view'),('users.view'),('users.create'),('users.update'),('users.delete'),('roles.view'),('roles.create'),('roles.update'),('roles.delete'),('roles.permissions');
+INSERT INTO permission_roles(id, code, name, is_system) VALUES ('019f9749-7693-721f-a3c8-df32ca71b1fe','ADMINISTRATOR','Administrador',true),('019f9749-7696-73e8-af3a-854533304fb0','PLAYER','Jogador',true);
+INSERT INTO permission_role_actions(permission_role_id,action) SELECT '019f9749-7693-721f-a3c8-df32ca71b1fe',action FROM permissions;
+INSERT INTO permission_role_actions(permission_role_id,action) VALUES ('019f9749-7696-73e8-af3a-854533304fb0','dashboard.view');
+INSERT INTO permission_assignments(user_id, permission_role_id) SELECT id, CASE WHEN role='ADMIN' THEN '019f9749-7693-721f-a3c8-df32ca71b1fe'::uuid ELSE '019f9749-7696-73e8-af3a-854533304fb0'::uuid END FROM users;
+ALTER TABLE users DROP CONSTRAINT users_role_valid;
+ALTER TABLE users DROP COLUMN role;
