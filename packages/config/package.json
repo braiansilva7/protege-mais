@@ -1,0 +1,12 @@
+{
+  "name": "@protege-mais/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}

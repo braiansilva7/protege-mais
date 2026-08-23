@@ -43,7 +43,7 @@ modelo de dados atual e changelog.
 
 | Campo        | Valor           |
 | ------------ | --------------- |
-| Status       | Pendente        |
+| Status       | Concluído       |
 | Tipo         | Technical Story |
 | Prioridade   | P0              |
 | Dependências | PROT-000        |

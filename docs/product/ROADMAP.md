@@ -76,6 +76,6 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-`PROT-000` removeu o domínio herdado e congelou um baseline vazio. O próximo
-trabalho de implementação deve começar por `PROT-001`, que consolidará a
-estrutura do monorepo e criará o shell do worker.
+`PROT-001` consolidou os workspaces, os packages compartilhados e o shell ocioso
+do worker. O próximo trabalho de implementação deve começar por `PROT-002`, que
+padronizará TypeScript, lint e formatter em todos os workspaces.

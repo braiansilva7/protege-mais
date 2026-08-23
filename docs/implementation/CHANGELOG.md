@@ -3,6 +3,66 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-23 — PROT-001 — Consolidar a estrutura do monorepo
+
+Status: Concluído
+
+### Resultado
+
+O pnpm e o Turbo reconhecem Manager API, Worker, Web e Mobile como apps
+independentes. O novo Worker permanece ocioso sem busy loop e encerra por
+`SIGINT` ou `SIGTERM`, sem antecipar Redis, filas, processors ou jobs.
+
+Os dez diretórios compartilhados de `packages/` foram registrados como
+workspaces de código-fonte com manifests e entrypoints públicos. O alias genérico
+`@core/*` foi substituído pelos nomes explícitos `@protege-mais/*`, e nenhuma
+dependência aponta de package para app.
+
+### Arquivos e dados
+
+- criado `apps/worker` com entrypoint, configuração TypeScript e scripts `dev`,
+  `build`, `typecheck` e `start`;
+- normalizado o workspace HTTP para `@protege-mais/manager-api` e atualizado seu
+  Dockerfile;
+- adicionados manifests e entrypoints a `common`, `config`, `interfaces`,
+  `middlewares`, `models`, `plugins`, `repositories`, `schema`, `services` e
+  `useCases`;
+- dependências externas foram movidas da raiz para os workspaces consumidores;
+  o Manager API também declara `uuid`, pois incorpora o package `common` em seu
+  artefato compilado;
+- atualizados `pnpm-workspace.yaml`, aliases TypeScript, scripts raiz e lockfile;
+- nenhuma migration, seed, tabela, rota de negócio, permissão ou dado foi criado.
+
+### Validação
+
+- `pnpm install --frozen-lockfile`: reconheceu raiz, quatro apps e dez packages;
+- `pnpm -r list --depth -1`: listou os 15 projetos esperados;
+- `pnpm typecheck`: quatro tarefas de app concluídas, incluindo todos os sources
+  compartilhados consumidos pelo Manager API;
+- `pnpm build`: quatro builds concluídos a partir da raiz;
+- grafo `dev` do Turbo: quatro tarefas persistentes reconhecidas;
+- smoke isolado da API: `/health` e `/swagger/` retornaram `200`;
+- smoke isolado do Web: raiz retornou `200`;
+- smoke isolado do Mobile: Metro retornou `packager-status:running` e `200`;
+- smoke isolado do Worker: permaneceu aguardando e encerrou por `SIGTERM` com
+  código `0`;
+- build e smoke da imagem do Manager API: `/health` retornou `200` e o container
+  encerrou com código `0`;
+- busca por `@core/*` no código e por dependências de apps em packages sem
+  ocorrências;
+- configuração do Docker Compose validada.
+
+### Decisões e pendências
+
+- nenhum ADR adicional foi necessário: a mudança materializa as fronteiras já
+  aprovadas na arquitetura-alvo, sem trocar tecnologia ou responsabilidade;
+- configuração TypeScript comum completa, lint e formatter por workspace
+  permanecem em `PROT-002`;
+- configuração validada por app permanece em `PROT-003`, Redis em `PROT-009` e
+  filas/processors do Worker em `PROT-010`;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-23 — PROT-000 — Sanear o legado e congelar o baseline
 
 Status: Concluído

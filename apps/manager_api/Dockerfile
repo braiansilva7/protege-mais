@@ -6,14 +6,14 @@ RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/manager_api/package.json apps/manager_api/package.json
+COPY packages packages
 
-RUN pnpm install --frozen-lockfile --filter manager_api...
+RUN pnpm install --frozen-lockfile --filter @protege-mais/manager-api...
 
 COPY apps/manager_api apps/manager_api
-COPY packages packages
 COPY tsconfig.json tsconfig.json
 
-RUN rm -rf apps/manager_api/dist && pnpm --filter manager_api build
+RUN pnpm --filter @protege-mais/manager-api build
 
 FROM node:24.12.0-bookworm-slim
 

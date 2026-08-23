@@ -1,5 +1,5 @@
 import { Type } from '@sinclair/typebox';
-import { ETagSwagger } from '@core/common/enums/ETagSwagger.js';
+import { ETagSwagger } from '@protege-mais/common';
 
 export const healthSchema = {
   description: 'Health check',

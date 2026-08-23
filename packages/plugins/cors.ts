@@ -1,7 +1,7 @@
 import cors from '@fastify/cors';
 import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
-import { managerApiEnvironment } from '@core/config/environments.js';
+import { managerApiEnvironment } from '@protege-mais/config';
 
 async function corsPlugin(server: FastifyInstance) {
   await server.register(cors, {

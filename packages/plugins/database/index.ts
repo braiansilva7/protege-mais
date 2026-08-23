@@ -3,8 +3,8 @@ import { Pool } from 'pg';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { container } from 'tsyringe';
 import type { FastifyInstance } from 'fastify';
-import { databaseEnvironment } from '@core/config/environments.js';
-import * as schema from '@core/models/index.js';
+import { databaseEnvironment } from '@protege-mais/config';
+import * as schema from '@protege-mais/models';
 
 export type AppDatabase = NodePgDatabase<typeof schema>;
 

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -11,7 +12,16 @@
     "skipLibCheck": true,
     "ignoreDeprecations": "6.0",
     "paths": {
-      "@core/*": ["./packages/*"]
+      "@protege-mais/common": ["./packages/common/index.ts"],
+      "@protege-mais/config": ["./packages/config/index.ts"],
+      "@protege-mais/interfaces": ["./packages/interfaces/index.ts"],
+      "@protege-mais/middlewares": ["./packages/middlewares/index.ts"],
+      "@protege-mais/models": ["./packages/models/index.ts"],
+      "@protege-mais/plugins": ["./packages/plugins/index.ts"],
+      "@protege-mais/repositories": ["./packages/repositories/index.ts"],
+      "@protege-mais/schema": ["./packages/schema/index.ts"],
+      "@protege-mais/services": ["./packages/services/index.ts"],
+      "@protege-mais/use-cases": ["./packages/useCases/index.ts"]
     }
   },
   "include": ["packages/**/*", "drizzle.config.ts"],

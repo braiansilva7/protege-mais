@@ -1,4 +1,4 @@
-import type { AppDatabase } from '@core/plugins/database/index.js';
+import type { AppDatabase } from '@protege-mais/plugins';
 import type { Pool } from 'pg';
 import type { TFunction } from 'i18next';
 

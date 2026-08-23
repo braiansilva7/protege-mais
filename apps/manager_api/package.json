@@ -1,5 +1,5 @@
 {
-  "name": "manager_api",
+  "name": "@protege-mais/manager-api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,25 +10,23 @@
     "start": "node dist/apps/manager_api/src/server.js"
   },
   "dependencies": {
-    "@fastify/cors": "^11.2.0",
-    "@fastify/multipart": "^9.0.3",
     "@fastify/swagger": "^9.8.1",
     "@fastify/swagger-ui": "^6.1.0",
-    "@sinclair/typebox": "^0.34.37",
-    "dotenv": "^17.4.2",
-    "drizzle-orm": "^0.44.3",
+    "@protege-mais/common": "workspace:*",
+    "@protege-mais/config": "workspace:*",
+    "@protege-mais/plugins": "workspace:*",
+    "@protege-mais/schema": "workspace:*",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.0.1",
     "i18next": "^26.3.6",
-    "i18next-fs-backend": "^2.6.6",
-    "i18next-http-middleware": "^3.9.7",
     "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",
-    "tsyringe": "^4.10.0"
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
     "@types/pg": "^8.20.0",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }

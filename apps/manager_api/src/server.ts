@@ -1,13 +1,15 @@
 import 'reflect-metadata';
 import Fastify from 'fastify';
-import { managerApiEnvironment } from '@core/config/environments.js';
-import { registerCors } from '@core/plugins/cors.js';
-import { registerDatabase } from '@core/plugins/database/index.js';
-import { registerMultipart } from '@core/plugins/multipart/index.js';
-import i18nextPlugin from '@core/plugins/i18next/index.js';
-import healthRoutes from '@/routes/health.route.js';
-import routes from '@/routes/index.js';
-import swaggerPlugin from '@/plugins/swagger/index.js';
+import { managerApiEnvironment } from '@protege-mais/config';
+import {
+  i18nextPlugin,
+  registerCors,
+  registerDatabase,
+  registerMultipart,
+} from '@protege-mais/plugins';
+import swaggerPlugin from './plugins/swagger/index.js';
+import healthRoutes from './routes/health.route.js';
+import routes from './routes/index.js';
 
 export async function buildServer() {
   const app = Fastify({ logger: true });

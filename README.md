@@ -2,10 +2,10 @@
 
 Fundação técnica do **Protege Mais**.
 
-O legado do template de origem foi removido pelo `PROT-000`. Neste baseline não
-existem tabelas, dados, autenticação, permissões ou rotas de negócio. API, Web e
-Mobile permanecem como shells mínimos para que a nova arquitetura seja criada e
-testada de forma incremental.
+O legado foi removido pelo `PROT-000` e a estrutura do monorepo foi consolidada
+pelo `PROT-001`. Neste baseline não existem tabelas, dados, autenticação,
+permissões ou rotas de negócio. API, Worker, Web e Mobile permanecem como shells
+mínimos para evolução incremental.
 
 ## Pré-requisitos
 
@@ -13,14 +13,41 @@ testada de forma incremental.
 - pnpm `11.9.0`;
 - Docker, apenas para os tickets que usam infraestrutura local.
 
-## Início rápido dos shells
+## Instalação
 
 1. Copie `.env.example` para `.env` e ajuste valores locais.
-2. Instale as dependências: `pnpm install`.
-3. Inicie a API: `pnpm dev:manager_api`.
-4. Em outro terminal, inicie o Web: `pnpm dev:web`.
+2. Instale todos os workspaces com `pnpm install`.
+3. Confira o grafo com `pnpm -r list --depth -1`.
 
-O Mobile pode ser iniciado com `pnpm dev:mobile`.
+O workspace contém quatro apps e dez packages compartilhados sob o namespace
+`@protege-mais/`.
+
+## Execução dos shells
+
+Use `pnpm dev` para iniciar os quatro apps pelo Turbo ou execute cada processo
+isoladamente:
+
+```bash
+pnpm dev:manager_api
+pnpm dev:web
+pnpm dev:mobile
+pnpm dev:worker
+```
+
+O Worker permanece ocioso até receber `SIGINT` ou `SIGTERM`. Ele ainda não
+conecta ao Redis e não processa filas ou jobs.
+
+## Qualidade e build
+
+```bash
+pnpm typecheck
+pnpm build
+pnpm format:check
+```
+
+Os comandos de typecheck e build da raiz cobrem Manager API, Worker, Web e
+Mobile. A consolidação de lint e da configuração TypeScript comum pertence ao
+`PROT-002`.
 
 ## Estado atual da API
 
@@ -28,7 +55,7 @@ O Mobile pode ser iniciado com `pnpm dev:mobile`.
 - `/swagger/` — documentação do contrato atual;
 - `/api/v1` — reservado para futuras rotas de negócio, atualmente vazio.
 
-O PostgreSQL, Atlas e MinIO permanecem configurados como infraestrutura local,
+PostgreSQL, Atlas e MinIO permanecem configurados como infraestrutura local,
 mas não há migrations nem seeds de domínio. A fundação de banco será
 consolidada em `PROT-011`.
 
@@ -42,8 +69,8 @@ consolidada em `PROT-011`.
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket é `PROT-001`. Para continuar por etapas:
+O próximo ticket é `PROT-002`:
 
 ```text
-Implemente o ticket PROT-001 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-002 seguindo toda a documentação do projeto.
 ```

@@ -2,7 +2,7 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { ETagSwagger } from '@core/common/enums/ETagSwagger.js';
+import { ETagSwagger } from '@protege-mais/common';
 
 async function swaggerPlugin(fastify: FastifyInstance) {
   await fastify.register(fastifySwagger, {
