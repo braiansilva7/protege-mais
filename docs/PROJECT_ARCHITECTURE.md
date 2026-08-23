@@ -6,7 +6,13 @@ Este documento registra a organização de pastas e o modelo de dados atual do
 Protege Mais. Deve ser consultado antes de criar domínios, rotas, telas,
 models, migrations ou recursos de autorização.
 
-## Estrutura de pastas
+> **Estado atual:** esta base ainda possui domínios e dados herdados do template
+> anterior. As seções abaixo descrevem o que existe hoje, não a arquitetura final
+> aprovada. A transição começa em `PROT-000`. Consulte também
+> `docs/architecture/TARGET_ARCHITECTURE.md` e
+> `docs/architecture/SECURITY_AND_PRIVACY.md`.
+
+## Estrutura atual de pastas
 
 ```text
 protege-mais/
@@ -73,7 +79,11 @@ As interfaces ficam em `packages/interfaces`; schemas em
 `packages/schema`; mensagens visíveis devem estar nos arquivos de tradução
 `pt`, `en` e `es` do backend e do web.
 
-## Modelo de dados
+## Modelo de dados atual — legado a sanear
+
+O diagrama abaixo permanece documentado para que o ticket `PROT-000` consiga
+remover ou adaptar cada dependência conscientemente. Novos domínios do Protege
+Mais não devem se acoplar a essas tabelas.
 
 ```mermaid
 erDiagram
@@ -162,7 +172,7 @@ erDiagram
   }
 ```
 
-## Permissões
+## Permissões atuais — legado a sanear
 
 O acesso não depende de `ADMIN` ou `PLAYER` fixos no usuário. Cada usuário
 possui uma atribuição em `permission_assignments`, vinculada a um papel em
@@ -178,6 +188,10 @@ Catálogo inicial:
 
 Os papéis de sistema são Administrador e Jogador. Eles são protegidos contra
 remoção e alteração.
+
+Esse catálogo não é o catálogo final do Protege Mais. A fundação contextual de
+roles e permissions será entregue por `PROT-017`, `PROT-018` e `PROT-030` a
+`PROT-034`.
 
 ## UUIDs e migrations
 

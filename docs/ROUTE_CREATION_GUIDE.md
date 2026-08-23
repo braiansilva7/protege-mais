@@ -65,10 +65,10 @@ Definir antes de codificar:
 Exemplos:
 
 ```text
-POST   /questions
-GET    /questions
-PATCH  /questions/:id
-DELETE /questions/:id
+POST   /victims
+GET    /victims
+PATCH  /victims/:id
+DELETE /victims/:id
 ```
 
 As rotas registradas em `apps/manager_api/src/routes/index.ts` recebem o prefixo `/api/v1` no `server.ts`. Não repetir esse prefixo no arquivo da rota.
@@ -84,7 +84,7 @@ packages/interfaces/<dominio>/I<Operacao>Input.ts
 Exemplo:
 
 ```text
-packages/interfaces/question/ICreateQuestionInput.ts
+packages/interfaces/victim/ICreateVictimInput.ts
 ```
 
 Nunca declarar interfaces diretamente em `packages/services` ou `packages/useCases`.
@@ -174,12 +174,12 @@ apps/manager_api/src/routes/<dominio>.route.ts
 Modelo:
 
 ```ts
-server.post('/questions', {
-  schema: createQuestionSchema,
-  handler: questionController.createQuestion,
+server.post('/victims', {
+  schema: createVictimSchema,
+  handler: victimController.createVictim,
   preHandler: [
     (request, reply) =>
-      server.authenticateJwt(request, reply, questionCreatePermissions),
+      server.authenticateJwt(request, reply, victimCreatePermissions),
   ],
 });
 ```
