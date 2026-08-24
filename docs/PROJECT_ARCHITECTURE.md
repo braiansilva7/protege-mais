@@ -2,7 +2,7 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-001`. A arquitetura
+Este documento registra somente o que existe após o `PROT-002`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
@@ -43,6 +43,11 @@ protege-mais/
 ├── atlas/
 │   ├── prod/                 # Vazio
 │   └── seed/dev/             # Vazio
+├── eslint.config.mjs       # Lint compartilhado e tipado
+├── tsconfig.base.json      # Regras TypeScript comuns
+├── tsconfig.json           # Node.js e aliases de packages
+├── .prettierrc             # Formatação comum
+├── .prettierignore         # Artefatos fora da formatação
 └── docs/
 ```
 
@@ -55,8 +60,8 @@ O `pnpm-workspace.yaml` reconhece `apps/*` e `packages/*`. Todos usam o namespac
 Cada package possui `package.json` e `index.ts` como fronteira pública. Nesta
 fase eles são workspaces de código-fonte: o Manager API compila os packages que
 consome, enquanto packages vazios permanecem como entrypoints preparados para
-os tickets de domínio. Configuração TypeScript comum mais ampla, lint e regras de
-qualidade pertencem ao `PROT-002`.
+os tickets de domínio. Cada package possui `tsconfig.json` e scripts isolados de
+lint, typecheck e formatter.
 
 As dependências seguem uma única direção:
 
@@ -79,6 +84,27 @@ Os aliases compartilhados usam os nomes dos workspaces, por exemplo:
 
 O alias legado `@core/*` não existe mais. Aliases locais de UI permanecem
 restritos ao respectivo app.
+
+## Qualidade e runtime
+
+O runtime fixado é Node.js `24.12.0` com pnpm `11.9.0`. O `preinstall` impede a
+instalação com outra versão do Node, e o lockfile preserva as versões resolvidas
+para todos os workspaces.
+
+`tsconfig.base.json` habilita explicitamente `strict`, `noImplicitAny`,
+`strictNullChecks`, `useUnknownInCatchVariables`, consistência de nomes de
+arquivo e bloqueio de emissão com erros. A raiz especializa essa base para
+Node.js e centraliza os aliases de packages. Web e Mobile combinam a mesma base
+com as configurações de seus runtimes.
+
+O ESLint usa flat config e análise com informação de tipos nos arquivos
+TypeScript. Vue e React Hooks possuem regras adequadas aos respectivos apps.
+`any` explícito é erro; uma exceção exige desabilitação somente na linha
+necessária e uma justificativa após `--`. O Prettier permanece responsável pelo
+estilo mecânico. As convenções completas estão em `docs/QUALITY.md`.
+
+Dependências, builds e caches são ignorados pelo lint e formatter. O lockfile
+é mantido exclusivamente pelo pnpm e não é reformatado.
 
 ## Responsabilidade dos apps
 
@@ -124,22 +150,25 @@ continua preservada como capacidade genérica, mas sua consolidação pertence a
 
 ## Comandos do monorepo
 
-| Comando                   | Resultado                              |
-| ------------------------- | -------------------------------------- |
-| `pnpm dev`                | Inicia os quatro apps pelo Turbo       |
-| `pnpm dev:manager_api`    | Inicia somente a API                   |
-| `pnpm dev:web`            | Inicia somente o Web                   |
-| `pnpm dev:mobile`         | Inicia somente o Mobile                |
-| `pnpm dev:worker`         | Inicia somente o worker ocioso         |
-| `pnpm typecheck`          | Valida os quatro apps a partir da raiz |
-| `pnpm build`              | Gera os quatro builds a partir da raiz |
-| `pnpm -r list --depth -1` | Lista raiz, quatro apps e dez packages |
+| Comando                             | Resultado                               |
+| ----------------------------------- | --------------------------------------- |
+| `pnpm dev`                          | Inicia os quatro apps pelo Turbo        |
+| `pnpm dev:manager_api`              | Inicia somente a API                    |
+| `pnpm dev:web`                      | Inicia somente o Web                    |
+| `pnpm dev:mobile`                   | Inicia somente o Mobile                 |
+| `pnpm dev:worker`                   | Inicia somente o worker ocioso          |
+| `pnpm lint`                         | Valida os quatro apps e os dez packages |
+| `pnpm typecheck`                    | Valida os quatro apps e os dez packages |
+| `pnpm format:check`                 | Confere a formatação do repositório     |
+| `pnpm -r --if-present format:check` | Confere a formatação por workspace      |
+| `pnpm build`                        | Gera os quatro builds a partir da raiz  |
+| `pnpm -r list --depth -1`           | Lista raiz, quatro apps e dez packages  |
 
 ## Inventário e recuperação
 
 A classificação do legado removido permanece em
 `docs/implementation/PROT-000_LEGACY_INVENTORY.md`. Os arquivos removidos são
-recuperáveis pelo histórico Git; o `PROT-001` não criou nem alterou dados.
+recuperáveis pelo histórico Git; o `PROT-002` não criou nem alterou dados.
 
 ---
 

@@ -34,8 +34,8 @@ async function start() {
     process.exit(0);
   };
 
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', () => void shutdown());
+  process.on('SIGTERM', () => void shutdown());
 
   try {
     await app.listen({ port: config.port, host: '0.0.0.0' });

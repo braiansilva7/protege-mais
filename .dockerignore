@@ -6,3 +6,5 @@ apps/**/dist
 .turbo
 .pnpm-store
 .env
+coverage
+**/*.tsbuildinfo

@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "tsx watch --tsconfig tsconfig.json src/index.ts",
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "format": "prettier --write . --ignore-path ../../.prettierignore",
+    "format:check": "prettier --check . --ignore-path ../../.prettierignore",
     "start": "node dist/index.js"
   },
   "devDependencies": {

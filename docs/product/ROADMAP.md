@@ -76,6 +76,6 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-`PROT-001` consolidou os workspaces, os packages compartilhados e o shell ocioso
-do worker. O próximo trabalho de implementação deve começar por `PROT-002`, que
-padronizará TypeScript, lint e formatter em todos os workspaces.
+`PROT-002` padronizou TypeScript, lint e formatter nos quatro apps e dez
+packages. O próximo trabalho de implementação deve começar por `PROT-003`, que
+centralizará e validará as configurações de ambiente por app.

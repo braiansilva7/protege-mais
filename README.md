@@ -2,10 +2,11 @@
 
 Fundação técnica do **Protege Mais**.
 
-O legado foi removido pelo `PROT-000` e a estrutura do monorepo foi consolidada
-pelo `PROT-001`. Neste baseline não existem tabelas, dados, autenticação,
-permissões ou rotas de negócio. API, Worker, Web e Mobile permanecem como shells
-mínimos para evolução incremental.
+O legado foi removido pelo `PROT-000`, a estrutura do monorepo foi consolidada
+pelo `PROT-001` e a configuração comum de qualidade foi entregue pelo
+`PROT-002`. Neste baseline não existem tabelas, dados, autenticação, permissões
+ou rotas de negócio. API, Worker, Web e Mobile permanecem como shells mínimos
+para evolução incremental.
 
 ## Pré-requisitos
 
@@ -40,14 +41,17 @@ conecta ao Redis e não processa filas ou jobs.
 ## Qualidade e build
 
 ```bash
+pnpm lint
 pnpm typecheck
-pnpm build
 pnpm format:check
+pnpm build
 ```
 
-Os comandos de typecheck e build da raiz cobrem Manager API, Worker, Web e
-Mobile. A consolidação de lint e da configuração TypeScript comum pertence ao
-`PROT-002`.
+Lint e typecheck cobrem os quatro apps e os dez packages. O build cobre Manager
+API, Worker, Web e Mobile. Use `pnpm format` para aplicar a formatação e
+`pnpm -r --if-present format:check` para conferir cada workspace explicitamente.
+As regras de TypeScript, ESLint, Prettier e uso excepcional de `any` estão em
+[`docs/QUALITY.md`](docs/QUALITY.md).
 
 ## Estado atual da API
 
@@ -69,8 +73,8 @@ consolidada em `PROT-011`.
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket é `PROT-002`:
+O próximo ticket é `PROT-003`:
 
 ```text
-Implemente o ticket PROT-002 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-003 seguindo toda a documentação do projeto.
 ```

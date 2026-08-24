@@ -31,16 +31,18 @@ testes, decisões e pendências.
 
 ## Fontes de verdade
 
-| Assunto                                  | Documento                                    |
-| ---------------------------------------- | -------------------------------------------- |
-| Sequência, fases e marcos                | `docs/product/ROADMAP.md`                    |
-| Arquitetura futura aprovada              | `docs/architecture/TARGET_ARCHITECTURE.md`   |
-| Segurança, privacidade e dados sensíveis | `docs/architecture/SECURITY_AND_PRIVACY.md`  |
-| Estado atual do código                   | `docs/PROJECT_ARCHITECTURE.md`               |
-| Tickets e seus estados                   | `docs/tickets/README.md` e arquivos de épico |
-| Mudanças efetivamente implementadas      | `docs/implementation/CHANGELOG.md`           |
-| Decisões com impacto arquitetural        | `docs/decisions/`                            |
-| Padrão para rotas verticais              | `docs/ROUTE_CREATION_GUIDE.md`               |
+| Assunto                                  | Documento                                            |
+| ---------------------------------------- | ---------------------------------------------------- |
+| Sequência, fases e marcos                | `docs/product/ROADMAP.md`                            |
+| Arquitetura futura aprovada              | `docs/architecture/TARGET_ARCHITECTURE.md`           |
+| Segurança, privacidade e dados sensíveis | `docs/architecture/SECURITY_AND_PRIVACY.md`          |
+| Estado atual do código                   | `docs/PROJECT_ARCHITECTURE.md`                       |
+| Runtime e convenções de qualidade        | `docs/QUALITY.md`                                    |
+| Tickets e seus estados                   | `docs/tickets/README.md` e arquivos de épico         |
+| Mudanças efetivamente implementadas      | `docs/implementation/CHANGELOG.md`                   |
+| Auditoria de dependências de 2026-08-23  | `docs/implementation/DEPENDENCY_AUDIT_2026-08-23.md` |
+| Decisões com impacto arquitetural        | `docs/decisions/`                                    |
+| Padrão para rotas verticais              | `docs/ROUTE_CREATION_GUIDE.md`                       |
 
 ## Regra contra divergência documental
 

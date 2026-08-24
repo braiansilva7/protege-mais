@@ -14,7 +14,7 @@ Estados permitidos: `Pendente`, `Em andamento`, `Bloqueado` e `Concluído`.
 | -------------------------------------------------- | ------------------------------------------ | ---------- | ---------------------------- | --------- |
 | [PROT-000](EPIC_00_FOUNDATION.md#prot-000)         | Sanear o legado e congelar o baseline      | P0         | —                            | Concluído |
 | [PROT-001](EPIC_00_FOUNDATION.md#prot-001)         | Consolidar a estrutura do monorepo         | P0         | PROT-000                     | Concluído |
-| [PROT-002](EPIC_00_FOUNDATION.md#prot-002)         | Configurar TypeScript, lint e formatter    | P0         | PROT-001                     | Pendente  |
+| [PROT-002](EPIC_00_FOUNDATION.md#prot-002)         | Configurar TypeScript, lint e formatter    | P0         | PROT-001                     | Concluído |
 | [PROT-003](EPIC_00_FOUNDATION.md#prot-003)         | Centralizar e validar configurações        | P0         | PROT-001                     | Pendente  |
 | [PROT-004](EPIC_00_FOUNDATION.md#prot-004)         | Implantar o padrão global de erros         | P0         | PROT-002                     | Pendente  |
 | [PROT-005](EPIC_00_FOUNDATION.md#prot-005)         | Consolidar i18n do backend                 | P1         | PROT-004                     | Pendente  |

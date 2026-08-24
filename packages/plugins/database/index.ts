@@ -8,7 +8,7 @@ import * as schema from '@protege-mais/models';
 
 export type AppDatabase = NodePgDatabase<typeof schema>;
 
-async function databasePlugin(fastify: FastifyInstance) {
+function databasePlugin(fastify: FastifyInstance) {
   const pool = new Pool({ connectionString: databaseEnvironment.databaseUrl });
   const db = drizzle(pool, { schema });
 

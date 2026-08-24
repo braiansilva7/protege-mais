@@ -72,7 +72,7 @@ inicialização isolada dos quatro apps.
 
 | Campo        | Valor           |
 | ------------ | --------------- |
-| Status       | Pendente        |
+| Status       | Concluído       |
 | Tipo         | Technical Story |
 | Prioridade   | P0              |
 | Dependências | PROT-001        |

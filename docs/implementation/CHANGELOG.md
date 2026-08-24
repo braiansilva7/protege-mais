@@ -3,6 +3,64 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-23 — PROT-002 — Configurar TypeScript, lint e formatter
+
+Status: Concluído
+
+### Resultado
+
+Os quatro apps e os dez packages agora compartilham regras TypeScript estritas,
+lint tipado e formatação reproduzível. Cada workspace pode executar seus
+comandos de qualidade isoladamente, enquanto a raiz os coordena pelo Turbo.
+
+`any` explícito é bloqueado pelo ESLint. Exceções exigem uma desabilitação
+restrita à linha e uma justificativa textual, com diretivas desnecessárias
+tratadas como erro.
+
+### Arquivos e dados
+
+- criado `tsconfig.base.json` com `strict`, `noImplicitAny`,
+  `strictNullChecks`, `useUnknownInCatchVariables` e proteções comuns;
+- os apps passaram a estender a base conforme Node.js, Vite/Vue ou Expo, e cada
+  package recebeu `tsconfig.json` próprio;
+- criado `eslint.config.mjs` com flat config, regras TypeScript com informação
+  de tipos, Vue, React Hooks, Prettier e validação de justificativas;
+- adicionados scripts `lint`, `typecheck`, `format` e `format:check` aos
+  workspaces, a tarefa `lint` e as configurações globais do cache ao Turbo;
+- criados `.prettierignore` e ignores equivalentes para dependências, builds,
+  caches e cobertura; o lockfile voltou a ser mantido no formato do pnpm;
+- corrigidos o contrato síncrono do plugin de banco, os callbacks de sinais da
+  API e a declaração de componentes Vue encontrados pelo lint tipado;
+- documentadas as convenções em `docs/QUALITY.md`, README, arquitetura atual e
+  roadmap;
+- nenhuma migration, seed, tabela, rota de negócio, permissão ou dado foi
+  criado ou alterado.
+
+### Validação
+
+- `pnpm install --frozen-lockfile`: dependências e os 15 projetos sincronizados;
+- `pnpm lint`: 14 tarefas de workspace concluídas sem warnings;
+- `pnpm typecheck`: 14 tarefas de workspace concluídas;
+- `pnpm format:check`: repositório formatado;
+- `pnpm -r --if-present format:check`: quatro apps e dez packages formatados;
+- casos negativos em memória: `TS7006` rejeitou `any` implícito, `TS2322`
+  rejeitou `null` em `string` e o ESLint rejeitou `any` explícito;
+- supressão sem justificativa: rejeitada; exceção local justificada: aceita;
+  buscas por `any` e diretivas no código versionado: sem ocorrências;
+- `pnpm build`: os quatro apps foram gerados com sucesso.
+
+### Decisões e pendências
+
+- nenhum ADR adicional foi necessário: o ticket materializa o padrão de
+  qualidade já aprovado, sem alterar fronteiras ou tecnologias de runtime;
+- a auditoria adicional encontrou 10 vulnerabilidades altas no grafo atual;
+  elas não foram corrigidas porque exigem atualizar bibliotecas existentes fora
+  do escopo, e o snapshot está em
+  `docs/implementation/DEPENDENCY_AUDIT_2026-08-23.md`;
+- `PROT-003` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-23 — PROT-001 — Consolidar a estrutura do monorepo
 
 Status: Concluído
