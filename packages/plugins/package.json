@@ -6,6 +6,7 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test error-handler/error-handler.test.ts",
     "format": "prettier --write . --ignore-path ../../.prettierignore",
     "format:check": "prettier --check . --ignore-path ../../.prettierignore"
   },
@@ -15,6 +16,7 @@
   "dependencies": {
     "@fastify/cors": "^11.2.0",
     "@fastify/multipart": "^9.0.3",
+    "@protege-mais/common": "workspace:*",
     "@protege-mais/models": "workspace:*",
     "drizzle-orm": "^0.44.3",
     "fastify": "^5.8.5",
@@ -24,5 +26,9 @@
     "i18next-http-middleware": "^3.9.7",
     "pg": "^8.22.0",
     "tsyringe": "^4.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "tsx": "^4.22.4"
   }
 }

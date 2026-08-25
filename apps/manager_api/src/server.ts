@@ -9,6 +9,7 @@ import {
   i18nextPlugin,
   registerCors,
   registerDatabase,
+  registerErrorHandler,
   registerMultipart,
 } from '@protege-mais/plugins';
 import swaggerPlugin from './plugins/swagger/index.js';
@@ -20,6 +21,7 @@ export async function buildServer(
 ) {
   const app = Fastify({ logger: { level: configuration.logLevel } });
 
+  await app.register(registerErrorHandler);
   await app.register(registerDatabase, {
     databaseUrl: configuration.databaseUrl,
   });

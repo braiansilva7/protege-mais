@@ -3,6 +3,72 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-24 — PROT-004 — Implantar o padrão global de erros
+
+Status: Concluído
+
+### Resultado
+
+A Manager API agora possui classes de erro comuns e um handler Fastify global.
+Erros previstos recebem status e códigos estáveis; erros desconhecidos viram
+`INTERNAL_SERVER_ERROR` com status 500. Toda resposta de falha contém somente
+`code`, `message` e `requestId`, sem stack, causa, detalhes de schema ou valores
+recebidos.
+
+O handler também padroniza rotas inexistentes e erros HTTP de cliente gerados
+pelo framework. Falhas 4xx registram somente metadados; falhas 5xx mantêm o erro
+ou a causa original no log interno associado ao `requestId`, sem reutilizá-lo na
+resposta.
+
+### Arquivos e dados
+
+- criadas em `packages/common/errors` `ApplicationError`, `ValidationError`,
+  `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`,
+  `BusinessRuleError`, `InfrastructureError` e o tipo `ErrorResponse`;
+- criado em `packages/plugins/error-handler` o mapeamento global de erros de
+  aplicação, validação, framework, infraestrutura, rota inexistente e falha
+  desconhecida;
+- a Manager API passou a registrar o handler antes dos demais plugins e rotas;
+- adicionados scripts e dependências de teste aos workspaces `common` e
+  `plugins`, com lockfile sincronizado;
+- documentados contrato, códigos, status, regras de lançamento e limites atuais
+  em `docs/api`, README, arquitetura atual, qualidade e roadmap;
+- nenhuma migration, seed, tabela, rota de negócio, permissão ou dado foi criado
+  ou alterado.
+
+### Validação
+
+- `pnpm install --frozen-lockfile --offline`: os 15 projetos e o lockfile
+  permaneceram sincronizados sem baixar dependências;
+- `pnpm test`: 19 testes aprovados, sendo 11 de configuração, quatro das
+  classes e quatro de integração do handler;
+- cenários do handler: 400, 401, 403, 404, 409, 422, 500 previsto, 500
+  desconhecido, rota inexistente e validação com valor sensível aprovados;
+- captura de log: diagnósticos originais de falhas 500 permaneceram no log com
+  `requestId` e não apareceram na resposta;
+- `pnpm lint`: 14 tarefas de workspace concluídas sem warnings;
+- `pnpm typecheck`: 14 tarefas de workspace concluídas;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece apenas o
+  aviso não bloqueante já conhecido do bundle Web maior que 500 kB;
+- smoke do artefato compilado: `/health` retornou 200 e rota inexistente
+  retornou 404 com `NOT_FOUND`, mensagem segura e `requestId`;
+- build e smoke da imagem da Manager API: os mesmos cenários 200 e 404 foram
+  aprovados, e o container e a imagem temporária foram removidos;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados.
+
+### Decisões e pendências
+
+- nenhum ADR adicional foi necessário: o ticket concretiza as fronteiras de
+  erros em `common` e plugins Fastify já previstas na arquitetura-alvo;
+- os defaults de mensagem permanecem em `pt-BR`; negociação de idioma, fallback
+  e paridade dos catálogos pertencem ao `PROT-005`;
+- schema OpenAPI comum de erro pertence ao `PROT-007`; aceitação de request ID
+  externo, correlação e redaction ampla pertencem ao `PROT-008`;
+- `PROT-005` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-24 — PROT-003 — Centralizar e validar configurações
 
 Status: Concluído

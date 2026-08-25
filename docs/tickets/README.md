@@ -16,7 +16,7 @@ Estados permitidos: `Pendente`, `Em andamento`, `Bloqueado` e `Concluído`.
 | [PROT-001](EPIC_00_FOUNDATION.md#prot-001)         | Consolidar a estrutura do monorepo         | P0         | PROT-000                     | Concluído |
 | [PROT-002](EPIC_00_FOUNDATION.md#prot-002)         | Configurar TypeScript, lint e formatter    | P0         | PROT-001                     | Concluído |
 | [PROT-003](EPIC_00_FOUNDATION.md#prot-003)         | Centralizar e validar configurações        | P0         | PROT-001                     | Concluído |
-| [PROT-004](EPIC_00_FOUNDATION.md#prot-004)         | Implantar o padrão global de erros         | P0         | PROT-002                     | Pendente  |
+| [PROT-004](EPIC_00_FOUNDATION.md#prot-004)         | Implantar o padrão global de erros         | P0         | PROT-002                     | Concluído |
 | [PROT-005](EPIC_00_FOUNDATION.md#prot-005)         | Consolidar i18n do backend                 | P1         | PROT-004                     | Pendente  |
 | [PROT-006](EPIC_00_FOUNDATION.md#prot-006)         | Consolidar API base, health e readiness    | P0         | PROT-003, PROT-004           | Pendente  |
 | [PROT-007](EPIC_00_FOUNDATION.md#prot-007)         | Consolidar Swagger/OpenAPI                 | P1         | PROT-004, PROT-006           | Pendente  |

@@ -2,14 +2,15 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-003`. A arquitetura
+Este documento registra somente o que existe após o `PROT-004`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
 O monorepo possui quatro apps executáveis e dez packages compartilhados. Ainda
 não existem domínio de negócio, autenticação, autorização, tabelas, migrations,
 seeds, Redis ou filas. Os contratos de configuração dessas capacidades já são
-validados de forma isolada, sem ativar as integrações futuras.
+validados de forma isolada, e a API possui um contrato global de erros, sem
+ativar as integrações futuras.
 
 ## Estrutura executável atual
 
@@ -31,12 +32,12 @@ protege-mais/
 │       ├── App.tsx
 │       └── index.ts
 ├── packages/
-│   ├── common/               # Tipos, enums, constantes e funções comuns
+│   ├── common/               # Tipos, enums, erros, constantes e funções comuns
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
 │   ├── models/               # Schema Drizzle, atualmente vazio
-│   ├── plugins/              # Banco, CORS, multipart e i18n existentes
+│   ├── plugins/              # Handler de erros, banco, CORS, multipart e i18n
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Contratos HTTP; hoje somente health
 │   ├── services/             # Capacidades reutilizáveis futuras
@@ -115,12 +116,12 @@ pela API neste estágio. A matriz está em `docs/CONFIGURATION.md`.
 
 ## Responsabilidade dos apps
 
-| App           | Responsabilidade atual                           | Não faz neste baseline              |
-| ------------- | ------------------------------------------------ | ----------------------------------- |
-| `manager_api` | Valida config; expõe health, Swagger e `/api/v1` | Regra de negócio, auth ou permissão |
-| `web`         | Valida config pública e serve o shell            | Chamada de API ou fluxo funcional   |
-| `mobile`      | Valida config pública e inicia o shell Expo      | Storage, API ou fluxo de proteção   |
-| `worker`      | Valida config, aguarda e encerra por sinal       | Redis, filas, processors ou jobs    |
+| App           | Responsabilidade atual                                  | Não faz neste baseline              |
+| ------------- | ------------------------------------------------------- | ----------------------------------- |
+| `manager_api` | Valida config; expõe health, Swagger, erros e `/api/v1` | Regra de negócio, auth ou permissão |
+| `web`         | Valida config pública e serve o shell                   | Chamada de API ou fluxo funcional   |
+| `mobile`      | Valida config pública e inicia o shell Expo             | Storage, API ou fluxo de proteção   |
+| `worker`      | Valida config, aguarda e encerra por sinal              | Redis, filas, processors ou jobs    |
 
 O worker usa um timer referenciado de longa duração apenas para manter o event
 loop ativo, sem polling ou busy loop. `SIGINT` e `SIGTERM` cancelam a espera e
@@ -132,13 +133,22 @@ encerram o shell. Redis e processamento assíncrono serão implementados por
 O bootstrap valida ambiente, host, porta, log, CORS e banco antes de criar o
 Fastify. Depois registra, nesta ordem:
 
-1. pool PostgreSQL/Drizzle;
-2. parser multipart;
-3. CORS;
-4. i18n;
-5. Swagger;
-6. `GET /health`;
-7. agregador vazio sob `/api/v1`.
+1. handler global de erros e de rota inexistente;
+2. pool PostgreSQL/Drizzle;
+3. parser multipart;
+4. CORS;
+5. i18n;
+6. Swagger;
+7. `GET /health`;
+8. agregador vazio sob `/api/v1`.
+
+`packages/common` expõe `ApplicationError` e as especializações para
+validação, autenticação, autorização, recurso ausente, conflito, regra de
+negócio e infraestrutura. `packages/plugins` converte essas classes, erros de
+schema e erros HTTP conhecidos em `{ code, message, requestId }`. Falhas
+desconhecidas recebem `INTERNAL_SERVER_ERROR` e 500; stack, causa e detalhes do
+schema não são serializados para o cliente. O contrato completo está em
+`docs/api/README.md`.
 
 Não há JWT, middleware de autenticação, usuário autenticado ou permissão no
 baseline. Esses componentes serão redesenhados em seus tickets próprios.
@@ -158,26 +168,26 @@ continua preservada como capacidade genérica, mas sua consolidação pertence a
 
 ## Comandos do monorepo
 
-| Comando                             | Resultado                               |
-| ----------------------------------- | --------------------------------------- |
-| `pnpm dev`                          | Inicia os quatro apps pelo Turbo        |
-| `pnpm dev:manager_api`              | Inicia somente a API                    |
-| `pnpm dev:web`                      | Inicia somente o Web                    |
-| `pnpm dev:mobile`                   | Inicia somente o Mobile                 |
-| `pnpm dev:worker`                   | Inicia somente o worker ocioso          |
-| `pnpm lint`                         | Valida os quatro apps e os dez packages |
-| `pnpm typecheck`                    | Valida os quatro apps e os dez packages |
-| `pnpm test`                         | Testa a validação de configuração       |
-| `pnpm format:check`                 | Confere a formatação do repositório     |
-| `pnpm -r --if-present format:check` | Confere a formatação por workspace      |
-| `pnpm build`                        | Gera os quatro builds a partir da raiz  |
-| `pnpm -r list --depth -1`           | Lista raiz, quatro apps e dez packages  |
+| Comando                             | Resultado                                     |
+| ----------------------------------- | --------------------------------------------- |
+| `pnpm dev`                          | Inicia os quatro apps pelo Turbo              |
+| `pnpm dev:manager_api`              | Inicia somente a API                          |
+| `pnpm dev:web`                      | Inicia somente o Web                          |
+| `pnpm dev:mobile`                   | Inicia somente o Mobile                       |
+| `pnpm dev:worker`                   | Inicia somente o worker ocioso                |
+| `pnpm lint`                         | Valida os quatro apps e os dez packages       |
+| `pnpm typecheck`                    | Valida os quatro apps e os dez packages       |
+| `pnpm test`                         | Testa configuração, classes e handler de erro |
+| `pnpm format:check`                 | Confere a formatação do repositório           |
+| `pnpm -r --if-present format:check` | Confere a formatação por workspace            |
+| `pnpm build`                        | Gera os quatro builds a partir da raiz        |
+| `pnpm -r list --depth -1`           | Lista raiz, quatro apps e dez packages        |
 
 ## Inventário e recuperação
 
 A classificação do legado removido permanece em
 `docs/implementation/PROT-000_LEGACY_INVENTORY.md`. Os arquivos removidos são
-recuperáveis pelo histórico Git; o `PROT-003` não criou nem alterou dados.
+recuperáveis pelo histórico Git; o `PROT-004` não criou nem alterou dados.
 
 ---
 

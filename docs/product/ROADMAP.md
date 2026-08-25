@@ -76,6 +76,6 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-`PROT-003` centralizou e validou as configurações de ambiente dos quatro apps e
-das capacidades futuras. O próximo trabalho de implementação deve começar por
-`PROT-004`, que implantará o padrão global de erros.
+`PROT-004` implantou as classes e o contrato global de erros da API sem expor
+stack, causa ou detalhes de validação. O próximo trabalho de implementação deve
+começar por `PROT-005`, que consolidará a internacionalização do backend.
