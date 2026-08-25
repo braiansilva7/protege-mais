@@ -3,6 +3,74 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-24 — PROT-003 — Centralizar e validar configurações
+
+Status: Concluído
+
+### Resultado
+
+`packages/config` tornou-se a única fronteira que lê variáveis de ambiente. Os
+valores são validados por app e por capacidade, normalizados e expostos em
+objetos tipados e congelados. Erros de ausência, formato ou configuração
+insegura citam somente as chaves envolvidas, sem ecoar valores.
+
+Manager API, Worker, Vite/Web e Expo/Mobile validam seus conjuntos mínimos antes
+de iniciar. Defaults operacionais existem somente fora de `PROD`; produção
+exige valores explícitos e rejeita marcadores conhecidos de exemplo em segredos
+e na credencial da URL do banco.
+
+### Arquivos e dados
+
+- criados os validadores puros, tipos, erro sanitizado, leitura central de
+  runtime e 11 testes unitários em `packages/config`;
+- criados contratos separados para Manager API, Worker, Web, Mobile, banco,
+  Redis, JWT, criptografia, S3 e SMTP;
+- Manager API passou a receber banco e origens CORS a partir do objeto validado,
+  e o host e o nível de log deixaram de ser hardcoded;
+- Worker passou a validar ambiente e log antes de entrar em espera; seu build
+  passou a incorporar e reescrever corretamente o package compartilhado;
+- Vite e Expo passaram a validar e incorporar somente as configurações públicas
+  dos clientes durante o bootstrap;
+- `.env.example`, Compose, scripts de teste, cache do Turbo, manifests e
+  lockfile foram sincronizados; os valores de exemplo não são segredos reais;
+- criada `docs/CONFIGURATION.md` com matriz por app, defaults, capacidades,
+  regras de produção e variáveis exclusivas de infraestrutura;
+- atualizados README, arquitetura atual, qualidade, roadmap e índices; nenhuma
+  migration, seed, tabela, rota, permissão ou dado foi criado ou alterado.
+
+### Validação
+
+- `pnpm install --frozen-lockfile`: lockfile e 15 projetos sincronizados;
+- `pnpm test`: 11 testes de configuração aprovados, incluindo ausência, tipos
+  inválidos, segredo vazio, placeholders de produção, sanitização e
+  imutabilidade;
+- `pnpm lint`: 14 tarefas de workspace concluídas sem warnings;
+- `pnpm typecheck`: 14 tarefas de workspace concluídas;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece apenas o
+  aviso não bloqueante já conhecido do bundle Web maior que 500 kB;
+- smokes compilados: `/health` retornou `200`, Worker encerrou por `SIGINT` com
+  código `0`, Web serviu o shell e Metro retornou `packager-status:running`;
+- smokes negativos dos quatro apps: chaves ausentes interromperam o bootstrap
+  com erro sanitizado e código diferente de zero;
+- busca em `apps` e `packages`: único acesso a `process.env` localizado em
+  `packages/config/runtime.ts`;
+- `docker compose config --quiet`: configuração válida;
+- build e smoke da imagem da Manager API: `/health` retornou `200` e o container
+  encerrou com código `0`.
+
+### Decisões e pendências
+
+- nenhum ADR adicional foi necessário: o ticket concretiza a fronteira de
+  configuração já aprovada sem trocar tecnologia ou responsabilidade;
+- Redis, emissão JWT, criptografia de dados, S3 e SMTP possuem somente contratos
+  de configuração; suas integrações continuam nos tickets próprios;
+- os achados da auditoria de dependências de `PROT-002` não foram alterados;
+- `PROT-004` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-23 — PROT-002 — Configurar TypeScript, lint e formatter
 
 Status: Concluído

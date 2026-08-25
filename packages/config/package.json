@@ -6,13 +6,19 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test validation.test.ts",
     "format": "prettier --write . --ignore-path ../../.prettierignore",
     "format:check": "prettier --check . --ignore-path ../../.prettierignore"
   },
   "exports": {
-    ".": "./index.ts"
+    ".": "./index.ts",
+    "./runtime": "./runtime.ts",
+    "./validation": "./validation.ts"
   },
   "dependencies": {
     "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.4"
   }
 }

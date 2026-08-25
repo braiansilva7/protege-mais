@@ -3,10 +3,10 @@
 Fundação técnica do **Protege Mais**.
 
 O legado foi removido pelo `PROT-000`, a estrutura do monorepo foi consolidada
-pelo `PROT-001` e a configuração comum de qualidade foi entregue pelo
-`PROT-002`. Neste baseline não existem tabelas, dados, autenticação, permissões
-ou rotas de negócio. API, Worker, Web e Mobile permanecem como shells mínimos
-para evolução incremental.
+pelo `PROT-001`, a qualidade comum foi entregue pelo `PROT-002` e as variáveis
+de ambiente foram centralizadas pelo `PROT-003`. Neste baseline não existem
+tabelas, dados, autenticação, permissões ou rotas de negócio. API, Worker, Web e
+Mobile permanecem como shells mínimos para evolução incremental.
 
 ## Pré-requisitos
 
@@ -22,6 +22,11 @@ para evolução incremental.
 
 O workspace contém quatro apps e dez packages compartilhados sob o namespace
 `@protege-mais/`.
+
+Cada app valida somente seu conjunto mínimo antes de iniciar. A matriz completa,
+os defaults permitidos e as regras para segredos estão em
+[`docs/CONFIGURATION.md`](docs/CONFIGURATION.md). Valores de exemplo marcados
+com `change-before-production` nunca devem ser usados em produção.
 
 ## Execução dos shells
 
@@ -43,12 +48,14 @@ conecta ao Redis e não processa filas ou jobs.
 ```bash
 pnpm lint
 pnpm typecheck
+pnpm test
 pnpm format:check
 pnpm build
 ```
 
-Lint e typecheck cobrem os quatro apps e os dez packages. O build cobre Manager
-API, Worker, Web e Mobile. Use `pnpm format` para aplicar a formatação e
+Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
+cobrem a validação centralizada, e o build cobre Manager API, Worker, Web e
+Mobile. Use `pnpm format` para aplicar a formatação e
 `pnpm -r --if-present format:check` para conferir cada workspace explicitamente.
 As regras de TypeScript, ESLint, Prettier e uso excepcional de `any` estão em
 [`docs/QUALITY.md`](docs/QUALITY.md).
@@ -73,8 +80,8 @@ consolidada em `PROT-011`.
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket é `PROT-003`:
+O próximo ticket é `PROT-004`:
 
 ```text
-Implemente o ticket PROT-003 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-004 seguindo toda a documentação do projeto.
 ```

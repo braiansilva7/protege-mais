@@ -16,6 +16,7 @@
     "dev:mobile": "pnpm --filter @protege-mais/mobile dev",
     "dev:worker": "pnpm --filter @protege-mais/worker dev",
     "build": "turbo run build",
+    "test": "turbo run test",
     "lint": "eslint eslint.config.mjs drizzle.config.ts --max-warnings 0 && turbo run lint",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write . --ignore-path .prettierignore",

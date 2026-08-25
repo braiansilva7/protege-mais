@@ -5,11 +5,19 @@
     "tsconfig.json",
     "eslint.config.mjs",
     ".prettierrc",
-    ".prettierignore"
+    ".prettierignore",
+    ".env",
+    ".env.example"
   ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "VITE_APP_ENVIRONMENT",
+        "VITE_API_URL",
+        "EXPO_PUBLIC_APP_ENVIRONMENT",
+        "EXPO_PUBLIC_API_URL"
+      ],
       "outputs": ["dist/**"]
     },
     "typecheck": {
@@ -18,6 +26,10 @@
     },
     "lint": {
       "dependsOn": ["^lint"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^test"],
       "outputs": []
     },
     "dev": {

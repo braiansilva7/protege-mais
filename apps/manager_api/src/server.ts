@@ -1,6 +1,10 @@
 import 'reflect-metadata';
 import Fastify from 'fastify';
-import { managerApiEnvironment } from '@protege-mais/config';
+import {
+  ConfigurationError,
+  managerApiEnvironment,
+  type ManagerApiEnvironment,
+} from '@protege-mais/config';
 import {
   i18nextPlugin,
   registerCors,
@@ -11,12 +15,18 @@ import swaggerPlugin from './plugins/swagger/index.js';
 import healthRoutes from './routes/health.route.js';
 import routes from './routes/index.js';
 
-export async function buildServer() {
-  const app = Fastify({ logger: true });
+export async function buildServer(
+  configuration: ManagerApiEnvironment = managerApiEnvironment()
+) {
+  const app = Fastify({ logger: { level: configuration.logLevel } });
 
-  await app.register(registerDatabase);
+  await app.register(registerDatabase, {
+    databaseUrl: configuration.databaseUrl,
+  });
   await app.register(registerMultipart);
-  await app.register(registerCors);
+  await app.register(registerCors, {
+    origins: configuration.corsOrigins,
+  });
   await app.register(i18nextPlugin);
   await app.register(swaggerPlugin);
   await app.register(healthRoutes);
@@ -26,8 +36,8 @@ export async function buildServer() {
 }
 
 async function start() {
-  const config = managerApiEnvironment();
-  const app = await buildServer();
+  const configuration = managerApiEnvironment();
+  const app = await buildServer(configuration);
 
   const shutdown = async () => {
     await app.close();
@@ -38,7 +48,10 @@ async function start() {
   process.on('SIGTERM', () => void shutdown());
 
   try {
-    await app.listen({ port: config.port, host: '0.0.0.0' });
+    await app.listen({
+      port: configuration.port,
+      host: configuration.host,
+    });
   } catch (error) {
     app.log.error(error);
     await app.close();
@@ -46,4 +59,11 @@ async function start() {
   }
 }
 
-void start();
+void start().catch((error: unknown) => {
+  if (error instanceof ConfigurationError) {
+    process.stderr.write(`${error.message}\n`);
+  } else {
+    process.stderr.write('Falha inesperada ao iniciar a Manager API.\n');
+  }
+  process.exitCode = 1;
+});

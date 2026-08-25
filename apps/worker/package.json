@@ -5,15 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --tsconfig tsconfig.json src/index.ts",
-    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json && tsc-alias -p tsconfig.json -f -fe .js",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "format": "prettier --write . --ignore-path ../../.prettierignore",
     "format:check": "prettier --check . --ignore-path ../../.prettierignore",
-    "start": "node dist/index.js"
+    "start": "node dist/apps/worker/src/index.js"
+  },
+  "dependencies": {
+    "@protege-mais/config": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }

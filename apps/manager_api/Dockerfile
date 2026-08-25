@@ -11,7 +11,7 @@ COPY packages packages
 RUN pnpm install --frozen-lockfile --filter @protege-mais/manager-api...
 
 COPY apps/manager_api apps/manager_api
-COPY tsconfig.json tsconfig.json
+COPY tsconfig.json tsconfig.base.json ./
 
 RUN pnpm --filter @protege-mais/manager-api build
 

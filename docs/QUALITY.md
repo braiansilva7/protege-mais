@@ -66,13 +66,15 @@ Na raiz:
 ```bash
 pnpm lint
 pnpm typecheck
+pnpm test
 pnpm format:check
 pnpm build
 ```
 
-`lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `build` gera os
-quatro apps. As configurações compartilhadas fazem parte das dependências
-globais do cache do Turbo, portanto sua alteração invalida as tarefas afetadas.
+`lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `test` executa as
+suítes disponíveis nos workspaces e `build` gera os quatro apps. As
+configurações compartilhadas fazem parte das dependências globais do cache do
+Turbo, portanto sua alteração invalida as tarefas afetadas.
 Para conferir explicitamente o formatter em cada workspace:
 
 ```bash

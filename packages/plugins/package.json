@@ -15,7 +15,6 @@
   "dependencies": {
     "@fastify/cors": "^11.2.0",
     "@fastify/multipart": "^9.0.3",
-    "@protege-mais/config": "workspace:*",
     "@protege-mais/models": "workspace:*",
     "drizzle-orm": "^0.44.3",
     "fastify": "^5.8.5",

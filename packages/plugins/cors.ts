@@ -1,14 +1,17 @@
 import cors from '@fastify/cors';
 import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
-import { managerApiEnvironment } from '@protege-mais/config';
 
-async function corsPlugin(server: FastifyInstance) {
+export interface CorsPluginOptions {
+  readonly origins: readonly string[];
+}
+
+async function corsPlugin(server: FastifyInstance, options: CorsPluginOptions) {
   await server.register(cors, {
-    origin: managerApiEnvironment().corsOrigin,
+    origin: [...options.origins],
     methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 }
 
-export const registerCors = fp(corsPlugin, { name: 'cors' });
+export const registerCors = fp<CorsPluginOptions>(corsPlugin, { name: 'cors' });
 export default registerCors;

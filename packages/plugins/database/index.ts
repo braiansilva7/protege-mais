@@ -3,13 +3,19 @@ import { Pool } from 'pg';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { container } from 'tsyringe';
 import type { FastifyInstance } from 'fastify';
-import { databaseEnvironment } from '@protege-mais/config';
 import * as schema from '@protege-mais/models';
 
 export type AppDatabase = NodePgDatabase<typeof schema>;
 
-function databasePlugin(fastify: FastifyInstance) {
-  const pool = new Pool({ connectionString: databaseEnvironment.databaseUrl });
+export interface DatabasePluginOptions {
+  readonly databaseUrl: string;
+}
+
+function databasePlugin(
+  fastify: FastifyInstance,
+  options: DatabasePluginOptions
+) {
+  const pool = new Pool({ connectionString: options.databaseUrl });
   const db = drizzle(pool, { schema });
 
   container.register<AppDatabase>('DatabaseRw', { useValue: db });
@@ -24,5 +30,7 @@ function databasePlugin(fastify: FastifyInstance) {
   });
 }
 
-export const registerDatabase = fp(databasePlugin, { name: 'database' });
+export const registerDatabase = fp<DatabasePluginOptions>(databasePlugin, {
+  name: 'database',
+});
 export default registerDatabase;

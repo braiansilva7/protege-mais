@@ -2,13 +2,14 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-002`. A arquitetura
+Este documento registra somente o que existe após o `PROT-003`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
 O monorepo possui quatro apps executáveis e dez packages compartilhados. Ainda
 não existem domínio de negócio, autenticação, autorização, tabelas, migrations,
-seeds, Redis ou filas.
+seeds, Redis ou filas. Os contratos de configuração dessas capacidades já são
+validados de forma isolada, sem ativar as integrações futuras.
 
 ## Estrutura executável atual
 
@@ -31,7 +32,7 @@ protege-mais/
 │       └── index.ts
 ├── packages/
 │   ├── common/               # Tipos, enums, constantes e funções comuns
-│   ├── config/               # Leitura de configuração existente
+│   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
 │   ├── models/               # Schema Drizzle, atualmente vazio
@@ -106,14 +107,20 @@ estilo mecânico. As convenções completas estão em `docs/QUALITY.md`.
 Dependências, builds e caches são ignorados pelo lint e formatter. O lockfile
 é mantido exclusivamente pelo pnpm e não é reformatado.
 
+`packages/config` é a única fronteira que acessa `process.env`. O package
+carrega o `.env` da raiz, preserva valores injetados pelo processo e expõe
+objetos congelados para Manager API, Worker, Web e Mobile. Banco, Redis, JWT,
+criptografia, S3 e SMTP possuem validadores separados; somente o banco é exigido
+pela API neste estágio. A matriz está em `docs/CONFIGURATION.md`.
+
 ## Responsabilidade dos apps
 
-| App           | Responsabilidade atual                      | Não faz neste baseline              |
-| ------------- | ------------------------------------------- | ----------------------------------- |
-| `manager_api` | Expõe health, Swagger e o prefixo `/api/v1` | Regra de negócio, auth ou permissão |
-| `web`         | Serve o shell institucional estático        | Chamada de API ou fluxo funcional   |
-| `mobile`      | Inicia o shell Expo/React Native            | Storage, API ou fluxo de proteção   |
-| `worker`      | Mantém processo ocioso e encerra por sinal  | Redis, filas, processors ou jobs    |
+| App           | Responsabilidade atual                           | Não faz neste baseline              |
+| ------------- | ------------------------------------------------ | ----------------------------------- |
+| `manager_api` | Valida config; expõe health, Swagger e `/api/v1` | Regra de negócio, auth ou permissão |
+| `web`         | Valida config pública e serve o shell            | Chamada de API ou fluxo funcional   |
+| `mobile`      | Valida config pública e inicia o shell Expo      | Storage, API ou fluxo de proteção   |
+| `worker`      | Valida config, aguarda e encerra por sinal       | Redis, filas, processors ou jobs    |
 
 O worker usa um timer referenciado de longa duração apenas para manter o event
 loop ativo, sem polling ou busy loop. `SIGINT` e `SIGTERM` cancelam a espera e
@@ -122,7 +129,8 @@ encerram o shell. Redis e processamento assíncrono serão implementados por
 
 ## API
 
-O bootstrap Fastify registra, nesta ordem:
+O bootstrap valida ambiente, host, porta, log, CORS e banco antes de criar o
+Fastify. Depois registra, nesta ordem:
 
 1. pool PostgreSQL/Drizzle;
 2. parser multipart;
@@ -159,6 +167,7 @@ continua preservada como capacidade genérica, mas sua consolidação pertence a
 | `pnpm dev:worker`                   | Inicia somente o worker ocioso          |
 | `pnpm lint`                         | Valida os quatro apps e os dez packages |
 | `pnpm typecheck`                    | Valida os quatro apps e os dez packages |
+| `pnpm test`                         | Testa a validação de configuração       |
 | `pnpm format:check`                 | Confere a formatação do repositório     |
 | `pnpm -r --if-present format:check` | Confere a formatação por workspace      |
 | `pnpm build`                        | Gera os quatro builds a partir da raiz  |
@@ -168,7 +177,7 @@ continua preservada como capacidade genérica, mas sua consolidação pertence a
 
 A classificação do legado removido permanece em
 `docs/implementation/PROT-000_LEGACY_INVENTORY.md`. Os arquivos removidos são
-recuperáveis pelo histórico Git; o `PROT-002` não criou nem alterou dados.
+recuperáveis pelo histórico Git; o `PROT-003` não criou nem alterou dados.
 
 ---
 

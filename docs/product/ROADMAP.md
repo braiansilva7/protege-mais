@@ -76,6 +76,6 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-`PROT-002` padronizou TypeScript, lint e formatter nos quatro apps e dez
-packages. O próximo trabalho de implementação deve começar por `PROT-003`, que
-centralizará e validará as configurações de ambiente por app.
+`PROT-003` centralizou e validou as configurações de ambiente dos quatro apps e
+das capacidades futuras. O próximo trabalho de implementação deve começar por
+`PROT-004`, que implantará o padrão global de erros.

@@ -1,37 +1,74 @@
-import dotenv from 'dotenv';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import {
+  createDatabaseEnvironment,
+  createEncryptionEnvironment,
+  createJwtEnvironment,
+  createManagerApiEnvironment,
+  createMobileEnvironment,
+  createRedisEnvironment,
+  createS3Environment,
+  createSmtpEnvironment,
+  createWebEnvironment,
+  createWorkerEnvironment,
+  type EnvironmentSource,
+} from './validation.js';
+import { runtimeEnvironment } from './runtime.js';
 
-const currentDirectory = dirname(fileURLToPath(import.meta.url));
-const projectRoot = resolve(currentDirectory, '../..');
-dotenv.config({ path: resolve(projectRoot, '.env') });
-
-function required(name: string): string {
-  const value = process.env[name]?.trim();
-  if (!value) throw new Error(`A variável de ambiente ${name} é obrigatória.`);
-  return value;
+export function managerApiEnvironment(
+  source: EnvironmentSource = runtimeEnvironment()
+) {
+  return createManagerApiEnvironment(source);
 }
 
-function port(value: string | undefined, fallback = '3000'): number {
-  const parsed = Number(value ?? fallback);
-  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
-    throw new Error('Porta inválida.');
-  }
-  return parsed;
+export function workerEnvironment(
+  source: EnvironmentSource = runtimeEnvironment()
+) {
+  return createWorkerEnvironment(source);
 }
 
-export const databaseEnvironment = {
-  databaseUrl: required('DATABASE_URL'),
-};
+export function webEnvironment(
+  source: EnvironmentSource = runtimeEnvironment()
+) {
+  return createWebEnvironment(source);
+}
 
-export function managerApiEnvironment() {
-  const appEnvironment = required('APP_ENVIRONMENT');
-  if (!['LOCAL', 'DEV', 'HMG', 'PROD'].includes(appEnvironment)) {
-    throw new Error('APP_ENVIRONMENT deve ser LOCAL, DEV, HMG ou PROD.');
-  }
-  return {
-    appEnvironment: appEnvironment as 'LOCAL' | 'DEV' | 'HMG' | 'PROD',
-    port: port(process.env.API_PORT),
-    corsOrigin: required('CORS_ORIGIN'),
-  };
+export function mobileEnvironment(
+  source: EnvironmentSource = runtimeEnvironment()
+) {
+  return createMobileEnvironment(source);
+}
+
+export function databaseEnvironment(
+  source: EnvironmentSource = runtimeEnvironment()
+) {
+  return createDatabaseEnvironment(source);
+}
+
+export function redisEnvironment(
+  source: EnvironmentSource = runtimeEnvironment()
+) {
+  return createRedisEnvironment(source);
+}
+
+export function jwtEnvironment(
+  source: EnvironmentSource = runtimeEnvironment()
+) {
+  return createJwtEnvironment(source);
+}
+
+export function encryptionEnvironment(
+  source: EnvironmentSource = runtimeEnvironment()
+) {
+  return createEncryptionEnvironment(source);
+}
+
+export function s3Environment(
+  source: EnvironmentSource = runtimeEnvironment()
+) {
+  return createS3Environment(source);
+}
+
+export function smtpEnvironment(
+  source: EnvironmentSource = runtimeEnvironment()
+) {
+  return createSmtpEnvironment(source);
 }
