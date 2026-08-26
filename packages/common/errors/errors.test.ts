@@ -13,21 +13,32 @@ import {
 
 void test('mapeia cada classe para código e status HTTP estáveis', () => {
   const scenarios = [
-    [new ApplicationError(), 'APPLICATION_ERROR', 500],
-    [new ValidationError(), 'VALIDATION_ERROR', 400],
-    [new UnauthorizedError(), 'UNAUTHORIZED', 401],
-    [new ForbiddenError(), 'FORBIDDEN', 403],
-    [new NotFoundError(), 'NOT_FOUND', 404],
-    [new ConflictError(), 'CONFLICT', 409],
-    [new BusinessRuleError(), 'BUSINESS_RULE_ERROR', 422],
-    [new InfrastructureError(), 'INFRASTRUCTURE_ERROR', 500],
+    [new ApplicationError(), 'APPLICATION_ERROR', 'errors.application', 500],
+    [new ValidationError(), 'VALIDATION_ERROR', 'errors.validation', 400],
+    [new UnauthorizedError(), 'UNAUTHORIZED', 'authentication.required', 401],
+    [new ForbiddenError(), 'FORBIDDEN', 'errors.forbidden', 403],
+    [new NotFoundError(), 'NOT_FOUND', 'errors.notFound', 404],
+    [new ConflictError(), 'CONFLICT', 'errors.conflict', 409],
+    [
+      new BusinessRuleError(),
+      'BUSINESS_RULE_ERROR',
+      'errors.businessRule',
+      422,
+    ],
+    [
+      new InfrastructureError(),
+      'INFRASTRUCTURE_ERROR',
+      'errors.infrastructure',
+      500,
+    ],
   ] as const;
 
-  for (const [error, code, statusCode] of scenarios) {
+  for (const [error, code, messageKey, statusCode] of scenarios) {
     assert.ok(error instanceof Error);
     assert.ok(error instanceof ApplicationError);
     assert.equal(error.name, error.constructor.name);
     assert.equal(error.code, code);
+    assert.equal(error.messageKey, messageKey);
     assert.equal(error.statusCode, statusCode);
     assert.notEqual(error.message, '');
   }
@@ -41,6 +52,19 @@ void test('permite código e mensagem públicos específicos sem alterar o statu
 
   assert.equal(error.code, 'VICTIM_NOT_FOUND');
   assert.equal(error.message, 'Perfil não encontrado.');
+  assert.equal(error.messageKey, undefined);
+  assert.equal(error.statusCode, 404);
+});
+
+void test('aceita chave específica de tradução sem alterar código e status', () => {
+  const error = new NotFoundError({
+    code: 'VICTIM_NOT_FOUND',
+    message: 'Perfil não encontrado.',
+    messageKey: 'victims.errors.notFound',
+  });
+
+  assert.equal(error.code, 'VICTIM_NOT_FOUND');
+  assert.equal(error.messageKey, 'victims.errors.notFound');
   assert.equal(error.statusCode, 404);
 });
 

@@ -76,6 +76,7 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-`PROT-004` implantou as classes e o contrato global de erros da API sem expor
-stack, causa ou detalhes de validação. O próximo trabalho de implementação deve
-começar por `PROT-005`, que consolidará a internacionalização do backend.
+`PROT-005` consolidou a internacionalização do backend em `pt-BR`, `en` e `es`,
+com fallback, negociação HTTP e paridade automática dos catálogos. O próximo
+trabalho de implementação deve começar por `PROT-006`, que consolidará a API
+base, health e readiness.

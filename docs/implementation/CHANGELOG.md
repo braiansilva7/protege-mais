@@ -3,6 +3,70 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-25 — PROT-005 — Consolidar internacionalização do backend
+
+Status: Concluído
+
+### Resultado
+
+A Manager API agora negocia `pt-BR`, `en` e `es` por `Accept-Language`,
+respeitando pesos `q` e variantes regionais. Locale ausente, desconhecido,
+malformado ou não aceito usa `pt-BR`; toda resposta informa o locale efetivo em
+`Content-Language` e varia por `Accept-Language`.
+
+Os catálogos possuem chaves comuns equivalentes de erros, saúde e autenticação.
+O handler global traduz a mensagem pública desde o início da requisição,
+inclusive em falhas de schema e rotas inexistentes, sem alterar `code`, status
+HTTP ou `requestId` e sem expor detalhes internos.
+
+### Arquivos e dados
+
+- consolidado em `packages/plugins/i18next` um resolvedor puro de locale, uma
+  instância isolada do i18next por servidor e a integração Fastify em
+  `onRequest`/`onSend`;
+- preenchidos os catálogos `pt-BR`, `en` e `es`; o diretório legado `pt` foi
+  substituído pelo locale canônico `pt-BR`;
+- as classes comuns de erro passaram a aceitar `messageKey`; defaults usam
+  chaves comuns e mensagens específicas sem chave preservam o fallback seguro;
+- o handler de erros passou a traduzir somente `message`, mantendo estáveis os
+  demais campos do contrato;
+- adicionados testes de resolução/fallback, pesos, variantes, paridade e textos
+  vazios dos catálogos, headers HTTP e erros nos três idiomas;
+- o build da Manager API passou a copiar os catálogos para o artefato compilado;
+  dependências redundantes foram removidas e o lockfile foi sincronizado;
+- documentados idiomas, headers, fallback e convenção de chaves em `docs/api`,
+  README, arquitetura atual, guia de rotas, qualidade e roadmap;
+- nenhuma migration, seed, tabela, rota de negócio, permissão ou dado foi criado
+  ou alterado.
+
+### Validação
+
+- `pnpm test`: 24 testes aprovados, incluindo resolução/fallback, paridade dos
+  três catálogos e integração HTTP por idioma;
+- `pnpm lint`: 14 tarefas de workspace concluídas sem warnings;
+- `pnpm typecheck`: 14 tarefas de workspace concluídas;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`, com as variáveis públicas locais exigidas: Manager API, Worker,
+  Web e Mobile gerados; permanece apenas o aviso não bloqueante já conhecido do
+  bundle Web maior que 500 kB;
+- inspeção do artefato compilado: os três JSONs de locale foram empacotados;
+- smoke do artefato compilado: `/health` retornou 200 com locale negociado e
+  rota inexistente retornou `NOT_FOUND` traduzido em `pt-BR`, `en`, `es` e com
+  fallback, preservando contrato e headers;
+- build e smoke da imagem da Manager API: health em `es` e erro em `en` foram
+  aprovados; o container e a imagem temporários foram removidos.
+
+### Decisões e pendências
+
+- nenhum ADR adicional foi necessário: o ticket concretiza a internacionalização
+  prevista em `packages/plugins` sem mudar tecnologia ou fronteira de camada;
+- as chaves comuns de autenticação não criam fluxo ou endpoint; autenticação
+  permanece nos tickets de identidade e acesso;
+- `PROT-006` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-24 — PROT-004 — Implantar o padrão global de erros
 
 Status: Concluído

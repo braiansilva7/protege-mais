@@ -26,8 +26,8 @@ Toda falha processada pela Manager API responde somente com estes campos:
 
 - `code` é estável; os defaults usam maiúsculas e podem ser especializados
   pelo domínio;
-- `message` é um texto público seguro. Os defaults atuais estão em `pt-BR` e
-  serão internacionalizados por `PROT-005` sem alterar `code`;
+- `message` é um texto público seguro traduzido em `pt-BR`, `en` ou `es`
+  conforme `Accept-Language`, com fallback para `pt-BR`;
 - `requestId` é o identificador gerado pelo Fastify para correlacionar a
   resposta com o log. Aceitação e propagação de correlação externa pertencem
   ao `PROT-008`.
@@ -36,6 +36,11 @@ Stack, causa interna, corpo recebido e detalhes do validador nunca fazem parte
 do contrato. Erros de schema retornam a mensagem genérica de validação, sem
 nomes de campos ou valores. Rotas inexistentes usam o mesmo formato 404 sem
 refletir a URL solicitada.
+
+A resposta informa o idioma efetivo em `Content-Language` e inclui
+`Accept-Language` em `Vary`. Clientes devem tratar falhas por `code`, nunca por
+comparação do texto traduzido. Idiomas, normalização, fallback e convenção de
+chaves estão em [`INTERNATIONALIZATION.md`](INTERNATIONALIZATION.md).
 
 ## Classes e mapeamentos
 
@@ -63,7 +68,7 @@ especializados sem alterar o status fixo da subclasse:
 ```ts
 throw new NotFoundError({
   code: 'VICTIM_NOT_FOUND',
-  message: 'Perfil não encontrado.',
+  messageKey: 'victims.errors.notFound',
 });
 ```
 

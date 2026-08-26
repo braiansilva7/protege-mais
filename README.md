@@ -9,6 +9,9 @@ padrão global de erros da API. Neste baseline não existem tabelas, dados,
 autenticação, permissões ou rotas de negócio. API, Worker, Web e Mobile
 permanecem como shells mínimos para evolução incremental.
 
+O `PROT-005` consolidou a internacionalização do backend em `pt-BR`, `en` e
+`es`, com negociação por `Accept-Language`, fallback e catálogos equivalentes.
+
 ## Pré-requisitos
 
 - Node.js `24.12.0`;
@@ -55,11 +58,12 @@ pnpm build
 ```
 
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
-cobrem a validação centralizada, as classes de erro e o handler Fastify; o build
-cobre Manager API, Worker, Web e Mobile. Use `pnpm format` para aplicar a
-formatação e `pnpm -r --if-present format:check` para conferir cada workspace
-explicitamente. As regras de TypeScript, ESLint, Prettier e uso excepcional de
-`any` estão em [`docs/QUALITY.md`](docs/QUALITY.md).
+cobrem a validação centralizada, as classes de erro, o handler Fastify, a
+resolução de locale e a paridade dos catálogos; o build cobre Manager API,
+Worker, Web e Mobile. Use `pnpm format` para aplicar a formatação e
+`pnpm -r --if-present format:check` para conferir cada workspace explicitamente.
+As regras de TypeScript, ESLint, Prettier e uso excepcional de `any` estão em
+[`docs/QUALITY.md`](docs/QUALITY.md).
 
 ## Estado atual da API
 
@@ -67,9 +71,11 @@ explicitamente. As regras de TypeScript, ESLint, Prettier e uso excepcional de
 - `/swagger/` — documentação do contrato atual;
 - `/api/v1` — reservado para futuras rotas de negócio, atualmente vazio.
 
-Falhas HTTP usam o contrato comum `{ code, message, requestId }`; stack, causa e
-detalhes de validação não fazem parte da resposta. A tabela de mapeamentos e as
-regras de uso estão em [`docs/api/README.md`](docs/api/README.md).
+Falhas HTTP usam o contrato comum `{ code, message, requestId }`; `message` é
+traduzida sem alterar `code`, enquanto stack, causa e detalhes de validação não
+fazem parte da resposta. A tabela de mapeamentos e as regras de uso estão em
+[`docs/api/README.md`](docs/api/README.md); idiomas e convenção de chaves estão
+em [`docs/api/INTERNATIONALIZATION.md`](docs/api/INTERNATIONALIZATION.md).
 
 PostgreSQL, Atlas e MinIO permanecem configurados como infraestrutura local,
 mas não há migrations nem seeds de domínio. A fundação de banco será
@@ -85,8 +91,8 @@ consolidada em `PROT-011`.
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket é `PROT-005`:
+O próximo ticket é `PROT-006`:
 
 ```text
-Implemente o ticket PROT-005 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-006 seguindo toda a documentação do projeto.
 ```

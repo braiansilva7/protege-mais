@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --tsconfig tsconfig.json src/server.ts",
-    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json && tsc-alias -p tsconfig.json -f -fe .js",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json && tsc-alias -p tsconfig.json -f -fe .js && node -e \"require('node:fs').cpSync('../../packages/plugins/i18next/locales', 'dist/packages/plugins/i18next/locales', { recursive: true })\"",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "format": "prettier --write . --ignore-path ../../.prettierignore",
@@ -21,7 +21,6 @@
     "@protege-mais/schema": "workspace:*",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.0.1",
-    "i18next": "^26.3.6",
     "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",
     "uuid": "^14.0.1"

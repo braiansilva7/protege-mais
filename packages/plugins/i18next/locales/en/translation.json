@@ -1,1 +1,20 @@
-{}
+{
+  "authentication": {
+    "invalidCredentials": "Invalid email or password.",
+    "required": "Authentication is required."
+  },
+  "errors": {
+    "application": "The request could not be processed.",
+    "businessRule": "The business rule was not satisfied.",
+    "conflict": "The request conflicts with the current state.",
+    "forbidden": "Access denied.",
+    "infrastructure": "The service is temporarily unavailable.",
+    "internalServer": "An internal server error occurred.",
+    "notFound": "Resource not found.",
+    "request": "The request could not be processed.",
+    "validation": "The submitted data is invalid."
+  },
+  "health": {
+    "ok": "Service is operational."
+  }
+}

@@ -14,6 +14,7 @@ import {
 const internalServerError = {
   code: 'INTERNAL_SERVER_ERROR',
   message: 'Ocorreu um erro interno no servidor.',
+  messageKey: 'errors.internalServer',
   statusCode: 500,
 } as const;
 
@@ -70,6 +71,7 @@ function mapClientError(error: unknown): ApplicationError | undefined {
             cause: error,
             code: 'REQUEST_ERROR',
             message: 'Não foi possível processar a solicitação.',
+            messageKey: 'errors.request',
             statusCode,
           });
   }
@@ -110,14 +112,22 @@ function logApplicationError(
 }
 
 function sendErrorResponse(
+  request: FastifyRequest,
   reply: FastifyReply,
-  error: Pick<ApplicationError, 'code' | 'message' | 'statusCode'>,
-  requestId: string
+  error: Pick<
+    ApplicationError,
+    'code' | 'message' | 'messageKey' | 'statusCode'
+  >
 ) {
+  const translatedMessage =
+    error.messageKey === undefined || typeof request.t !== 'function'
+      ? error.message
+      : request.t(error.messageKey, { defaultValue: error.message });
   const response: ErrorResponse = {
     code: error.code,
-    message: error.message,
-    requestId,
+    message:
+      typeof translatedMessage === 'string' ? translatedMessage : error.message,
+    requestId: request.id,
   };
 
   return reply.status(error.statusCode).type('application/json').send(response);
@@ -129,7 +139,7 @@ function errorHandlerPlugin(fastify: FastifyInstance) {
 
     if (applicationError) {
       logApplicationError(request, applicationError, error);
-      return sendErrorResponse(reply, applicationError, request.id);
+      return sendErrorResponse(request, reply, applicationError);
     }
 
     request.log.error(
@@ -142,13 +152,13 @@ function errorHandlerPlugin(fastify: FastifyInstance) {
       'Falha interna durante a requisição.'
     );
 
-    return sendErrorResponse(reply, internalServerError, request.id);
+    return sendErrorResponse(request, reply, internalServerError);
   });
 
   fastify.setNotFoundHandler((request, reply) => {
     const error = new NotFoundError();
     logApplicationError(request, error, error);
-    return sendErrorResponse(reply, error, request.id);
+    return sendErrorResponse(request, reply, error);
   });
 }
 

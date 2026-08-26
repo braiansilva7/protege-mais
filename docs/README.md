@@ -39,6 +39,7 @@ testes, decisões e pendências.
 | Estado atual do código                   | `docs/PROJECT_ARCHITECTURE.md`                       |
 | Runtime e convenções de qualidade        | `docs/QUALITY.md`                                    |
 | Configuração e matriz de variáveis       | `docs/CONFIGURATION.md`                              |
+| Idiomas e chaves do backend              | `docs/api/INTERNATIONALIZATION.md`                   |
 | Tickets e seus estados                   | `docs/tickets/README.md` e arquivos de épico         |
 | Mudanças efetivamente implementadas      | `docs/implementation/CHANGELOG.md`                   |
 | Auditoria de dependências de 2026-08-23  | `docs/implementation/DEPENDENCY_AUDIT_2026-08-23.md` |

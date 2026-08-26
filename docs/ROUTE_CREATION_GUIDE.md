@@ -195,7 +195,7 @@ apps/manager_api/src/routes/index.ts
 Toda mensagem retornada pela API deve ter chave nos três arquivos:
 
 ```text
-packages/plugins/i18next/locales/pt/translation.json
+packages/plugins/i18next/locales/pt-BR/translation.json
 packages/plugins/i18next/locales/en/translation.json
 packages/plugins/i18next/locales/es/translation.json
 ```
@@ -209,7 +209,11 @@ Criar a mesma chave nos três idiomas para:
 - conflito;
 - erro de conexão ou falha inesperada.
 
-O idioma é enviado pelo cabeçalho `Accept-Language`, com português como fallback. Não retornar mensagens em português diretamente no controller ou use case.
+O idioma é enviado pelo cabeçalho `Accept-Language`, com `pt-BR` como
+fallback. Erros de domínio devem informar uma `messageKey` existente nos três
+catálogos. Não retornar mensagens em português diretamente no controller ou
+use case. A convenção completa está em
+`docs/api/INTERNATIONALIZATION.md`.
 
 ## ARQUITETURA DO FRONT-END
 

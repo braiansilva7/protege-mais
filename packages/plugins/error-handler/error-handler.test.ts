@@ -13,6 +13,7 @@ import {
   type ErrorResponse,
 } from '@protege-mais/common';
 import { registerErrorHandler } from './index.js';
+import { registerI18next } from '../i18next/index.js';
 
 const requestId = 'request-test-004';
 
@@ -37,6 +38,7 @@ async function createTestServer() {
     genReqId: () => requestId,
   });
   await server.register(registerErrorHandler);
+  await server.register(registerI18next);
   return server;
 }
 
@@ -133,6 +135,44 @@ void test('sanitiza detalhes e valores de erros de schema do Fastify', async () 
   }
 });
 
+void test('traduz mensagem HTTP sem alterar código, status ou requestId', async () => {
+  const server = await createTestServer();
+
+  server.get('/localized-not-found', () => {
+    throw new NotFoundError();
+  });
+
+  const scenarios = [
+    [undefined, 'pt-BR', 'Recurso não encontrado.'],
+    ['en-US,en;q=0.8', 'en', 'Resource not found.'],
+    ['es-AR', 'es', 'Recurso no encontrado.'],
+    ['fr-FR', 'pt-BR', 'Recurso não encontrado.'],
+  ] as const;
+
+  try {
+    for (const [acceptLanguage, locale, message] of scenarios) {
+      const response = await server.inject({
+        method: 'GET',
+        url: '/localized-not-found',
+        headers:
+          acceptLanguage === undefined
+            ? undefined
+            : { 'accept-language': acceptLanguage },
+      });
+
+      assertErrorResponse(response, 'NOT_FOUND', 404);
+      assert.deepEqual(JSON.parse(response.body), {
+        code: 'NOT_FOUND',
+        message,
+        requestId,
+      });
+      assert.equal(response.headers['content-language'], locale);
+    }
+  } finally {
+    await server.close();
+  }
+});
+
 void test('transforma erro desconhecido em 500 e mantém o original só no log', async () => {
   const logChunks: string[] = [];
   const logStream = new Writable({
@@ -146,6 +186,7 @@ void test('transforma erro desconhecido em 500 e mantém o original só no log',
     genReqId: () => requestId,
   });
   await server.register(registerErrorHandler);
+  await server.register(registerI18next);
 
   const internalDiagnostic = 'internal-diagnostic-004';
   const infrastructureDiagnostic = 'database-driver-diagnostic-004';

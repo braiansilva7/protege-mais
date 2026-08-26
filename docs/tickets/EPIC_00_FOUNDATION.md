@@ -160,7 +160,7 @@ sensível; o erro original permanece disponível apenas no log seguro.
 
 | Campo        | Valor           |
 | ------------ | --------------- |
-| Status       | Pendente        |
+| Status       | Concluído       |
 | Tipo         | Technical Story |
 | Prioridade   | P1              |
 | Dependências | PROT-004        |

@@ -2,15 +2,15 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-004`. A arquitetura
+Este documento registra somente o que existe após o `PROT-005`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
 O monorepo possui quatro apps executáveis e dez packages compartilhados. Ainda
 não existem domínio de negócio, autenticação, autorização, tabelas, migrations,
 seeds, Redis ou filas. Os contratos de configuração dessas capacidades já são
-validados de forma isolada, e a API possui um contrato global de erros, sem
-ativar as integrações futuras.
+validados de forma isolada. A API possui contrato global de erros e
+internacionalização em `pt-BR`, `en` e `es`, sem ativar as integrações futuras.
 
 ## Estrutura executável atual
 
@@ -37,7 +37,7 @@ protege-mais/
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
 │   ├── models/               # Schema Drizzle, atualmente vazio
-│   ├── plugins/              # Handler de erros, banco, CORS, multipart e i18n
+│   ├── plugins/              # Erros, banco, CORS, multipart e i18n backend
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Contratos HTTP; hoje somente health
 │   ├── services/             # Capacidades reutilizáveis futuras
@@ -144,11 +144,20 @@ Fastify. Depois registra, nesta ordem:
 
 `packages/common` expõe `ApplicationError` e as especializações para
 validação, autenticação, autorização, recurso ausente, conflito, regra de
-negócio e infraestrutura. `packages/plugins` converte essas classes, erros de
-schema e erros HTTP conhecidos em `{ code, message, requestId }`. Falhas
-desconhecidas recebem `INTERNAL_SERVER_ERROR` e 500; stack, causa e detalhes do
-schema não são serializados para o cliente. O contrato completo está em
-`docs/api/README.md`.
+negócio e infraestrutura. Cada default possui uma `messageKey` traduzível;
+mensagens de domínio podem informar uma chave específica sem alterar código ou
+status. `packages/plugins` converte essas classes, erros de schema e erros HTTP
+conhecidos em `{ code, message, requestId }`. Falhas desconhecidas recebem
+`INTERNAL_SERVER_ERROR` e 500; stack, causa e detalhes do schema não são
+serializados para o cliente.
+
+O plugin i18n resolve `Accept-Language` desde `onRequest`, respeita pesos `q`,
+normaliza variantes de português para `pt-BR` e variantes regionais de inglês
+ou espanhol para `en` e `es`. Locale ausente ou desconhecido usa `pt-BR`. As
+respostas informam `Content-Language` e `Vary: Accept-Language`; os três
+catálogos passam por teste automático de paridade e textos vazios. O contrato de
+erros está em `docs/api/README.md` e a convenção de idiomas e chaves em
+`docs/api/INTERNATIONALIZATION.md`.
 
 Não há JWT, middleware de autenticação, usuário autenticado ou permissão no
 baseline. Esses componentes serão redesenhados em seus tickets próprios.
@@ -168,26 +177,26 @@ continua preservada como capacidade genérica, mas sua consolidação pertence a
 
 ## Comandos do monorepo
 
-| Comando                             | Resultado                                     |
-| ----------------------------------- | --------------------------------------------- |
-| `pnpm dev`                          | Inicia os quatro apps pelo Turbo              |
-| `pnpm dev:manager_api`              | Inicia somente a API                          |
-| `pnpm dev:web`                      | Inicia somente o Web                          |
-| `pnpm dev:mobile`                   | Inicia somente o Mobile                       |
-| `pnpm dev:worker`                   | Inicia somente o worker ocioso                |
-| `pnpm lint`                         | Valida os quatro apps e os dez packages       |
-| `pnpm typecheck`                    | Valida os quatro apps e os dez packages       |
-| `pnpm test`                         | Testa configuração, classes e handler de erro |
-| `pnpm format:check`                 | Confere a formatação do repositório           |
-| `pnpm -r --if-present format:check` | Confere a formatação por workspace            |
-| `pnpm build`                        | Gera os quatro builds a partir da raiz        |
-| `pnpm -r list --depth -1`           | Lista raiz, quatro apps e dez packages        |
+| Comando                             | Resultado                                         |
+| ----------------------------------- | ------------------------------------------------- |
+| `pnpm dev`                          | Inicia os quatro apps pelo Turbo                  |
+| `pnpm dev:manager_api`              | Inicia somente a API                              |
+| `pnpm dev:web`                      | Inicia somente o Web                              |
+| `pnpm dev:mobile`                   | Inicia somente o Mobile                           |
+| `pnpm dev:worker`                   | Inicia somente o worker ocioso                    |
+| `pnpm lint`                         | Valida os quatro apps e os dez packages           |
+| `pnpm typecheck`                    | Valida os quatro apps e os dez packages           |
+| `pnpm test`                         | Testa config, erros, i18n e paridade de catálogos |
+| `pnpm format:check`                 | Confere a formatação do repositório               |
+| `pnpm -r --if-present format:check` | Confere a formatação por workspace                |
+| `pnpm build`                        | Gera os quatro builds a partir da raiz            |
+| `pnpm -r list --depth -1`           | Lista raiz, quatro apps e dez packages            |
 
 ## Inventário e recuperação
 
 A classificação do legado removido permanece em
 `docs/implementation/PROT-000_LEGACY_INVENTORY.md`. Os arquivos removidos são
-recuperáveis pelo histórico Git; o `PROT-004` não criou nem alterou dados.
+recuperáveis pelo histórico Git; o `PROT-005` não criou nem alterou dados.
 
 ---
 

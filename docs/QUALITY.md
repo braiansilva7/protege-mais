@@ -72,10 +72,10 @@ pnpm build
 ```
 
 `lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `test` executa as
-suítes de configuração, classes comuns e handler Fastify nos workspaces que as
-possuem; `build` gera os quatro apps. As configurações compartilhadas fazem
-parte das dependências globais do cache do Turbo, portanto sua alteração
-invalida as tarefas afetadas.
+suítes de configuração, classes comuns, handler Fastify, resolução de locale e
+paridade de catálogos nos workspaces que as possuem; `build` gera os quatro
+apps. As configurações compartilhadas fazem parte das dependências globais do
+cache do Turbo, portanto sua alteração invalida as tarefas afetadas.
 Para conferir explicitamente o formatter em cada workspace:
 
 ```bash

@@ -1,0 +1,20 @@
+{
+  "authentication": {
+    "invalidCredentials": "E-mail ou senha inválidos.",
+    "required": "Autenticação necessária."
+  },
+  "errors": {
+    "application": "Não foi possível processar a solicitação.",
+    "businessRule": "A regra de negócio não foi atendida.",
+    "conflict": "A solicitação está em conflito com o estado atual.",
+    "forbidden": "Acesso negado.",
+    "infrastructure": "O serviço está temporariamente indisponível.",
+    "internalServer": "Ocorreu um erro interno no servidor.",
+    "notFound": "Recurso não encontrado.",
+    "request": "Não foi possível processar a solicitação.",
+    "validation": "Os dados enviados são inválidos."
+  },
+  "health": {
+    "ok": "Serviço operacional."
+  }
+}

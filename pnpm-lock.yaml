@@ -77,9 +77,6 @@ importers:
       fastify-plugin:
         specifier: ^5.0.1
         version: 5.1.0
-      i18next:
-        specifier: ^26.3.6
-        version: 26.3.6(typescript@6.0.3)
       pg:
         specifier: ^8.22.0
         version: 8.22.0
@@ -239,9 +236,6 @@ importers:
       i18next-fs-backend:
         specifier: ^2.6.6
         version: 2.6.6
-      i18next-http-middleware:
-        specifier: ^3.9.7
-        version: 3.9.7
       pg:
         specifier: ^8.22.0
         version: 8.22.0
@@ -2686,9 +2680,6 @@ packages:
 
   i18next-fs-backend@2.6.6:
     resolution: {integrity: sha512-mYGu6Nt8RIp3X/U8Y+Gej1wo5xmYWmGKLqBGMCC2OCAou5rW5epeHgHmVcw20mJs9Z9+DAPHIxQPNCgFyPRMeg==}
-
-  i18next-http-middleware@3.9.7:
-    resolution: {integrity: sha512-k4Aa39thnQXGox5ZeKvlOwbDsFz+iGxtPJITWm6xmmErNZOeGMXIoH9XwK3ITUq7lqHaywnIH9gLwOraU4jJvQ==}
 
   i18next@26.3.6:
     resolution: {integrity: sha512-Bu5Z2nAXgfVyM8xvW3jk9EKRIuX37PudsrBViThNFx7CR7aaYTpP01cxNB/E4c4UUzTDiAZRstEhsRfPOL/8xA==}
@@ -6617,8 +6608,6 @@ snapshots:
   hyphenate-style-name@1.1.0: {}
 
   i18next-fs-backend@2.6.6: {}
-
-  i18next-http-middleware@3.9.7: {}
 
   i18next@26.3.6(typescript@6.0.3):
     optionalDependencies:

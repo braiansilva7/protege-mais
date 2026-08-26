@@ -6,10 +6,10 @@ import {
   type ManagerApiEnvironment,
 } from '@protege-mais/config';
 import {
-  i18nextPlugin,
   registerCors,
   registerDatabase,
   registerErrorHandler,
+  registerI18next,
   registerMultipart,
 } from '@protege-mais/plugins';
 import swaggerPlugin from './plugins/swagger/index.js';
@@ -29,7 +29,7 @@ export async function buildServer(
   await app.register(registerCors, {
     origins: configuration.corsOrigins,
   });
-  await app.register(i18nextPlugin);
+  await app.register(registerI18next);
   await app.register(swaggerPlugin);
   await app.register(healthRoutes);
   await app.register(routes, { prefix: '/api/v1' });
