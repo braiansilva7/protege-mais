@@ -54,6 +54,8 @@ detalhe, segurança e testabilidade de `PROT-000` a `PROT-050`.
 Requer `PROT-000` a `PROT-010`. API, Web e Worker iniciam; configuração,
 erros, i18n, logs, Redis e filas possuem testes básicos.
 
+Status: alcançado em 2026-08-26 com a conclusão do `PROT-010`.
+
 ### Marco B — Fundação de dados
 
 Requer `PROT-011` a `PROT-021`. O banco pode ser criado do zero por migrations,
@@ -76,7 +78,8 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-`PROT-009` configurou Redis compartilhado na Manager API e no Worker, com
-readiness, namespaces por ambiente, expiração, reconexão e fechamento gracioso.
-O próximo trabalho de implementação deve começar por `PROT-010`, que criará a
-infraestrutura de filas e processors do Worker sem antecipar regras de domínio.
+`PROT-010` concluiu a fundação executável com as cinco filas do Worker, envelope
+versionado, idempotência de publicação, retry/backoff, falha controlada e
+shutdown durante processamento. O próximo trabalho de implementação deve
+começar por `PROT-011`, que consolidará PostgreSQL, Drizzle e Atlas sem antecipar
+entidades de domínio.

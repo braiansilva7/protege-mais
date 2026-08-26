@@ -3,10 +3,11 @@
 ## Responsabilidade
 
 O Redis é uma dependência obrigatória da Manager API e do Worker. A conexão
-compartilhada fica em `packages/plugins/redis`, usa o cliente oficial
-`redis`, aplica namespace por ambiente e oferece comandos mínimos para
-leitura, escrita, expiração e exclusão. Filas e processors continuam sob
-responsabilidade do `PROT-010`.
+compartilhada fica em `packages/plugins/redis`, usa o cliente oficial `redis`,
+aplica namespace por ambiente e oferece comandos mínimos para leitura, escrita,
+expiração e exclusão. Desde o `PROT-010`, `packages/plugins/queues` usa BullMQ
+com o adaptador do mesmo cliente para filas e conexões bloqueantes. O contrato
+específico está em [`WORKER_QUEUES.md`](WORKER_QUEUES.md).
 
 Redis não é fonte de verdade para dados de domínio. Uma perda de cache, lock ou
 contador deve ser tratada de acordo com a semântica da capacidade que o criou;
@@ -19,8 +20,8 @@ implementarem.
 - contadores efêmeros de rate limit;
 - locks curtos com expiração e token de posse, quando o ticket consumidor
   definir a operação atômica correspondente;
-- infraestrutura de filas, somente por meio dos contratos que serão definidos
-  no `PROT-010`.
+- infraestrutura de filas, somente por meio do envelope, catálogo e produtor de
+  `packages/plugins/queues`.
 
 Não armazenar senha, token, chave de criptografia, conteúdo de evidência,
 relato, CPF, endereço, dado médico ou geolocalização. Não usar Redis como
@@ -49,6 +50,7 @@ Exemplos fictícios:
 cache:catalog:summary
 rate-limit:public-api:bucket-42
 lock:integration:operation-42
+queues:notifications:...
 ```
 
 O prefixo impede colisão entre ambientes que compartilhem uma instância, mas
@@ -64,17 +66,24 @@ backoff exponencial com jitter e teto aproximado de 2 segundos. Assim, comandos
 falham rapidamente durante uma queda em vez de reter payloads indefinidamente
 em memória.
 
+As conexões de fila preservam o mesmo timeout de conexão, limite da fila interna
+e backoff de reconexão. Produtores desabilitam offline queue para não acumular
+publicações durante uma queda. Consumers mantêm reconexão e conexões bloqueantes
+próprias para voltar a aguardar jobs quando o Redis se recuperar. BullMQ não usa
+o `keyPrefix` do cliente: recebe explicitamente
+`protege-mais:<ambiente>:queues` para manter seus scripts atômicos consistentes.
+
 A Manager API registra um probe obrigatório chamado `redis`. `GET /ready`
 retorna 503 enquanto o cliente não estiver pronto ou `PING` falhar, sem expor
 nome do host, credencial ou diagnóstico. `GET /health` continua respondendo
 apenas pela vida do processo. A recuperação da conexão torna readiness pronta
 novamente sem reiniciar a API.
 
-O Worker inicia a mesma política de conexão e reconexão, mas ainda não expõe
-endpoint HTTP. API e Worker fecham sua conexão Redis uma única vez durante
-`SIGINT`, `SIGTERM` ou fechamento do Fastify. Eventos de conexão contêm apenas
-nomes estáveis sob `redis.connection.*`; a `REDIS_URL` e mensagens do cliente
-não são registradas.
+O Worker ainda não expõe endpoint HTTP. Durante `SIGINT` ou `SIGTERM`, fecha os
+consumers, aguarda o job ativo, fecha as conexões BullMQ e por último a conexão
+Redis genérica. A API fecha o cliente pelo lifecycle do Fastify. Eventos de
+conexão contêm apenas nomes estáveis sob `redis.connection.*` e `queue.*`; a
+`REDIS_URL` e mensagens do cliente não são registradas.
 
 ## Configuração
 
@@ -103,19 +112,23 @@ Na execução dos apps diretamente pelo host, use:
 REDIS_URL=redis://127.0.0.1:6379/0
 ```
 
-Dentro da rede do Compose, a Manager API recebe
+Dentro da rede do Compose, a Manager API e o Worker recebem
 `REDIS_URL=redis://redis:6379/0` automaticamente.
 
 Para validar o cliente contra Redis real:
 
 ```bash
 pnpm --filter @protege-mais/plugins test:redis
+pnpm --filter @protege-mais/worker test:redis
 ```
 
-A suíte comprova namespace, `set/get`, expiração, indisponibilidade e retomada
-por reconexão. O teste usa chaves fictícias e remove as chaves sem TTL ao
+A primeira suíte comprova namespace, `set/get`, expiração, indisponibilidade e
+retomada por reconexão. A segunda comprova fila/processor/use case, retry,
+backoff, falha terminal, idempotência após reinício e shutdown com job ativo. Os
+testes usam referências fictícias e removem seus jobs e chaves sem TTL ao
 concluir. Em inspeções operacionais, prefira `SCAN` limitado ao namespace; não
-use `KEYS *` em instâncias compartilhadas ou de produção.
+use `KEYS *` em instâncias compartilhadas ou de produção e não altere estruturas
+internas do BullMQ com `redis-cli`.
 
 ---
 

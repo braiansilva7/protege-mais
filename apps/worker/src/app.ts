@@ -2,36 +2,31 @@ import {
   workerEnvironment,
   type WorkerEnvironment,
 } from '@protege-mais/config';
+import { createStructuredLogger } from '@protege-mais/plugins/logging';
 import {
-  createCorrelatedLogger,
-  createStructuredLogger,
-  createWorkerCorrelationContext,
-  type CorrelationMetadata,
-} from '@protege-mais/plugins/logging';
+  createQueueWorkerPool,
+  type QueueWorkerPoolContract,
+} from '@protege-mais/plugins/queues';
 import {
   createRedisConnection,
   type RedisConnection,
 } from '@protege-mais/plugins/redis';
+import { JobUseCaseRegistry } from '@protege-mais/use-cases/jobs';
+import { JobProcessor } from './job-processor.js';
+import type { WorkerLogger } from './job-logger.js';
 import { waitForShutdown } from './lifecycle.js';
-
-export type WorkerLogger = ReturnType<typeof createStructuredLogger>;
 
 export interface WorkerShellOptions {
   readonly logger?: WorkerLogger;
   readonly redisConnection?: RedisConnection;
-  readonly waitForSignal?: () => Promise<NodeJS.Signals>;
+  readonly queueWorkerPool?: QueueWorkerPoolContract;
+  readonly jobUseCases?: JobUseCaseRegistry;
+  readonly waitForSignal?: (
+    abortSignal?: AbortSignal
+  ) => Promise<NodeJS.Signals>;
 }
 
-export function createWorkerJobLogger(
-  logger: WorkerLogger,
-  metadata: Partial<CorrelationMetadata> = {}
-) {
-  const context = createWorkerCorrelationContext(metadata);
-  return Object.freeze({
-    context,
-    logger: createCorrelatedLogger(logger, context),
-  });
-}
+export { createWorkerJobLogger, type WorkerLogger } from './job-logger.js';
 
 export async function runWorkerShell(
   configuration: WorkerEnvironment = workerEnvironment(),
@@ -52,17 +47,52 @@ export async function runWorkerShell(
       environment: configuration.appEnvironment,
       logger,
     });
+  const jobUseCases = options.jobUseCases ?? new JobUseCaseRegistry();
+  const processor = new JobProcessor(logger, jobUseCases);
+  const queueWorkerPool =
+    options.queueWorkerPool ??
+    createQueueWorkerPool(
+      {
+        redisUrl: configuration.redisUrl,
+        environment: configuration.appEnvironment,
+        logger,
+      },
+      (job) => processor.process(job)
+    );
 
   redisConnection.start();
-  logger.info(
-    { event: 'worker.ready' },
-    'Worker aguardando configuração de filas.'
-  );
-  let signal: NodeJS.Signals;
+  const shutdownWaitController = new AbortController();
+  const signalTask = waitForSignal(shutdownWaitController.signal);
+  let signal: NodeJS.Signals | undefined;
   try {
-    signal = await waitForSignal();
+    const startResult = await Promise.race([
+      queueWorkerPool.start().then(() => ({ ready: true }) as const),
+      signalTask.then(
+        (receivedSignal) =>
+          ({
+            ready: false,
+            signal: receivedSignal,
+          }) as const
+      ),
+    ]);
+    if (startResult.ready) {
+      logger.info(
+        { event: 'worker.ready' },
+        'Worker aguardando jobs nas filas.'
+      );
+      signal = await signalTask;
+    } else {
+      signal = startResult.signal;
+    }
   } finally {
-    await redisConnection.close();
+    shutdownWaitController.abort();
+    try {
+      await queueWorkerPool.close();
+    } finally {
+      await redisConnection.close();
+    }
   }
-  logger.info({ event: 'worker.stopped', signal }, 'Worker encerrado.');
+  if (signal !== undefined) {
+    logger.info({ event: 'worker.stopped', signal }, 'Worker encerrado.');
+  }
 }

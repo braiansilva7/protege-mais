@@ -6,3 +6,7 @@ nodeLinker: hoisted
 
 allowBuilds:
   esbuild: true
+  msgpackr-extract: false
+
+minimumReleaseAgeExclude:
+  - bullmq@6.3.0

@@ -26,8 +26,10 @@ identificadores enviados na URL não são copiados para o log.
 
 Erros podem acrescentar `errorCode` e um `errorType` sintático. Mensagem,
 stack, causa e objeto original do erro não fazem parte do log seguro. O Worker
-usa eventos estáveis como `worker.ready`, `worker.stopped` e, quando os
-processors forem implementados, nomes sob `worker.job.*`.
+usa `worker.ready`, `worker.stopped`, `worker.job.started`,
+`worker.job.completed`, `worker.job.retry.scheduled` e `worker.job.failed`.
+Eventos de fila usam `queue.connection.error`, `queue.producer.error` e
+`queue.worker.error`.
 
 ## Cabeçalhos e propagação
 
@@ -42,14 +44,20 @@ Toda resposta devolve os dois cabeçalhos. Sem correlação externa válida,
 Um produtor de job deve publicar somente o resultado de
 `correlationMetadata(request)`, nunca headers, body ou o logger inteiro. O
 consumer usa `createWorkerJobLogger`: ele preserva o `correlationId`, cria um
-novo `requestId` para a tentativa e devolve um child logger com ambos. Redis já
-está disponível, mas filas e publicação de jobs pertencem ao `PROT-010`; esta é
-a fronteira obrigatória quando forem adicionadas.
+novo `requestId` para a tentativa e devolve um child logger com ambos. O
+envelope v1 transporta somente `correlationId` e payload mínimo; `requestId` de
+uma tentativa nunca é reaproveitado por outra.
 
 Conexões Redis usam somente `redis.connection.ready`,
 `redis.connection.reconnecting`, `redis.connection.error` e
 `redis.connection.closed`. Esses eventos não incluem URL, host, porta, database,
 chave, valor ou mensagem original do cliente.
+
+Eventos `worker.job.*` permitem somente `queue`, `processor`, `attempt`,
+`maxAttempts`, `durationMs`, `failureType` e `errorCode`, além do contexto
+comum. `failureType` usa `transient`, `terminal` ou `exhausted`. `jobId`, chave
+de idempotência, payload, mensagem, stack e causa permanecem proibidos. O
+catálogo e o runbook estão em [`WORKER_QUEUES.md`](WORKER_QUEUES.md).
 
 ## Allowlist
 

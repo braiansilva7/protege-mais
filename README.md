@@ -19,6 +19,9 @@ O `PROT-008` implantou logs JSON seguros na API e no Worker, com correlação,
 rotas normalizadas e redaction defensiva.
 O `PROT-009` adicionou Redis compartilhado, namespaces por ambiente, probe de
 readiness, reconexão limitada e fechamento gracioso na API e no Worker.
+O `PROT-010` adicionou as cinco filas do Worker, envelope versionado,
+idempotência de publicação, retry/backoff, falha controlada e shutdown durante
+processamento.
 
 ## Pré-requisitos
 
@@ -52,9 +55,11 @@ pnpm dev:mobile
 pnpm dev:worker
 ```
 
-O Worker conecta ao Redis, permanece ocioso até receber `SIGINT` ou `SIGTERM` e
-registra seu ciclo de vida em JSON. Filas, processors e jobs continuam fora
-deste incremento e pertencem ao `PROT-010`.
+O Worker conecta ao Redis e aguarda, sem busy loop, jobs nas filas `emergency`,
+`notifications`, `integrations`, `evidences` e `risk`. `SIGINT` e `SIGTERM`
+interrompem novas coletas, aguardam o job ativo e fecham todas as conexões. O
+catálogo, envelope e runbook estão em
+[`docs/WORKER_QUEUES.md`](docs/WORKER_QUEUES.md).
 
 Para iniciar apenas a dependência local compartilhada:
 
@@ -77,10 +82,11 @@ pnpm build
 
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
 cobrem configuração, erros, i18n, Redis, registry de readiness, endpoints
-operacionais, OpenAPI, logging, redaction, correlação e shutdown; o build cobre
-Manager API, Worker, Web e Mobile. A integração real do Redis é executada com
-`pnpm --filter @protege-mais/plugins test:redis` depois de subir o serviço
-local. Use `pnpm format` para aplicar a formatação e
+operacionais, OpenAPI, logging, redaction, correlação, filas e shutdown; o build
+cobre Manager API, Worker, Web e Mobile. Depois de subir o Redis local, as
+integrações reais são executadas com
+`pnpm --filter @protege-mais/plugins test:redis` e
+`pnpm --filter @protege-mais/worker test:redis`. Use `pnpm format` para aplicar a formatação e
 `pnpm -r --if-present format:check` para conferir cada workspace explicitamente.
 As regras de TypeScript, ESLint, Prettier e uso excepcional de `any` estão em
 [`docs/QUALITY.md`](docs/QUALITY.md).
@@ -117,8 +123,8 @@ consolidada em `PROT-011`.
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-010`:
+O próximo ticket liberado é `PROT-011`:
 
 ```text
-Implemente o ticket PROT-010 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-011 seguindo toda a documentação do projeto.
 ```

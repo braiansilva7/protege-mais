@@ -3,6 +3,92 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-26 — PROT-010 — Criar infraestrutura do Worker
+
+Status: Concluído
+
+### Resultado
+
+O Worker agora aguarda sem busy loop as filas `emergency`, `notifications`,
+`integrations`, `evidences` e `risk`. O pipeline separa produtor BullMQ,
+processor e caso de uso; publica envelope v1 limitado e correlacionado; aplica
+idempotência por `jobId` opaco, três tentativas com backoff exponencial e falha
+terminal controlada. Jobs finalizados permanecem disponíveis para deduplicação
+e operação.
+
+Cada tentativa cria um `requestId`, preserva `correlationId` e registra somente
+fila, processor, contadores, duração e classificação. O shutdown deixa de buscar
+novos jobs, aguarda o trabalho ativo e fecha consumers e conexões Redis. Nenhuma
+regra de negócio foi adicionada ao processor.
+
+### Arquivos e dados
+
+- criado `packages/plugins/queues` com catálogo fixo, prefixo Redis por
+  ambiente, envelope de até 16 KiB, validação de JSON/campos proibidos, hash
+  SHA-256 da chave de idempotência, produtor, inspeção, retry/backoff e pool de
+  consumers;
+- criado `packages/useCases/jobs` com contrato de execução, contexto
+  correlacionado, registry e erros explícitos `RetryableJobError` e
+  `TerminalJobError`;
+- o Worker ganhou `JobProcessor`, logger de tentativa, composição das cinco
+  filas, eventos seguros de sucesso/retry/falha e fechamento ordenado durante
+  `SIGINT` ou `SIGTERM`;
+- criado `apps/worker/Dockerfile`; o Compose ganhou o serviço `worker`,
+  dependente do Redis saudável e com `init` para propagação de sinais;
+- BullMQ `6.3.0` e `tslib` `2.8.1`, versões mais recentes consultadas no
+  registro, foram adicionados somente a `packages/plugins`; o adaptador oficial
+  reutiliza `redis` `6.2.1` sem introduzir `ioredis` ou atualizar dependências
+  existentes;
+- o pnpm passou a permitir explicitamente a versão nova do BullMQ pela política
+  de idade mínima e a negar o build opcional de `msgpackr-extract`; o fallback
+  JavaScript foi validado nos testes, build e container;
+- adicionados testes unitários de catálogo, envelope, payload sensível,
+  idempotência, registry, delegação, correlação e classificação de falhas, além
+  da integração real de fila/processor/use case, retry/backoff, reinício, falha
+  terminal e shutdown com job ativo;
+- criados `docs/WORKER_QUEUES.md` e
+  `docs/decisions/ADR-001-bullmq-redis-queues.md`; README, arquitetura atual,
+  Redis, observabilidade, qualidade, roadmap e índices foram sincronizados;
+- nenhuma tabela, migration, seed, permissão, rota, evento de domínio ou payload
+  real foi criado. A integração remove seus jobs fictícios; permanecem somente
+  metadados operacionais do BullMQ no Redis local.
+
+### Validação
+
+- `pnpm test`: 61 testes aprovados em seis workspaces;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes aprovados para
+  namespace, set/get, TTL, indisponibilidade e retomada do Redis real;
+- `pnpm --filter @protege-mais/worker test:redis`: integração aprovada para
+  processamento único, deduplicação após reinício, três tentativas com backoff
+  reduzido, falha terminal observável e shutdown aguardando job ativo;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem warnings
+  ou erros;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`, com variáveis públicas locais fictícias: Manager API, Worker,
+  Web e Mobile gerados; permanece somente o aviso não bloqueante já conhecido
+  do bundle Web maior que 500 kB;
+- `docker compose config --quiet` e `docker compose build worker`: configuração
+  válida e imagem do Worker construída com lockfile congelado;
+- smoke do container: o Worker conectou, registrou `worker.ready`, recebeu
+  `SIGTERM`, fechou Redis, registrou `worker.stopped` e terminou com código 0;
+- `pnpm audit --prod --audit-level high`: manteve o baseline conhecido de 13
+  achados, sendo 10 altos e três moderados, sem caminho novo pelo BullMQ; versões
+  existentes não foram alteradas fora do escopo.
+
+### Decisões e pendências
+
+- `ADR-001` aprovou BullMQ sobre Redis, o adaptador `node-redis`, as cinco filas,
+  retenção dos jobs finalizados e o conjunto `failed` como dead letter inicial;
+- cada domínio futuro ainda deve definir idempotência durável do efeito,
+  retenção, monitoramento e ferramenta aprovada de reprocessamento antes de
+  produção;
+- a consistência entre gravação durável e publicação, inclusive outbox para
+  emergência, permanece no ticket que implementar o respectivo fluxo;
+- `PROT-011` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-26 — PROT-009 — Configurar Redis
 
 Status: Concluído

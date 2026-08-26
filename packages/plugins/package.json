@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test error-handler/error-handler.test.ts i18next/i18next.test.ts logging/logging.test.ts readiness/readiness.test.ts redis/redis.test.ts",
+    "test": "tsx --test error-handler/error-handler.test.ts i18next/i18next.test.ts logging/logging.test.ts queues/queues.test.ts readiness/readiness.test.ts redis/redis.test.ts",
     "test:redis": "APP_ENVIRONMENT=LOCAL REDIS_URL=redis://127.0.0.1:6379/0 tsx --test redis/redis.integration.test.ts",
     "format": "prettier --write . --ignore-path ../../.prettierignore",
     "format:check": "prettier --check . --ignore-path ../../.prettierignore"
@@ -14,6 +14,7 @@
   "exports": {
     ".": "./index.ts",
     "./logging": "./logging/index.ts",
+    "./queues": "./queues/index.ts",
     "./redis": "./redis/index.ts"
   },
   "dependencies": {
@@ -22,6 +23,7 @@
     "@protege-mais/common": "workspace:*",
     "@protege-mais/models": "workspace:*",
     "@protege-mais/schema": "workspace:*",
+    "bullmq": "6.3.0",
     "drizzle-orm": "^0.44.3",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.0.1",
@@ -30,6 +32,7 @@
     "pg": "^8.22.0",
     "pino": "^10.3.1",
     "redis": "6.2.1",
+    "tslib": "2.8.1",
     "tsyringe": "^4.10.0"
   },
   "devDependencies": {

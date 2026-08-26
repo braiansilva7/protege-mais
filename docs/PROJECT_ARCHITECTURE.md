@@ -2,20 +2,21 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-009`. A arquitetura
+Este documento registra somente o que existe após o `PROT-010`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
 O monorepo possui quatro apps executáveis e dez packages compartilhados. Ainda
-não existem domínio de negócio, autenticação, autorização, tabelas, migrations,
-seeds ou filas. Redis já é uma dependência compartilhada com namespace por
-ambiente, reconexão, timeouts e encerramento gracioso. A API possui contrato
-global de erros,
+não existem domínio de negócio, autenticação, autorização, tabelas, migrations
+ou seeds. Redis já é uma dependência compartilhada com namespace por ambiente,
+reconexão, timeouts e encerramento gracioso. As cinco filas base usam BullMQ,
+envelope v1, publicação idempotente, retry/backoff e falha controlada. A API
+possui contrato global de erros,
 internacionalização em `pt-BR`, `en` e `es`, liveness, readiness extensível,
 encerramento gracioso e logs JSON correlacionados. Seus contratos HTTP geram
 OpenAPI 3.1 e a exposição do Swagger segue uma política por ambiente, sem ativar
-as integrações futuras. O Worker usa o mesmo logger seguro e possui a fronteira
-de correlação preparada para jobs futuros.
+as integrações futuras. O Worker consome filas sem busy loop, cria correlação
+por tentativa e delega toda execução a casos de uso registrados.
 
 ## Estrutura executável atual
 
@@ -31,9 +32,11 @@ protege-mais/
 │   │       ├── app.ts         # Composição testável do Fastify
 │   │       ├── lifecycle.ts   # Readiness e shutdown por sinais
 │   │       └── server.ts      # Entrada do processo
-│   ├── worker/               # Shell conectado ao Redis, ainda sem filas
+│   ├── worker/               # Consumers, processors e lifecycle dos jobs
 │   │   └── src/
-│   │       ├── app.ts         # Shell e contexto correlacionado de jobs
+│   │       ├── app.ts         # Composição do pool, processor e shutdown
+│   │       ├── job-logger.ts  # Contexto correlacionado por tentativa
+│   │       ├── job-processor.ts # Adaptação para casos de uso
 │   │       ├── lifecycle.ts   # Espera e remoção de sinais
 │   │       └── index.ts       # Entrada do processo
 │   ├── web/                  # Shell institucional Vue
@@ -47,11 +50,11 @@ protege-mais/
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
 │   ├── models/               # Schema Drizzle, atualmente vazio
-│   ├── plugins/              # Logging, erros, readiness, Redis e plugins Fastify
+│   ├── plugins/              # Logging, Redis, filas e plugins Fastify
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
 │   ├── services/             # Capacidades reutilizáveis futuras
-│   └── useCases/             # Orquestração de casos de uso futura
+│   └── useCases/             # Contrato/registry de jobs e orquestração futura
 ├── atlas/
 │   ├── prod/                 # Vazio
 │   └── seed/dev/             # Vazio
@@ -86,9 +89,11 @@ ficam no workspace que as utiliza; a raiz mantém somente ferramentas do
 monorepo e de banco.
 
 Entre packages, `plugins` consome erros de `common`, modelos de `models` e o
-tipo HTTP compartilhado de `schema`. `schema` depende somente do TypeBox e não
-depende de `common`; assim, contratos de transporte não criam ciclo com regras
-de erro.
+tipo HTTP compartilhado de `schema`; também encapsula BullMQ sem expô-lo ao
+Worker ou aos casos de uso. `schema` depende somente do TypeBox e não depende
+de `common`; assim, contratos de transporte não criam ciclo com regras de erro.
+`useCases` define a execução e a classificação de falhas de jobs sem importar o
+plugin de filas.
 
 Os aliases compartilhados usam os nomes dos workspaces, por exemplo:
 
@@ -137,12 +142,33 @@ Redis é exigido pela API e pelo Worker. A matriz está em
 | `manager_api` | Config, Redis, logs, probes, OpenAPI, erros e `/api/v1` | Regra de negócio, auth ou permissão |
 | `web`         | Valida config pública e serve o shell                   | Chamada de API ou fluxo funcional   |
 | `mobile`      | Valida config pública e inicia o shell Expo             | Storage, API ou fluxo de proteção   |
-| `worker`      | Config, Redis, logs e espera graciosa por sinal         | Filas, processors ou jobs           |
+| `worker`      | Filas, processors, retry, logs e shutdown gracioso      | Regra de negócio ou persistência    |
 
-O worker usa um timer referenciado de longa duração apenas para manter o event
-loop ativo, sem polling ou busy loop. Ele inicia a conexão Redis compartilhada;
-`SIGINT` e `SIGTERM` cancelam a espera, fecham a conexão e encerram o shell.
-Filas e processamento assíncrono serão implementados pelo `PROT-010`.
+## Worker e filas
+
+`packages/plugins/queues` contém o catálogo `emergency`, `notifications`,
+`integrations`, `evidences` e `risk`. O BullMQ usa espera bloqueante no Redis,
+sem polling de aplicação ou busy loop. Cada fila possui concorrência um por
+instância neste baseline.
+
+O produtor exige envelope de versão 1, correlação, payload JSON limitado a 16
+KiB e chave de idempotência. Nome do job e chave formam um digest SHA-256 usado
+como `jobId`; jobs concluídos e falhos são retidos, por isso publicar novamente
+a mesma operação não cria outra execução mesmo depois de reiniciar consumers.
+A semântica permanece pelo menos uma vez, e cada caso de uso futuro deve tornar
+seus próprios efeitos idempotentes na fonte durável.
+
+O `JobProcessor` cria um `requestId` por tentativa, preserva `correlationId`,
+localiza o `JobUseCase` e converte `RetryableJobError` ou `TerminalJobError` para
+a política do transporte. Erro não classificado, envelope inválido ou nome sem
+caso de uso falha de forma terminal. A política base permite três tentativas
+totais com backoff exponencial de um segundo. Falhas finais permanecem no
+conjunto `failed` da fila, que funciona como dead letter inicial.
+
+`SIGINT` e `SIGTERM` fecham primeiro os consumers, que deixam de buscar novos
+jobs e aguardam o trabalho ativo. Depois o Worker fecha as conexões BullMQ e a
+conexão Redis compartilhada. O catálogo, contrato completo e runbook estão em
+`docs/WORKER_QUEUES.md`; a tecnologia foi registrada no `ADR-001`.
 
 ## API
 
@@ -214,8 +240,10 @@ A API aceita IDs externos com formato limitado, gera valores para entradas
 ausentes ou inválidas e sempre devolve `x-request-id` e `x-correlation-id`. O
 evento de conclusão HTTP inclui somente método, template da rota, status e
 duração; a URL bruta e os logs automáticos do Fastify ficam desabilitados. O
-Worker pode criar um logger de job que preserva `correlationId` e gera um novo
-`requestId` por tentativa.
+Worker cria um logger de job que preserva `correlationId` e gera um novo
+`requestId` por tentativa. Início, conclusão, retry e falha incluem somente
+fila, processor, contadores, classificação e duração; payload, `jobId`, mensagem
+e causa não são registrados.
 
 Uma denylist recursiva bloqueia payloads e dados de autenticação, pessoais, de
 proteção, evidência e geolocalização. Erros conservam somente um tipo seguro;
@@ -230,10 +258,11 @@ da aplicação. A allowlist, denylist e as consultas operacionais estão em
 desabilita offline queue e agenda reconexão com backoff e jitter. A API e o
 Worker usam a mesma fábrica e fecham a conexão em seus ciclos de vida.
 
-O Compose fornece Redis local com AOF, healthcheck e volume próprio. A
-capacidade oferece comandos mínimos de `get`, `set`, expiração e exclusão; não
-cria filas, locks de domínio ou caches antes dos tickets consumidores. Usos
-permitidos e operação estão em `docs/REDIS.md`.
+O Compose fornece Redis local com AOF, healthcheck e volume próprio, além de uma
+imagem própria para o Worker. A capacidade genérica oferece comandos mínimos de
+`get`, `set`, expiração e exclusão; a capacidade de filas usa o prefixo adicional
+`queues` e conexões próprias, inclusive bloqueantes. Usos permitidos e operação
+estão em `docs/REDIS.md` e `docs/WORKER_QUEUES.md`.
 
 ## Web e Mobile
 
@@ -250,28 +279,30 @@ continua preservada como capacidade genérica, mas sua consolidação pertence a
 
 ## Comandos do monorepo
 
-| Comando                                          | Resultado                                                |
-| ------------------------------------------------ | -------------------------------------------------------- |
-| `pnpm dev`                                       | Inicia os quatro apps pelo Turbo                         |
-| `pnpm dev:manager_api`                           | Inicia somente a API                                     |
-| `pnpm dev:web`                                   | Inicia somente o Web                                     |
-| `pnpm dev:mobile`                                | Inicia somente o Mobile                                  |
-| `pnpm dev:worker`                                | Inicia somente o worker ocioso                           |
-| `pnpm lint`                                      | Valida os quatro apps e os dez packages                  |
-| `pnpm typecheck`                                 | Valida os quatro apps e os dez packages                  |
-| `pnpm test`                                      | Testa config, Redis, erros, i18n, logs, probes e OpenAPI |
-| `pnpm --filter @protege-mais/plugins test:redis` | Integra Redis real, TTL e reconexão                      |
-| `pnpm format:check`                              | Confere a formatação do repositório                      |
-| `pnpm -r --if-present format:check`              | Confere a formatação por workspace                       |
-| `pnpm build`                                     | Gera os quatro builds a partir da raiz                   |
-| `pnpm -r list --depth -1`                        | Lista raiz, quatro apps e dez packages                   |
+| Comando                                          | Resultado                                                 |
+| ------------------------------------------------ | --------------------------------------------------------- |
+| `pnpm dev`                                       | Inicia os quatro apps pelo Turbo                          |
+| `pnpm dev:manager_api`                           | Inicia somente a API                                      |
+| `pnpm dev:web`                                   | Inicia somente o Web                                      |
+| `pnpm dev:mobile`                                | Inicia somente o Mobile                                   |
+| `pnpm dev:worker`                                | Inicia somente os consumers do Worker                     |
+| `pnpm lint`                                      | Valida os quatro apps e os dez packages                   |
+| `pnpm typecheck`                                 | Valida os quatro apps e os dez packages                   |
+| `pnpm test`                                      | Testa config, filas, Redis, erros, logs, probes e OpenAPI |
+| `pnpm --filter @protege-mais/plugins test:redis` | Integra Redis real, TTL e reconexão                       |
+| `pnpm --filter @protege-mais/worker test:redis`  | Integra filas, retry, idempotência, falha e shutdown      |
+| `pnpm format:check`                              | Confere a formatação do repositório                       |
+| `pnpm -r --if-present format:check`              | Confere a formatação por workspace                        |
+| `pnpm build`                                     | Gera os quatro builds a partir da raiz                    |
+| `pnpm -r list --depth -1`                        | Lista raiz, quatro apps e dez packages                    |
 
 ## Inventário e recuperação
 
 A classificação do legado removido permanece em
 `docs/implementation/PROT-000_LEGACY_INVENTORY.md`. Os arquivos removidos são
-recuperáveis pelo histórico Git; o `PROT-009` não criou tabelas, migrations ou
-dados de domínio. O volume Redis local contém somente dados técnicos efêmeros.
+recuperáveis pelo histórico Git; o `PROT-010` não criou tabelas, migrations ou
+dados de domínio. O volume Redis local contém somente metadados técnicos das
+filas e qualquer job fictício de teste é removido ao concluir a integração.
 
 ---
 

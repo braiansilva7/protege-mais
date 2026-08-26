@@ -2,6 +2,7 @@ import { createStructuredLogger } from '@protege-mais/plugins/logging';
 import { runWorkerShell } from './app.js';
 
 export { createWorkerJobLogger, runWorkerShell } from './app.js';
+export { JobProcessor } from './job-processor.js';
 export { waitForShutdown } from './lifecycle.js';
 
 void runWorkerShell().catch((error: unknown) => {

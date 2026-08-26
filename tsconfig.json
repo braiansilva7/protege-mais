@@ -18,11 +18,13 @@
       "@protege-mais/models": ["./packages/models/index.ts"],
       "@protege-mais/plugins": ["./packages/plugins/index.ts"],
       "@protege-mais/plugins/logging": ["./packages/plugins/logging/index.ts"],
+      "@protege-mais/plugins/queues": ["./packages/plugins/queues/index.ts"],
       "@protege-mais/plugins/redis": ["./packages/plugins/redis/index.ts"],
       "@protege-mais/repositories": ["./packages/repositories/index.ts"],
       "@protege-mais/schema": ["./packages/schema/index.ts"],
       "@protege-mais/services": ["./packages/services/index.ts"],
-      "@protege-mais/use-cases": ["./packages/useCases/index.ts"]
+      "@protege-mais/use-cases": ["./packages/useCases/index.ts"],
+      "@protege-mais/use-cases/jobs": ["./packages/useCases/jobs/index.ts"]
     }
   },
   "include": ["packages/**/*", "drizzle.config.ts"],

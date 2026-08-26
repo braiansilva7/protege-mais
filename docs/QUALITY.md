@@ -70,16 +70,19 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm --filter @protege-mais/plugins test:redis
+pnpm --filter @protege-mais/worker test:redis
 pnpm format:check
 pnpm build
 ```
 
 `lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `test` executa as
 suítes de configuração, classes comuns, handler Fastify, i18n, Redis com porta
-injetável, logging, redaction, correlação, readiness, endpoints operacionais,
-OpenAPI e shutdown. `test:redis`, executado após
-`docker compose up -d --wait redis`, comprova namespace, set/get, TTL,
-indisponibilidade e retomada contra o serviço real;
+injetável, logging, redaction, correlação, filas, processors, casos de uso,
+readiness, endpoints operacionais, OpenAPI e shutdown. Os dois comandos
+`test:redis`, executados após `docker compose up -d --wait redis`, comprovam o
+cliente genérico e o pipeline real do Worker. A integração do Worker cobre
+retry/backoff reduzido, idempotência após reinício, falha terminal e shutdown
+durante processamento;
 `build` gera os quatro apps. O teste de OpenAPI valida estrutura e referências,
 contrato operacional, exemplos, security e exposição da UI por ambiente. As
 configurações compartilhadas fazem parte das dependências globais do cache do

@@ -288,7 +288,7 @@ conexões são fechadas no shutdown.
 
 | Campo        | Valor              |
 | ------------ | ------------------ |
-| Status       | Pendente           |
+| Status       | Concluído          |
 | Tipo         | Technical Story    |
 | Prioridade   | P0                 |
 | Dependências | PROT-001, PROT-009 |

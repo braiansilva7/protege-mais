@@ -38,3 +38,7 @@ Benefícios, custos, riscos e plano de reversão/migração.
 
 ADR registra decisão; não substitui documentação operacional, contrato de API
 ou registro de implementação.
+
+## Decisões existentes
+
+- [ADR-001 — BullMQ sobre Redis para filas do Worker](ADR-001-bullmq-redis-queues.md)
