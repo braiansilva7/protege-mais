@@ -4,12 +4,21 @@
 
 O baseline não possui rotas de autenticação, usuários, papéis ou negócio.
 
-| Rota          | Autenticação | Estado                       | Observação                                     |
-| ------------- | ------------ | ---------------------------- | ---------------------------------------------- |
-| `GET /health` | Não          | Disponível                   | Liveness; retorna `{ "status": "ok" }`         |
-| `GET /ready`  | Não          | Disponível                   | Readiness dos probes obrigatórios              |
-| `/swagger/`   | Não          | Disponível no baseline local | Documenta somente o contrato atual             |
-| `/api/v1/*`   | —            | Sem rotas                    | Prefixo exclusivo das rotas futuras de domínio |
+| Rota          | Autenticação | Estado                 | Observação                                     |
+| ------------- | ------------ | ---------------------- | ---------------------------------------------- |
+| `GET /health` | Não          | Disponível             | Liveness; retorna `{ "status": "ok" }`         |
+| `GET /ready`  | Não          | Disponível             | Readiness dos probes obrigatórios              |
+| `/swagger/*`  | Não          | `LOCAL`, `DEV` e `HMG` | UI, JSON e YAML do contrato OpenAPI 3.1        |
+| `/api/v1/*`   | —            | Sem rotas              | Prefixo exclusivo das rotas futuras de domínio |
+
+## OpenAPI
+
+`packages/schema` é a fonte oficial de contratos HTTP. Health, readiness,
+resposta comum de erro, tags e o esquema Bearer estão publicados no OpenAPI
+3.1 com referências locais estáveis. O bootstrap rejeita rotas sem contrato
+completo. A estrutura dos schemas, as regras de segurança, a validação e a
+política que bloqueia toda exposição do Swagger em `PROD` estão em
+[`OPENAPI.md`](OPENAPI.md).
 
 ## Health, readiness e ciclo de vida
 
@@ -133,5 +142,5 @@ Cada rota implementada deve documentar:
 - efeitos síncronos, eventos e jobs publicados;
 - exemplo fictício sem PII ou segredo.
 
-O OpenAPI consolidado em `PROT-007` será o contrato técnico principal. Este
-catálogo explica decisões e fluxos que não cabem no schema.
+O OpenAPI é o contrato técnico principal. Este catálogo explica decisões e
+fluxos que não cabem no schema.

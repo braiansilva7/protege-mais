@@ -10,8 +10,8 @@ import {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
-  type ErrorResponse,
 } from '@protege-mais/common';
+import type { ErrorResponse } from '@protege-mais/schema';
 import { registerErrorHandler } from './index.js';
 import { registerI18next } from '../i18next/index.js';
 

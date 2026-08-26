@@ -1,20 +1,24 @@
 import { Type } from '@sinclair/typebox';
-import { ETagSwagger } from '@protege-mais/common';
+import {
+  errorResponseSchema,
+  operationalStatusSchema,
+} from '../../common/responses/index.js';
+import { apiTags } from '../../openapi/index.js';
 
 export const readinessSchema = {
-  description: 'Readiness check',
-  tags: [ETagSwagger.health],
+  summary: 'Verificar readiness da aplicação',
+  description:
+    'Confirma que o processo pode receber tráfego e que todos os probes obrigatórios estão disponíveis.',
+  operationId: 'getReadiness',
+  tags: [apiTags.health],
+  security: [],
   response: {
-    200: Type.Object({
-      status: Type.Literal('ok'),
+    200: Type.Ref(operationalStatusSchema, {
+      description: 'O processo está pronto para receber tráfego.',
     }),
-    503: Type.Object(
-      {
-        code: Type.Literal('SERVICE_NOT_READY'),
-        message: Type.String(),
-        requestId: Type.String(),
-      },
-      { additionalProperties: false }
-    ),
+    503: Type.Ref(errorResponseSchema, {
+      description:
+        'Um ou mais probes obrigatórios estão indisponíveis. O código retornado é SERVICE_NOT_READY.',
+    }),
   },
 };

@@ -8,8 +8,8 @@ import {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
-  type ErrorResponse,
 } from '@protege-mais/common';
+import type { ErrorResponse } from '@protege-mais/schema';
 
 const internalServerError = {
   code: 'INTERNAL_SERVER_ERROR',

@@ -1,12 +1,17 @@
 import { Type } from '@sinclair/typebox';
-import { ETagSwagger } from '@protege-mais/common';
+import { operationalStatusSchema } from '../../common/responses/index.js';
+import { apiTags } from '../../openapi/index.js';
 
 export const healthSchema = {
-  description: 'Health check',
-  tags: [ETagSwagger.health],
+  summary: 'Verificar liveness da aplicação',
+  description:
+    'Confirma que o processo está ativo. Não consulta dependências externas.',
+  operationId: 'getHealth',
+  tags: [apiTags.health],
+  security: [],
   response: {
-    200: Type.Object({
-      status: Type.Literal('ok'),
+    200: Type.Ref(operationalStatusSchema, {
+      description: 'O processo está ativo.',
     }),
   },
 };

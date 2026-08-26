@@ -3,6 +3,80 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-25 — PROT-007 — Consolidar Swagger/OpenAPI
+
+Status: Concluído
+
+### Resultado
+
+`packages/schema` agora é a fonte oficial dos contratos HTTP da Manager API.
+Health, readiness e a resposta comum de erro geram componentes OpenAPI 3.1 com
+referências locais estáveis; tags e o esquema HTTP Bearer também são
+compartilhados pelo package.
+
+O registro de rotas falha durante o bootstrap quando o contrato não declara
+schema, metadados, tags, security e responses. A documentação HTTP do Swagger
+fica disponível em `LOCAL`, `DEV` e `HMG` e responde 404 em `PROD`, enquanto a
+geração em memória permanece ativa para validação interna.
+
+### Arquivos e dados
+
+- criados em `packages/schema/common` os componentes `OperationalStatus` e
+  `ErrorResponse`, com tipos TypeScript derivados do TypeBox e exemplos
+  fictícios, e em `packages/schema/openapi` o catálogo de tags e o security
+  scheme `bearerAuth`;
+- health e readiness passaram a declarar summary, description, operationId,
+  exposição pública explícita e responses referenciadas; o tipo
+  `ErrorResponse` saiu de `common` e passou a derivar do schema oficial, e o
+  enum de tag duplicado foi removido;
+- o plugin Swagger passou a registrar schemas compartilhados, gerar OpenAPI
+  3.1 com nomes estáveis e rejeitar rotas sem contrato completo;
+- a UI, o JSON e o YAML são registrados somente fora de produção; a UI ganhou
+  Content Security Policy e o validador remoto permaneceu desabilitado;
+- adicionados testes estruturais do documento e das referências, snapshot do
+  contrato operacional, security de operação protegida, exemplos sem segredo,
+  guarda de rotas e matriz de exposição;
+- criado `docs/api/OPENAPI.md` e atualizados catálogo da API, README,
+  arquitetura atual, qualidade, guia de rotas, roadmap e índices;
+- nenhuma biblioteca foi adicionada ou atualizada; o lockfile apenas recebeu a
+  nova dependência interna de `plugins` para `schema`; nenhuma migration, seed,
+  tabela, permissão, rota de negócio ou dado foi criado ou alterado.
+
+### Validação
+
+- `pnpm install --frozen-lockfile --offline`: os 15 projetos permaneceram
+  sincronizados sem download;
+- `pnpm test`: 35 testes aprovados em quatro workspaces, incluindo sete da
+  Manager API e todos os cenários OpenAPI do ticket;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`, com as variáveis públicas locais exigidas: Manager API, Worker,
+  Web e Mobile gerados; permanece apenas o aviso não bloqueante já conhecido do
+  bundle Web maior que 500 kB;
+- inspeção do artefato: arquivos de teste não foram emitidos;
+- smoke do artefato compilado: em `LOCAL`, health, Swagger UI e JSON retornaram
+  200 com OpenAPI 3.1; em `PROD`, health retornou 200 e UI, JSON e YAML
+  retornaram 404; os dois processos encerraram com código 0;
+- `docker compose config --quiet`: configuração válida;
+- build e smoke da imagem da Manager API em `PROD`: health/readiness retornaram
+  200, UI/JSON/YAML do Swagger retornaram 404 e o container encerrou com código
+  0; container e imagem temporários foram removidos.
+
+### Decisões e pendências
+
+- nenhum ADR adicional foi necessário: o ticket concretiza `packages/schema` e
+  o Swagger já previstos na arquitetura-alvo, sem trocar tecnologia ou
+  fronteira de camada;
+- o documento continua sendo gerado em memória em produção, mas nenhum recurso
+  HTTP do Swagger é registrado nesse ambiente;
+- o esquema Bearer prepara os contratos futuros, mas não cria autenticação nem
+  endpoint protegido; identidade e acesso permanecem em seus tickets;
+- `PROT-008` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-25 — PROT-006 — Consolidar API base, health e readiness
 
 Status: Concluído

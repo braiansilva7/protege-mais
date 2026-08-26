@@ -11,12 +11,6 @@ export type SpecializedErrorOptions = Omit<
   'statusCode'
 >;
 
-export interface ErrorResponse {
-  readonly code: string;
-  readonly message: string;
-  readonly requestId: string;
-}
-
 const defaultError = {
   code: 'APPLICATION_ERROR',
   message: 'Não foi possível processar a solicitação.',

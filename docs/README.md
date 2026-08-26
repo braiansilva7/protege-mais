@@ -40,6 +40,7 @@ testes, decisões e pendências.
 | Runtime e convenções de qualidade        | `docs/QUALITY.md`                                    |
 | Configuração e matriz de variáveis       | `docs/CONFIGURATION.md`                              |
 | Rotas base, probes e erros HTTP          | `docs/api/README.md`                                 |
+| Contratos HTTP, OpenAPI e Swagger        | `docs/api/OPENAPI.md`                                |
 | Idiomas e chaves do backend              | `docs/api/INTERNATIONALIZATION.md`                   |
 | Tickets e seus estados                   | `docs/tickets/README.md` e arquivos de épico         |
 | Mudanças efetivamente implementadas      | `docs/implementation/CHANGELOG.md`                   |

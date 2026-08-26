@@ -31,7 +31,9 @@ export async function buildServer(
     origins: configuration.corsOrigins,
   });
   await app.register(registerI18next);
-  await app.register(swaggerPlugin);
+  await app.register(swaggerPlugin, {
+    exposeUi: configuration.appEnvironment !== 'PROD',
+  });
   await app.register(healthRoutes);
   await app.register(routes, { prefix: apiV1Prefix });
 

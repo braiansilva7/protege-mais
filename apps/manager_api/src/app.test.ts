@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { test } from 'node:test';
 import type { ManagerApiEnvironment } from '@protege-mais/config';
-import type { ErrorResponse } from '@protege-mais/common';
+import type { ErrorResponse } from '@protege-mais/schema';
 import { buildServer } from './app.js';
 import { registerShutdownSignals } from './lifecycle.js';
 

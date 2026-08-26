@@ -134,14 +134,16 @@ packages/schema/<dominio>/<operacao>/
 
 O schema deve declarar:
 
-- `tags`;
-- `summary`;
-- parâmetros;
-- query string;
-- body;
-- respostas de sucesso e erro.
+- `summary`, `description` e `operationId` único;
+- `tags` do catálogo compartilhado;
+- `security: []` em rotas públicas ou o requisito Bearer em rotas protegidas;
+- `params`, `querystring` e `body`, quando aplicáveis;
+- respostas de sucesso e erro, reutilizando o erro comum.
 
-Ele é usado tanto para validação do Fastify quanto para documentação em `/swagger/`.
+Ele é usado tanto para validação do Fastify quanto para geração do OpenAPI.
+A Manager API falha no bootstrap se uma rota não declarar o contrato mínimo.
+O formato, os exports compartilhados e a política de exposição da UI estão em
+`docs/api/OPENAPI.md`.
 
 ### 6. CRIAR CONTROLLER
 
@@ -335,7 +337,8 @@ Antes de concluir:
 
 1. Executar migration, quando houver alteração de banco.
 2. Testar rota autenticada, sem autenticação e sem permissão.
-3. Conferir request, response e erros em `/swagger/`.
+3. Conferir request, response, erros e security no OpenAPI; usar `/swagger/`
+   somente em `LOCAL`, `DEV` ou `HMG`.
 4. Testar o fluxo no web: carregamento, lista vazia, erro, criação, edição e exclusão.
 5. Confirmar chaves nos seis arquivos de tradução: três do backend e três do web.
 6. Executar:
@@ -349,11 +352,12 @@ pnpm --filter @protege-mais/web build
 
 - [ ] Interface criada em `packages/interfaces`.
 - [ ] Schema criado em `packages/schema`.
+- [ ] Schema declara metadados, security e todas as responses previstas.
 - [ ] Use case criado em `packages/useCases`.
 - [ ] Controller criado em `apps/manager_api/src/controllers`.
 - [ ] Permissão criada em `apps/manager_api/src/permissions`.
 - [ ] Rota registrada no arquivo de domínio e em `routes/index.ts`.
-- [ ] Swagger validado.
+- [ ] OpenAPI e política de exposição do Swagger validados.
 - [ ] Web separado entre `types`, `composables`, `pages`, `components` e `navigation`.
 - [ ] Navegação vertical e horizontal atualizadas.
 - [ ] Traduções completas em português, inglês e espanhol no backend e web.

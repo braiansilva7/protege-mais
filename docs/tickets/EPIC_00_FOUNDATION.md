@@ -212,7 +212,7 @@ disponíveis e 503 sanitizado caso contrário; rotas de negócio ficam sob
 
 | Campo        | Valor              |
 | ------------ | ------------------ |
-| Status       | Pendente           |
+| Status       | Concluído          |
 | Tipo         | Technical Story    |
 | Prioridade   | P1                 |
 | Dependências | PROT-004, PROT-006 |

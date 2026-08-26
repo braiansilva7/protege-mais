@@ -18,6 +18,7 @@
     "@fastify/multipart": "^9.0.3",
     "@protege-mais/common": "workspace:*",
     "@protege-mais/models": "workspace:*",
+    "@protege-mais/schema": "workspace:*",
     "drizzle-orm": "^0.44.3",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.0.1",

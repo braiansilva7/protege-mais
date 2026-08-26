@@ -2,7 +2,7 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-006`. A arquitetura
+Este documento registra somente o que existe após o `PROT-007`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
@@ -11,7 +11,8 @@ não existem domínio de negócio, autenticação, autorização, tabelas, migra
 seeds, Redis ou filas. Os contratos de configuração dessas capacidades já são
 validados de forma isolada. A API possui contrato global de erros,
 internacionalização em `pt-BR`, `en` e `es`, liveness, readiness extensível e
-encerramento gracioso, sem ativar as integrações futuras.
+encerramento gracioso. Seus contratos HTTP geram OpenAPI 3.1 e a exposição do
+Swagger segue uma política por ambiente, sem ativar as integrações futuras.
 
 ## Estrutura executável atual
 
@@ -35,14 +36,14 @@ protege-mais/
 │       ├── App.tsx
 │       └── index.ts
 ├── packages/
-│   ├── common/               # Tipos, enums, erros, constantes e funções comuns
+│   ├── common/               # Erros, constantes e funções comuns
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
 │   ├── models/               # Schema Drizzle, atualmente vazio
 │   ├── plugins/              # Erros, readiness, banco, CORS, multipart e i18n
 │   ├── repositories/         # Persistência por domínio futura
-│   ├── schema/               # Contratos HTTP de health e readiness
+│   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
 │   ├── services/             # Capacidades reutilizáveis futuras
 │   └── useCases/             # Orquestração de casos de uso futura
 ├── atlas/
@@ -77,6 +78,11 @@ apps → packages
 Packages não importam nem declaram dependência de apps. Dependências externas
 ficam no workspace que as utiliza; a raiz mantém somente ferramentas do
 monorepo e de banco.
+
+Entre packages, `plugins` consome erros de `common`, modelos de `models` e o
+tipo HTTP compartilhado de `schema`. `schema` depende somente do TypeBox e não
+depende de `common`; assim, contratos de transporte não criam ciclo com regras
+de erro.
 
 Os aliases compartilhados usam os nomes dos workspaces, por exemplo:
 
@@ -119,12 +125,12 @@ pela API neste estágio. A matriz está em `docs/CONFIGURATION.md`.
 
 ## Responsabilidade dos apps
 
-| App           | Responsabilidade atual                                     | Não faz neste baseline              |
-| ------------- | ---------------------------------------------------------- | ----------------------------------- |
-| `manager_api` | Config, health/ready, shutdown, Swagger, erros e `/api/v1` | Regra de negócio, auth ou permissão |
-| `web`         | Valida config pública e serve o shell                      | Chamada de API ou fluxo funcional   |
-| `mobile`      | Valida config pública e inicia o shell Expo                | Storage, API ou fluxo de proteção   |
-| `worker`      | Valida config, aguarda e encerra por sinal                 | Redis, filas, processors ou jobs    |
+| App           | Responsabilidade atual                               | Não faz neste baseline              |
+| ------------- | ---------------------------------------------------- | ----------------------------------- |
+| `manager_api` | Config, probes, shutdown, OpenAPI, erros e `/api/v1` | Regra de negócio, auth ou permissão |
+| `web`         | Valida config pública e serve o shell                | Chamada de API ou fluxo funcional   |
+| `mobile`      | Valida config pública e inicia o shell Expo          | Storage, API ou fluxo de proteção   |
+| `worker`      | Valida config, aguarda e encerra por sinal           | Redis, filas, processors ou jobs    |
 
 O worker usa um timer referenciado de longa duração apenas para manter o event
 loop ativo, sem polling ou busy loop. `SIGINT` e `SIGTERM` cancelam a espera e
@@ -157,13 +163,22 @@ readiness antes de fechar o Fastify, que para de aceitar conexões e executa os
 hooks de liberação, incluindo `pool.end()`. Rotas operacionais permanecem na
 raiz; o agregador versionado é a única entrada futura para rotas de negócio.
 
+`packages/schema` concentra os schemas TypeBox, os tipos HTTP derivados, tags,
+respostas comuns e o security scheme Bearer. Health e readiness referenciam
+`OperationalStatus` e `ErrorResponse` em `components.schemas`. Um hook de
+registro impede rota de aplicação sem `schema`, metadados, declaração explícita
+de `security` e responses. A UI e os documentos HTTP ficam em `/swagger/`,
+`/swagger/json` e `/swagger/yaml` somente em `LOCAL`, `DEV` e `HMG`; `PROD`
+mantém apenas a geração em memória. A convenção está em
+`docs/api/OPENAPI.md`.
+
 `packages/common` expõe `ApplicationError` e as especializações para
 validação, autenticação, autorização, recurso ausente, conflito, regra de
 negócio, infraestrutura e indisponibilidade. Cada default possui uma
 `messageKey` traduzível; mensagens de domínio podem informar uma chave específica
-sem alterar código ou status. `packages/plugins` converte essas classes, erros de
-schema e erros HTTP
-conhecidos em `{ code, message, requestId }`. Falhas desconhecidas recebem
+sem alterar código ou status. `packages/plugins` converte essas classes, erros
+de schema e erros HTTP conhecidos em `{ code, message, requestId }`. O tipo
+desse contrato HTTP deriva de `packages/schema`. Falhas desconhecidas recebem
 `INTERNAL_SERVER_ERROR` e 500; stack, causa e detalhes do schema não são
 serializados para o cliente.
 
@@ -193,26 +208,26 @@ continua preservada como capacidade genérica, mas sua consolidação pertence a
 
 ## Comandos do monorepo
 
-| Comando                             | Resultado                                       |
-| ----------------------------------- | ----------------------------------------------- |
-| `pnpm dev`                          | Inicia os quatro apps pelo Turbo                |
-| `pnpm dev:manager_api`              | Inicia somente a API                            |
-| `pnpm dev:web`                      | Inicia somente o Web                            |
-| `pnpm dev:mobile`                   | Inicia somente o Mobile                         |
-| `pnpm dev:worker`                   | Inicia somente o worker ocioso                  |
-| `pnpm lint`                         | Valida os quatro apps e os dez packages         |
-| `pnpm typecheck`                    | Valida os quatro apps e os dez packages         |
-| `pnpm test`                         | Testa config, erros, i18n, readiness e shutdown |
-| `pnpm format:check`                 | Confere a formatação do repositório             |
-| `pnpm -r --if-present format:check` | Confere a formatação por workspace              |
-| `pnpm build`                        | Gera os quatro builds a partir da raiz          |
-| `pnpm -r list --depth -1`           | Lista raiz, quatro apps e dez packages          |
+| Comando                             | Resultado                                                  |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `pnpm dev`                          | Inicia os quatro apps pelo Turbo                           |
+| `pnpm dev:manager_api`              | Inicia somente a API                                       |
+| `pnpm dev:web`                      | Inicia somente o Web                                       |
+| `pnpm dev:mobile`                   | Inicia somente o Mobile                                    |
+| `pnpm dev:worker`                   | Inicia somente o worker ocioso                             |
+| `pnpm lint`                         | Valida os quatro apps e os dez packages                    |
+| `pnpm typecheck`                    | Valida os quatro apps e os dez packages                    |
+| `pnpm test`                         | Testa config, erros, i18n, probes, OpenAPI e ciclo de vida |
+| `pnpm format:check`                 | Confere a formatação do repositório                        |
+| `pnpm -r --if-present format:check` | Confere a formatação por workspace                         |
+| `pnpm build`                        | Gera os quatro builds a partir da raiz                     |
+| `pnpm -r list --depth -1`           | Lista raiz, quatro apps e dez packages                     |
 
 ## Inventário e recuperação
 
 A classificação do legado removido permanece em
 `docs/implementation/PROT-000_LEGACY_INVENTORY.md`. Os arquivos removidos são
-recuperáveis pelo histórico Git; o `PROT-006` não criou nem alterou dados.
+recuperáveis pelo histórico Git; o `PROT-007` não criou nem alterou dados.
 
 ---
 

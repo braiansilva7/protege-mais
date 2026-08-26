@@ -13,7 +13,6 @@
     ".": "./index.ts"
   },
   "dependencies": {
-    "@protege-mais/common": "workspace:*",
     "@sinclair/typebox": "^0.34.37"
   }
 }

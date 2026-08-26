@@ -221,6 +221,9 @@ importers:
       '@protege-mais/models':
         specifier: workspace:*
         version: link:../models
+      '@protege-mais/schema':
+        specifier: workspace:*
+        version: link:../schema
       drizzle-orm:
         specifier: ^0.44.3
         version: 0.44.7(@types/pg@8.20.0)(pg@8.22.0)
@@ -254,9 +257,6 @@ importers:
 
   packages/schema:
     dependencies:
-      '@protege-mais/common':
-        specifier: workspace:*
-        version: link:../common
       '@sinclair/typebox':
         specifier: ^0.34.37
         version: 0.34.52

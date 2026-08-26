@@ -76,7 +76,7 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-`PROT-006` separou liveness de readiness, criou o mecanismo extensível de probes,
-formalizou `/api/v1` como entrada de rotas de negócio e garantiu shutdown
-gracioso da Manager API. O próximo trabalho de implementação deve começar por
-`PROT-007`, que consolidará Swagger/OpenAPI e os schemas compartilhados.
+`PROT-007` consolidou `packages/schema` como fonte oficial dos contratos HTTP,
+gerou OpenAPI 3.1 com schemas e segurança compartilhados e restringiu o Swagger
+por ambiente. O próximo trabalho de implementação deve começar por `PROT-008`,
+que implantará logging estruturado, correlação e redaction segura.
