@@ -17,7 +17,7 @@
     "dev:worker": "pnpm --filter @protege-mais/worker dev",
     "build": "turbo run build",
     "test": "turbo run test",
-    "lint": "eslint eslint.config.mjs drizzle.config.ts --max-warnings 0 && turbo run lint",
+    "lint": "eslint eslint.config.mjs drizzle.config.ts drizzle.reference.config.ts --max-warnings 0 && turbo run lint",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write . --ignore-path .prettierignore",
     "format:check": "prettier --check . --ignore-path .prettierignore",
@@ -40,6 +40,9 @@
     "seed:local": "pnpm run migrate:local && ENV=dev pnpm run atlas:run:dev:docker",
     "seed:dev": "ENV=dev pnpm run atlas:run:dev:docker",
     "migration:diff:local": "ENV=prod pnpm run atlas:diff:docker",
+    "model:reference:export": "drizzle-kit export --config drizzle.reference.config.ts",
+    "model:reference:diff": "ENV=reference pnpm run atlas:diff:docker",
+    "model:reference:validate": "ENV=reference pnpm run atlas:validate:docker",
     "seed:new:local": "ENV=dev docker compose run --rm -T atlas atlas migrate new --env dev"
   },
   "devDependencies": {

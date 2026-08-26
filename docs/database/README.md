@@ -4,15 +4,23 @@
 
 O `PROT-011` consolidou PostgreSQL, Drizzle e Atlas como a fundação oficial de
 persistência. O `PROT-012` acrescentou PostGIS por migration estrutural
-idempotente. A Manager API possui pool gerenciado, probe obrigatório e shutdown
-idempotente. O schema de domínio continua intencionalmente vazio: não há
-tabelas, enums, seeds ou dados de domínio.
+idempotente. O `PROT-013` congelou as convenções de models e migrations. A
+Manager API possui pool gerenciado, probe obrigatório e shutdown idempotente. O
+schema de domínio continua intencionalmente vazio: não há tabelas, enums, seeds
+ou dados de domínio.
 
-`packages/models/index.ts` é a única entrada do schema Drizzle. `atlas/prod`
-mantém a migration `20260826000000_enable_postgis.sql` e
-`atlas/seed/dev` permanece sem dados. Uma base nova aceita `migrate` sem exigir
-seed, habilita a extensão e permanece sem tabelas de domínio; `spatial_ref_sys`
-é um objeto interno gerenciado pelo próprio PostGIS.
+`packages/models/index.ts` é a única entrada do schema Drizzle de produção e
+exporta os helpers comuns, mas ainda nenhuma tabela. `atlas/prod` mantém a
+migration `20260826000000_enable_postgis.sql` e `atlas/seed/dev` permanece sem
+dados. Uma base nova aceita `migrate` sem exigir seed, habilita a extensão e
+permanece sem tabelas de domínio; `spatial_ref_sys` é um objeto interno
+gerenciado pelo próprio PostGIS.
+
+O guia normativo está em [CONVENTIONS.md](CONVENTIONS.md), o checklist de cada
+mudança estrutural está em
+[MIGRATION_CHECKLIST.md](MIGRATION_CHECKLIST.md) e a decisão correspondente foi
+registrada no
+[ADR-002](../decisions/ADR-002-database-conventions.md).
 
 ## Conexão da aplicação
 
@@ -90,7 +98,7 @@ removê-la se tornará destrutivo assim que tipos espaciais forem referenciados.
 Em validações descartáveis, reverta removendo somente a base temporária criada
 para o teste.
 
-Convenções congeladas por este ticket:
+Convenções espaciais congeladas pelo `PROT-012`:
 
 - dados geográficos usam SRID 4326;
 - pontos futuros usam `geography(Point, 4326)` quando distâncias na superfície
@@ -109,11 +117,13 @@ equador. Ela deve ser executada somente depois da migration estrutural.
 
 ## Fluxo Atlas
 
-`atlas.hcl` oferece dois ambientes:
+`atlas.hcl` oferece três ambientes:
 
 - `prod`: estado desejado Drizzle → `atlas/prod`, somente estrutura;
 - `dev`: estado desejado Drizzle → `atlas/seed/dev`, somente dados fictícios de
-  desenvolvimento, aplicados depois de `prod` e em ordem não linear.
+  desenvolvimento, aplicados depois de `prod` e em ordem não linear;
+- `reference`: fixture Drizzle isolado → `packages/models/reference/atlas`, sem
+  URL de deploy e sem export pelo schema de produção.
 
 O Atlas recebe `DB_DATABASE_URL` e `DB_ATLAS` pelo ambiente do processo. O
 estado desejado é exportado pelo binário local de `drizzle-kit` fixado no
@@ -131,6 +141,9 @@ diff. A imagem local fixa Node.js `24.12.0` e Atlas `v1.3.0`.
 | aplicar estrutura em DEV/PROD              | `pnpm migrate:dev` / `pnpm migrate:prod` |
 | aplicar estrutura e seed fictício local    | `pnpm seed:local`                        |
 | criar arquivo vazio de seed local          | `pnpm seed:new:local`                    |
+| inspecionar DDL do model de referência     | `pnpm model:reference:export`            |
+| validar migration de referência            | `pnpm model:reference:validate`          |
+| confirmar zero drift na referência         | `pnpm model:reference:diff`              |
 
 Ao adicionar um model futuro:
 
@@ -139,7 +152,9 @@ Ao adicionar um model futuro:
 3. confirme que seed não é referenciado pela migration;
 4. valide `atlas.sum` e aplique em uma base limpa;
 5. aplique novamente e confirme zero pendências/drift;
-6. registre forward/rollback compatível com a estratégia vigente do ticket.
+6. registre forward/rollback compatível com a estratégia vigente do ticket;
+7. complete todos os itens de
+   [MIGRATION_CHECKLIST.md](MIGRATION_CHECKLIST.md).
 
 `atlas migrate apply` nunca recalcula o checksum. `hash` pertence à autoria e
 `apply` verifica a integridade versionada antes do deploy. Um seed não corrige
@@ -148,14 +163,19 @@ schema e nunca é pré-requisito de migration.
 ## Padrões congelados nesta fundação
 
 - PostgreSQL e todas as sessões operam em UTC;
-- instantes de domínio futuros usam `TIMESTAMPTZ`;
+- instantes de domínio futuros usam `TIMESTAMPTZ(3)`;
 - UUID v7 é gerado pela aplicação, não pelo relógio do banco;
 - Drizzle é a fonte tipada dos models e Atlas é a fonte do histórico aplicado;
-- banco usa `snake_case` e TypeScript usa `camelCase`.
+- banco usa `snake_case` e TypeScript usa `camelCase`;
+- constraints e índices usam nomes determinísticos e FKs declaram suas ações;
+- tabelas mutáveis usam optimistic locking como baseline;
+- soft delete é opt-in e nunca é aplicado automaticamente a `audit_logs`,
+  `alert_events` ou `risk_assessments`.
 
-PostGIS está habilitado e consultas espaciais usam SRID 4326. O `PROT-013`
-definirá nomes de constraints, índices, nulabilidade, concorrência, soft delete
-e um model de referência; o `PROT-012` não antecipou essas decisões.
+PostGIS está habilitado e consultas espaciais usam SRID 4326. O fixture em
+`packages/models/reference` prova nomes, mapeamento, nulabilidade, concorrência
+e soft delete sem criar entidade de domínio. O próximo ticket liberado,
+`PROT-014`, pode consumir essas convenções ao criar os enums fundamentais.
 
 ---
 

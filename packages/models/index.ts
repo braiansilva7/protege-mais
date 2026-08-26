@@ -1,8 +1,14 @@
 /**
  * Fonte central do schema Drizzle do Protege Mais.
  *
- * O export permanece intencionalmente vazio após o PROT-012. A extensão
- * PostGIS é gerenciada pela migration Atlas; tabelas, enums e convenções de
- * colunas pertencem aos tickets de dados subsequentes.
+ * O schema de produção permanece sem tabelas após o PROT-013. A extensão
+ * PostGIS é gerenciada pela migration Atlas, e as colunas comuns abaixo
+ * materializam as convenções aprovadas para os models subsequentes.
  */
-export {};
+export {
+  createdAtColumn,
+  deletedAtColumn,
+  optimisticLockVersionColumn,
+  updatedAtColumn,
+  uuidV7PrimaryKey,
+} from './columns.js';

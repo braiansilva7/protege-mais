@@ -3,6 +3,88 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-26 — PROT-013 — Definir convenções de tabelas e migrations
+
+Status: Concluído
+
+### Resultado
+
+As convenções de persistência foram congeladas antes das tabelas de domínio:
+banco em `snake_case`, TypeScript em `camelCase`, UUID v7 gerado pela aplicação,
+instantes UTC em `TIMESTAMPTZ(3)`, nomes determinísticos de constraints e
+índices, nulabilidade deliberada, unicidade no banco, optimistic locking e soft
+delete opt-in.
+
+Helpers Drizzle reutilizáveis materializam as colunas comuns. Um fixture com
+duas tabelas e migration Atlas comprova o contrato sem entrar no export nem no
+histórico de produção. Seu ambiente Atlas é isolado e não possui URL de deploy;
+o schema de domínio continua sem tabelas, enums, seeds ou dados.
+
+### Arquivos e dados
+
+- criado `packages/models/columns.ts` com helpers para primary key UUID v7,
+  `created_at`, `updated_at`, `version` e `deleted_at`; a entrada pública de
+  `packages/models` exporta somente esses helpers, não o fixture;
+- criado `packages/models/reference` com mapeamento camel/snake, coluna nullable,
+  FK e ações explícitas, unique/check constraints, índice de FK, unicidade
+  parcial para registros ativos, versionamento otimista e soft delete;
+- gerada por diff real a migration isolada
+  `20260826225016_conventions_reference.sql`, com checksum Atlas versionado e
+  sem default UUID no banco;
+- adicionado `drizzle.reference.config.ts`, o ambiente Atlas `reference` sem
+  deploy e scripts para exportar, validar e detectar drift no exemplo;
+- adicionados quatro testes automatizados do model e da migration, incluindo
+  UUID v7, `TIMESTAMPTZ(3)`, nulabilidade, nomes e ações de integridade;
+- criados o guia normativo `docs/database/CONVENTIONS.md`, o checklist
+  `docs/database/MIGRATION_CHECKLIST.md` e o `ADR-002`; README, arquitetura
+  atual, qualidade, banco, roadmap, índices e ticket foram sincronizados;
+- `audit_logs`, `alert_events` e `risk_assessments` foram excluídos
+  explicitamente de qualquer soft delete automático; migrations de produção
+  continuam independentes de seed;
+- nenhuma versão de dependência foi atualizada; Drizzle, `tsx` e tipos Node já
+  presentes no lockfile apenas passaram a ser declarados pelo workspace de
+  models.
+
+### Validação
+
+- `pnpm model:reference:export`: DDL gerado com UUID sem default de banco,
+  `TIMESTAMPTZ(3)`, mapeamento snake/camel e objetos nomeados;
+- `pnpm model:reference:validate` e `pnpm model:reference:diff`: checksum válido
+  e diretório sincronizado, sem drift;
+- migration de referência em base temporária criada de `template0`: FK,
+  check de versão e duplicidade ativa foram rejeitados pelos nomes esperados;
+  soft delete permitiu reutilização da chave; update com versão obsoleta afetou
+  zero linhas; sessão permaneceu em UTC e a base foi removida;
+- `pnpm migrate:local`, `atlas migrate validate`, `status` e `diff` em `prod`:
+  versão `20260826000000`, zero pendências e zero drift; as tabelas do fixture
+  não entraram no schema principal;
+- `pnpm test`: 70 testes aprovados em sete workspaces, incluindo os quatro
+  testes novos de models;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm --filter @protege-mais/plugins test:database`: três testes reais
+  aprovados para Drizzle/UTC, PostGIS/SRID/distância e retomada/shutdown;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados;
+  `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso
+  não bloqueante já conhecido do bundle Web maior que 500 kB;
+- `docker compose config --quiet`: configuração válida.
+
+### Decisões e pendências
+
+- o `ADR-002` registra a geração de UUID pela aplicação, precisão temporal,
+  integridade nomeada, optimistic locking, soft delete opt-in, migrations
+  forward-only e isolamento do fixture;
+- `updated_at` é atualizado automaticamente nas operações Drizzle que usam o
+  helper; SQL manual precisa definir `updated_at = now()` explicitamente;
+- retenção, restauração, exceções de concorrência e efeitos de exclusão
+  continuam obrigatoriamente explícitos nos tickets de cada entidade;
+- `PROT-014` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-26 — PROT-012 — Habilitar e validar PostGIS
 
 Status: Concluído

@@ -27,6 +27,9 @@ banco, sessões UTC e o fluxo Atlas reproduzível com migrations estruturais
 independentes de seed.
 O `PROT-012` habilitou PostGIS por migration idempotente, fixou SRID 4326 para
 dados espaciais futuros e adicionou validação real de versão e distância.
+O `PROT-013` congelou as convenções de models e migrations, adicionou helpers
+Drizzle reutilizáveis e uma referência isolada que comprova o fluxo Atlas sem
+introduzir tabelas fictícias no schema de produção.
 
 ## Pré-requisitos
 
@@ -90,8 +93,9 @@ pnpm build
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
 cobrem configuração, erros, i18n, PostgreSQL, Redis, registry de readiness,
 endpoints operacionais, OpenAPI, logging, redaction, correlação, filas e
-shutdown; o build cobre Manager API, Worker, Web e Mobile. Depois de subir as
-dependências locais, as integrações reais são executadas com
+shutdown, além das convenções Drizzle/Atlas; o build cobre Manager API, Worker,
+Web e Mobile. Depois de subir as dependências locais, as integrações reais são
+executadas com
 `pnpm --filter @protege-mais/plugins test:database`,
 `pnpm --filter @protege-mais/plugins test:redis` e
 `pnpm --filter @protege-mais/worker test:redis`. Use `pnpm format` para aplicar a formatação e
@@ -120,7 +124,9 @@ permitidos/proibidos e consultas operacionais estão em
 PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
 de domínio continua vazio: não há tabelas, enums, seeds ou dados de domínio. A
 primeira migration estrutural habilita PostGIS de forma idempotente e pode ser
-aplicada em uma base limpa sem seed.
+aplicada em uma base limpa sem seed. As convenções, exemplos e checklist estão
+em [`docs/database/CONVENTIONS.md`](docs/database/CONVENTIONS.md) e
+[`docs/database/MIGRATION_CHECKLIST.md`](docs/database/MIGRATION_CHECKLIST.md).
 
 ## Documentação e tickets
 
@@ -132,8 +138,8 @@ aplicada em uma base limpa sem seed.
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-013`:
+O próximo ticket liberado é `PROT-014`:
 
 ```text
-Implemente o ticket PROT-013 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-014 seguindo toda a documentação do projeto.
 ```

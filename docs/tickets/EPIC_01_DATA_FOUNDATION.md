@@ -57,11 +57,11 @@ falha com diagnóstico claro.
 
 ### Definir convenções de tabelas e migrations
 
-| Campo        | Valor    |
-| ------------ | -------- |
-| Status       | Pendente |
-| Prioridade   | P0       |
-| Dependências | PROT-011 |
+| Campo        | Valor     |
+| ------------ | --------- |
+| Status       | Concluído |
+| Prioridade   | P0        |
+| Dependências | PROT-011  |
 
 **Objetivo:** congelar convenções antes das tabelas de domínio.
 

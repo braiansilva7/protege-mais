@@ -5,6 +5,14 @@ data "external_schema" "drizzle" {
   ]
 }
 
+data "external_schema" "drizzle_reference" {
+  program = [
+    "./node_modules/.bin/drizzle-kit",
+    "export",
+    "--config=drizzle.reference.config.ts"
+  ]
+}
+
 env "dev" {
   url = getenv("DB_DATABASE_URL")
   dev = getenv("DB_ATLAS")
@@ -28,5 +36,17 @@ env "prod" {
 
   migration {
     dir = "file://atlas/prod"
+  }
+}
+
+env "reference" {
+  dev = getenv("DB_ATLAS")
+
+  schema {
+    src = data.external_schema.drizzle_reference.url
+  }
+
+  migration {
+    dir = "file://packages/models/reference/atlas"
   }
 }

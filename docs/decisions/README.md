@@ -42,3 +42,4 @@ ou registro de implementação.
 ## Decisões existentes
 
 - [ADR-001 — BullMQ sobre Redis para filas do Worker](ADR-001-bullmq-redis-queues.md)
+- [ADR-002 — Convenções de models e migrations](ADR-002-database-conventions.md)

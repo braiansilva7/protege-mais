@@ -30,6 +30,10 @@
       "@protege-mais/use-cases/jobs": ["./packages/useCases/jobs/index.ts"]
     }
   },
-  "include": ["packages/**/*", "drizzle.config.ts"],
+  "include": [
+    "packages/**/*",
+    "drizzle.config.ts",
+    "drizzle.reference.config.ts"
+  ],
   "exclude": ["node_modules", "**/*.test.ts"]
 }

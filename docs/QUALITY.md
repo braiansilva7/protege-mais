@@ -72,14 +72,16 @@ pnpm test
 pnpm --filter @protege-mais/plugins test:database
 pnpm --filter @protege-mais/plugins test:redis
 pnpm --filter @protege-mais/worker test:redis
+pnpm model:reference:validate
+pnpm model:reference:diff
 pnpm format:check
 pnpm build
 ```
 
 `lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `test` executa as
-suítes de configuração, classes comuns, handler Fastify, i18n, PostgreSQL e
-Redis com conexões injetáveis, logging, redaction, correlação, filas,
-processors, casos de uso, readiness, endpoints operacionais, OpenAPI e
+suítes de configuração, classes comuns, models, handler Fastify, i18n,
+PostgreSQL e Redis com conexões injetáveis, logging, redaction, correlação,
+filas, processors, casos de uso, readiness, endpoints operacionais, OpenAPI e
 shutdown. `test:database`, executado após
 `docker compose up -d --wait db atlas-db` e `pnpm migrate:local`, comprova query
 Drizzle, UTC, PostGIS, SRID 4326, distância geodésica, indisponibilidade,
@@ -87,7 +89,8 @@ recuperação e fechamento contra PostgreSQL real. Os dois comandos
 `test:redis`, executados após `docker compose up -d --wait redis`, comprovam o
 cliente genérico e o pipeline real do Worker. A integração do Worker cobre
 retry/backoff reduzido, idempotência após reinício, falha terminal e shutdown
-durante processamento;
+durante processamento. Os comandos `model:reference` validam o checksum Atlas
+e comprovam que o export Drizzle do fixture de convenções permanece sem drift;
 `build` gera os quatro apps. O teste de OpenAPI valida estrutura e referências,
 contrato operacional, exemplos, security e exposição da UI por ambiente. As
 configurações compartilhadas fazem parte das dependências globais do cache do

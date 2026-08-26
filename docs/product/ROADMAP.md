@@ -81,5 +81,7 @@ integrações e garantia de histórico.
 `PROT-011` iniciou a fundação de dados com pool PostgreSQL/Drizzle, readiness,
 shutdown, UTC e Atlas reproduzível sem tabelas ou seeds de domínio. O
 `PROT-012` habilitou e validou PostGIS com SRID 4326 sem antecipar entidades. O
-próximo trabalho de implementação deve começar por `PROT-013`, que congelará
-as convenções de tabelas e migrations antes do primeiro model de referência.
+`PROT-013` congelou as convenções de tabelas e migrations e as comprovou com um
+fixture isolado do schema de produção. O próximo trabalho de implementação deve
+começar por `PROT-014`, que criará os enums fundamentais no banco e no
+TypeScript.

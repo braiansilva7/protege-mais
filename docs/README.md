@@ -40,6 +40,8 @@ testes, decisões e pendências.
 | Runtime e convenções de qualidade        | `docs/QUALITY.md`                                    |
 | Configuração e matriz de variáveis       | `docs/CONFIGURATION.md`                              |
 | PostgreSQL, Drizzle e fluxo Atlas        | `docs/database/README.md`                            |
+| Convenções de models e persistência      | `docs/database/CONVENTIONS.md`                       |
+| Revisão obrigatória de migrations        | `docs/database/MIGRATION_CHECKLIST.md`               |
 | Redis, namespaces e operação local       | `docs/REDIS.md`                                      |
 | Filas, jobs e operação do Worker         | `docs/WORKER_QUEUES.md`                              |
 | Logging seguro e correlação              | `docs/OBSERVABILITY.md`                              |
@@ -49,7 +51,7 @@ testes, decisões e pendências.
 | Tickets e seus estados                   | `docs/tickets/README.md` e arquivos de épico         |
 | Mudanças efetivamente implementadas      | `docs/implementation/CHANGELOG.md`                   |
 | Auditoria de dependências de 2026-08-23  | `docs/implementation/DEPENDENCY_AUDIT_2026-08-23.md` |
-| Decisões com impacto arquitetural        | `docs/decisions/`                                    |
+| Decisões com impacto arquitetural        | `docs/decisions/README.md`                           |
 | Padrão para rotas verticais              | `docs/ROUTE_CREATION_GUIDE.md`                       |
 
 ## Regra contra divergência documental
