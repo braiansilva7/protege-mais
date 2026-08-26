@@ -12,6 +12,8 @@ import {
   registerLogging,
   registerMultipart,
   registerReadiness,
+  registerRedis,
+  type RedisConnection,
 } from '@protege-mais/plugins';
 import {
   createRequestLogger,
@@ -25,6 +27,7 @@ import routes, { apiV1Prefix } from './routes/index.js';
 
 export interface BuildServerOptions {
   readonly logDestination?: LogDestination;
+  readonly redisConnection?: RedisConnection;
 }
 
 export async function buildServer(
@@ -52,6 +55,11 @@ export async function buildServer(
   await app.register(registerLogging);
   await app.register(registerErrorHandler);
   await app.register(registerReadiness);
+  await app.register(registerRedis, {
+    redisUrl: configuration.redisUrl,
+    environment: configuration.appEnvironment,
+    connection: options.redisConnection,
+  });
   await app.register(registerDatabase, {
     databaseUrl: configuration.databaseUrl,
   });

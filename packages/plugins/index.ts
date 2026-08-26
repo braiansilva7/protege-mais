@@ -41,3 +41,18 @@ export {
   registerReadiness,
   type ReadinessProbe,
 } from './readiness/index.js';
+export {
+  createRedisConnection,
+  redisCommandsQueueMaximumLength,
+  redisCommandTimeoutMs,
+  redisConnectTimeoutMs,
+  redisKeyNamespace,
+  redisMaximumReconnectDelayMs,
+  redisReconnectDelay,
+  registerRedis,
+  type RedisCommands,
+  type RedisConnection,
+  type RedisConnectionOptions,
+  type RedisLogger,
+  type RedisPluginOptions,
+} from './redis/index.js';

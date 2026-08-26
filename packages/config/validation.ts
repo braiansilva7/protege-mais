@@ -22,11 +22,13 @@ export interface ManagerApiEnvironment {
   readonly port: number;
   readonly corsOrigins: readonly string[];
   readonly databaseUrl: string;
+  readonly redisUrl: string;
   readonly logLevel: LogLevel;
 }
 
 export interface WorkerEnvironment {
   readonly appEnvironment: AppEnvironment;
+  readonly redisUrl: string;
   readonly logLevel: LogLevel;
 }
 
@@ -211,16 +213,6 @@ function parsedUrl(
   return parsed;
 }
 
-function serviceUrl(
-  source: EnvironmentSource,
-  key: string,
-  protocols: readonly string[]
-): string {
-  const value = required(source, key);
-  parsedUrl(value, key, protocols);
-  return value;
-}
-
 function isUnsafeProductionSecret(value: string): boolean {
   const normalized = value.toLowerCase();
   return (
@@ -229,6 +221,14 @@ function isUnsafeProductionSecret(value: string): boolean {
     normalized.includes('troque-por') ||
     /^(?:<.*>|\[.*\])$/.test(normalized)
   );
+}
+
+function urlPassword(parsed: URL, key: string): string {
+  try {
+    return decodeURIComponent(parsed.password);
+  } catch {
+    throw new ConfigurationError(key, 'INVALID');
+  }
 }
 
 function databaseUrl(
@@ -243,10 +243,36 @@ function databaseUrl(
   if (
     environment === 'PROD' &&
     parsed.password &&
-    isUnsafeProductionSecret(parsed.password)
+    isUnsafeProductionSecret(urlPassword(parsed, 'DATABASE_URL'))
   ) {
     throw new ConfigurationError('DATABASE_URL', 'INSECURE');
   }
+  return value;
+}
+
+function redisUrl(
+  source: EnvironmentSource,
+  environment: AppEnvironment
+): string {
+  const value = required(source, 'REDIS_URL');
+  const parsed = parsedUrl(value, 'REDIS_URL', ['redis:', 'rediss:']);
+
+  if (
+    (parsed.pathname !== '' && !/^\/(?:\d+)?$/u.test(parsed.pathname)) ||
+    parsed.search.length > 0 ||
+    parsed.hash.length > 0
+  ) {
+    throw new ConfigurationError('REDIS_URL', 'INVALID');
+  }
+
+  if (
+    environment === 'PROD' &&
+    parsed.password &&
+    isUnsafeProductionSecret(urlPassword(parsed, 'REDIS_URL'))
+  ) {
+    throw new ConfigurationError('REDIS_URL', 'INSECURE');
+  }
+
   return value;
 }
 
@@ -352,6 +378,7 @@ export function createManagerApiEnvironment(
     ),
     corsOrigins: origins(source, 'CORS_ORIGIN'),
     databaseUrl: databaseUrl(source, environment),
+    redisUrl: redisUrl(source, environment),
     logLevel: logLevel(source, environment),
   };
   return freeze(result);
@@ -363,6 +390,7 @@ export function createWorkerEnvironment(
   const environment = appEnvironment(source);
   return freeze({
     appEnvironment: environment,
+    redisUrl: redisUrl(source, environment),
     logLevel: logLevel(source, environment),
   });
 }
@@ -398,9 +426,10 @@ export function createDatabaseEnvironment(
 export function createRedisEnvironment(
   source: EnvironmentSource
 ): RedisEnvironment {
+  const environment = appEnvironment(source);
   return freeze({
-    appEnvironment: appEnvironment(source),
-    redisUrl: serviceUrl(source, 'REDIS_URL', ['redis:', 'rediss:']),
+    appEnvironment: environment,
+    redisUrl: redisUrl(source, environment),
   });
 }
 

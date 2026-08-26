@@ -32,6 +32,7 @@ normalizada em maiúsculas.
 | `API_PORT`                    | Default fora de PROD | —                    | —           | —           | Inteiro entre 1 e 65535                  |
 | `CORS_ORIGIN`                 | Obrigatória          | —                    | —           | —           | Uma ou mais origens HTTP(S), por vírgula |
 | `DATABASE_URL`                | Obrigatória          | —                    | —           | —           | URL `postgres://` ou `postgresql://`     |
+| `REDIS_URL`                   | Obrigatória          | Obrigatória          | —           | —           | URL `redis://` ou `rediss://`            |
 | `VITE_APP_ENVIRONMENT`        | —                    | —                    | Obrigatória | —           | Ambiente público do Web                  |
 | `VITE_API_URL`                | —                    | —                    | Obrigatória | —           | URL HTTP(S) pública da API               |
 | `EXPO_PUBLIC_APP_ENVIRONMENT` | —                    | —                    | —           | Obrigatória | Ambiente público do Mobile               |
@@ -50,15 +51,15 @@ origem CORS, banco, URLs públicas ou qualquer segredo.
 
 ## Configurações de capacidades
 
-As integrações abaixo ainda pertencem aos tickets indicados no roadmap, mas
-seus contratos de configuração já estão centralizados. Cada validador também
-exige `APP_ENVIRONMENT`. Uma capacidade só torna suas chaves obrigatórias quando
-o app passa a carregá-la.
+As configurações de capacidades ficam centralizadas mesmo antes de todos os
+consumidores existirem. Cada validador também exige `APP_ENVIRONMENT`. Redis é
+carregado pela Manager API e pelo Worker desde o `PROT-009`; as demais
+capacidades só tornam suas chaves obrigatórias quando o app passa a carregá-las.
 
 | Capacidade   | Variáveis obrigatórias                                                             | Validação                                                           |
 | ------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Banco        | `DATABASE_URL`                                                                     | Protocolos PostgreSQL                                               |
-| Redis        | `REDIS_URL`                                                                        | `redis://` ou `rediss://`                                           |
+| Redis        | `REDIS_URL`                                                                        | `redis://` ou `rediss://`, database numérico e sem query/fragment   |
 | JWT          | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`                                          | Não vazias, sem espaços externos e diferentes entre si              |
 | Criptografia | `ENCRYPTION_KEY`                                                                   | Não vazia e sem espaços externos                                    |
 | S3           | `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`          | Endpoint HTTP(S), bucket compatível com S3 e credenciais não vazias |
@@ -72,9 +73,10 @@ aceita somente `true` ou `false`. O contrato dos logs está em
 
 Em produção, marcadores conhecidos de exemplo, como `change-me`, `admin` e os
 valores `change-before-production` do `.env.example`, são rejeitados quando
-usados em campos secretos ou na credencial da URL do banco. Parâmetros e
-algoritmos criptográficos continuam fora do escopo deste ticket e serão
-definidos pelos tickets de segurança.
+usados em campos secretos ou na credencial das URLs de banco e Redis.
+Parâmetros e algoritmos criptográficos continuam fora do escopo deste ticket e
+serão definidos pelos tickets de segurança. Timeouts, namespace e operação do
+Redis estão em [`REDIS.md`](REDIS.md).
 
 ## Variáveis exclusivas de infraestrutura
 
@@ -88,7 +90,8 @@ apps.
 1. Copie `.env.example` para `.env`.
 2. Substitua os marcadores locais conforme o ambiente. Em dispositivo físico,
    ajuste `EXPO_PUBLIC_API_URL` para um endereço alcançável pelo aparelho.
-3. Inicie o app desejado pelos scripts da raiz.
+3. Inicie o Redis com `docker compose up -d --wait redis`.
+4. Inicie o app desejado pelos scripts da raiz.
 
 O `.env` não é versionado. Variáveis fornecidas diretamente pelo processo têm
 prioridade sobre o arquivo, o que permite injeção segura por container ou

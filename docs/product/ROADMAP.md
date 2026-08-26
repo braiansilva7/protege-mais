@@ -76,7 +76,7 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-`PROT-008` implantou logging JSON na Manager API e no Worker, com IDs validados,
-propagação de correlação, rota normalizada e redaction defensiva. O próximo
-trabalho de implementação deve começar por `PROT-009`, que configurará Redis,
-readiness e namespaces por ambiente.
+`PROT-009` configurou Redis compartilhado na Manager API e no Worker, com
+readiness, namespaces por ambiente, expiração, reconexão e fechamento gracioso.
+O próximo trabalho de implementação deve começar por `PROT-010`, que criará a
+infraestrutura de filas e processors do Worker sem antecipar regras de domínio.

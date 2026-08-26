@@ -21,7 +21,7 @@
     "typecheck": "turbo run typecheck",
     "format": "prettier --write . --ignore-path .prettierignore",
     "format:check": "prettier --check . --ignore-path .prettierignore",
-    "db:up": "docker compose up --build -d db atlas-db minio minio-setup atlas",
+    "db:up": "docker compose up --build -d db redis atlas-db minio minio-setup atlas",
     "atlas:run": "atlas migrate hash --env ${ENV} --var DB_ATLAS=${DB_ATLAS} && atlas migrate apply --env ${ENV} --var DB_ATLAS=${DB_ATLAS} --url \"${DB_DATABASE_URL}\"",
     "atlas:run:docker": "docker compose run --rm -T -e ENV -e DB_ATLAS -e DB_DATABASE_URL atlas sh -c 'atlas migrate hash --env ${ENV} --var DB_ATLAS=${DB_ATLAS} && atlas migrate apply --env ${ENV} --var DB_ATLAS=${DB_ATLAS} --url \"${DB_DATABASE_URL}\"'",
     "atlas:run:auto": "if command -v atlas >/dev/null 2>&1; then pnpm run atlas:run; else echo 'Atlas CLI nao encontrado. Usando Docker (atlas).' && pnpm run atlas:run:docker; fi",

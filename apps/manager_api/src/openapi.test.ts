@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { ManagerApiEnvironment } from '@protege-mais/config';
+import type { RedisConnection } from '@protege-mais/plugins';
 import {
   apiTags,
   bearerAuthSecurity,
@@ -16,8 +17,34 @@ const baseConfiguration: ManagerApiEnvironment = Object.freeze({
   port: 3000,
   corsOrigins: Object.freeze(['http://localhost:5173']),
   databaseUrl: 'postgresql://test:test@127.0.0.1:5432/protege_mais_test',
+  redisUrl: 'redis://127.0.0.1:6379/0',
   logLevel: 'silent',
 });
+
+function createReadyRedisConnection(): RedisConnection {
+  return {
+    namespace: 'protege-mais:local:',
+    commands: {
+      get: () => Promise.resolve(null),
+      set: () => Promise.resolve(),
+      setWithExpiration: () => Promise.resolve(),
+      delete: () => Promise.resolve(0),
+      expire: () => Promise.resolve(false),
+    },
+    connect: () => Promise.resolve(),
+    start: () => undefined,
+    isReady: () => Promise.resolve(true),
+    close: () => Promise.resolve(),
+  };
+}
+
+function buildOpenApiServer(
+  configuration: ManagerApiEnvironment = baseConfiguration
+) {
+  return buildServer(configuration, {
+    redisConnection: createReadyRedisConnection(),
+  });
+}
 
 const httpMethods = [
   'delete',
@@ -200,7 +227,7 @@ function collectExamples(value: unknown, examples: unknown[]): void {
 }
 
 void test('gera OpenAPI 3.1 estruturalmente válido e preserva o contrato operacional', async () => {
-  const app = await buildServer(baseConfiguration);
+  const app = await buildOpenApiServer();
 
   try {
     await app.ready();
@@ -274,7 +301,7 @@ void test('gera OpenAPI 3.1 estruturalmente válido e preserva o contrato operac
 });
 
 void test('documenta o esquema de segurança nas operações protegidas', async () => {
-  const app = await buildServer(baseConfiguration);
+  const app = await buildOpenApiServer();
 
   app.get('/api/v1/protected-contract-test', {
     schema: {
@@ -313,7 +340,7 @@ void test('documenta o esquema de segurança nas operações protegidas', async 
 });
 
 void test('impede o registro de rota sem contrato HTTP completo', async () => {
-  const app = await buildServer(baseConfiguration);
+  const app = await buildOpenApiServer();
 
   try {
     assert.throws(
@@ -340,8 +367,8 @@ void test('impede o registro de rota sem contrato HTTP completo', async () => {
 });
 
 void test('expõe Swagger em ambientes internos e o bloqueia em produção', async () => {
-  const localApp = await buildServer(baseConfiguration);
-  const productionApp = await buildServer({
+  const localApp = await buildOpenApiServer();
+  const productionApp = await buildOpenApiServer({
     ...baseConfiguration,
     appEnvironment: 'PROD',
   });

@@ -3,12 +3,34 @@ import { Writable } from 'node:stream';
 import { test } from 'node:test';
 import type { WorkerEnvironment } from '@protege-mais/config';
 import { createStructuredLogger } from '@protege-mais/plugins/logging';
+import type { RedisConnection } from '@protege-mais/plugins/redis';
 import { createWorkerJobLogger, runWorkerShell } from './app.js';
 
 const configuration: WorkerEnvironment = Object.freeze({
   appEnvironment: 'LOCAL',
+  redisUrl: 'redis://127.0.0.1:6379/0',
   logLevel: 'info',
 });
+
+function createTestRedisConnection(onClose = () => undefined): RedisConnection {
+  return {
+    namespace: 'protege-mais:local:',
+    commands: {
+      get: () => Promise.resolve(null),
+      set: () => Promise.resolve(),
+      setWithExpiration: () => Promise.resolve(),
+      delete: () => Promise.resolve(0),
+      expire: () => Promise.resolve(false),
+    },
+    connect: () => Promise.resolve(),
+    start: () => undefined,
+    isReady: () => Promise.resolve(true),
+    close: () => {
+      onClose();
+      return Promise.resolve();
+    },
+  };
+}
 
 function captureLogger() {
   const chunks: string[] = [];
@@ -30,9 +52,13 @@ function captureLogger() {
 
 void test('worker registra ciclo de vida em JSON', async () => {
   const capture = captureLogger();
+  let redisCloses = 0;
 
   await runWorkerShell(configuration, {
     logger: capture.logger,
+    redisConnection: createTestRedisConnection(() => {
+      redisCloses += 1;
+    }),
     waitForSignal: () => Promise.resolve<NodeJS.Signals>('SIGTERM'),
   });
   capture.logger.flush();
@@ -52,6 +78,7 @@ void test('worker registra ciclo de vida em JSON', async () => {
     records.every((record) => record.service === 'worker-test'),
     true
   );
+  assert.equal(redisCloses, 1);
 });
 
 void test('worker cria novo requestId e preserva correlationId do job', () => {

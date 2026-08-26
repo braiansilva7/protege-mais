@@ -47,11 +47,13 @@ sem expor nome do probe, causa ou diagnóstico:
 }
 ```
 
-Neste incremento não há probe obrigatório registrado, portanto uma instância
-inicializada responde pronta. O Redis registrará seu probe em `PROT-009`; o
-PostgreSQL passará a integrar readiness quando sua fundação for consolidada em
-`PROT-011`. O mecanismo não define timeout: cada integração deve executar um
-check curto e limitado pelo timeout apropriado ao respectivo cliente.
+O Redis registra um probe obrigatório chamado `redis`. Uma instância responde
+pronta somente depois que a conexão estiver operacional e um `PING` limitado a
+1 segundo retornar `PONG`; uma queda posterior produz 503 e a reconexão torna o
+probe pronto novamente. O PostgreSQL passará a integrar readiness quando sua
+fundação for consolidada em `PROT-011`. O registry não define timeout global:
+cada integração executa um check curto e limitado pelo respectivo cliente. A
+operação do Redis está em [`../REDIS.md`](../REDIS.md).
 
 Ao receber `SIGINT` ou `SIGTERM`, a API marca readiness como indisponível antes
 de chamar o fechamento do Fastify. O encerramento é idempotente, para de aceitar

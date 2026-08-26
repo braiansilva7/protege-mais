@@ -39,12 +39,16 @@ const managerSource: EnvironmentSource = {
   API_PORT: '3000',
   CORS_ORIGIN: 'http://localhost:5173,http://localhost:5173/',
   DATABASE_URL: 'postgresql://user:password@localhost:5432/protege_mais',
+  REDIS_URL: 'redis://localhost:6379/0',
   LOG_LEVEL: 'debug',
 };
 
 void test('cria configurações mínimas, tipadas e imutáveis para cada app', () => {
   const manager = createManagerApiEnvironment(managerSource);
-  const worker = createWorkerEnvironment({ APP_ENVIRONMENT: 'DEV' });
+  const worker = createWorkerEnvironment({
+    APP_ENVIRONMENT: 'DEV',
+    REDIS_URL: 'redis://localhost:6379/0',
+  });
   const web = createWebEnvironment({
     VITE_APP_ENVIRONMENT: 'HMG',
     VITE_API_URL: 'https://api.hmg.example.test/api/v1',
@@ -60,9 +64,14 @@ void test('cria configurações mínimas, tipadas e imutáveis para cada app', (
     port: 3000,
     corsOrigins: ['http://localhost:5173'],
     databaseUrl: managerSource.DATABASE_URL,
+    redisUrl: managerSource.REDIS_URL,
     logLevel: 'debug',
   });
-  assert.deepEqual(worker, { appEnvironment: 'DEV', logLevel: 'info' });
+  assert.deepEqual(worker, {
+    appEnvironment: 'DEV',
+    redisUrl: 'redis://localhost:6379/0',
+    logLevel: 'info',
+  });
   assert.equal(web.appEnvironment, 'HMG');
   assert.equal(mobile.appEnvironment, 'PROD');
   assert.ok(Object.isFrozen(manager));
@@ -138,7 +147,11 @@ void test('rejeita ambiente, host, porta, origem, URL e log level inválidos', (
 
 void test('produção exige valores explícitos para defaults operacionais', () => {
   expectConfigurationError(
-    () => createWorkerEnvironment({ APP_ENVIRONMENT: 'PROD' }),
+    () =>
+      createWorkerEnvironment({
+        APP_ENVIRONMENT: 'PROD',
+        REDIS_URL: 'redis://redis.example.test:6379/0',
+      }),
     'LOG_LEVEL',
     'MISSING'
   );
@@ -189,6 +202,59 @@ void test('valida configurações isoladas de banco e Redis', () => {
       }),
     'REDIS_URL',
     'INVALID'
+  );
+
+  for (const invalidUrl of [
+    'redis://redis.example.test/cache',
+    'redis://redis.example.test/0?secret=value',
+    'redis://redis.example.test/0#fragment',
+  ]) {
+    expectConfigurationError(
+      () =>
+        createRedisEnvironment({
+          APP_ENVIRONMENT: 'DEV',
+          REDIS_URL: invalidUrl,
+        }),
+      'REDIS_URL',
+      'INVALID',
+      invalidUrl
+    );
+  }
+});
+
+void test('apps exigem Redis e produção rejeita credencial de exemplo', () => {
+  expectConfigurationError(
+    () =>
+      createManagerApiEnvironment({
+        ...managerSource,
+        REDIS_URL: undefined,
+      }),
+    'REDIS_URL',
+    'MISSING'
+  );
+
+  const placeholder = 'local-redis-change-before-production';
+  expectConfigurationError(
+    () =>
+      createWorkerEnvironment({
+        APP_ENVIRONMENT: 'PROD',
+        LOG_LEVEL: 'info',
+        REDIS_URL: `rediss://default:${placeholder}@redis.example.test:6379/0`,
+      }),
+    'REDIS_URL',
+    'INSECURE',
+    placeholder
+  );
+
+  expectConfigurationError(
+    () =>
+      createRedisEnvironment({
+        APP_ENVIRONMENT: 'PROD',
+        REDIS_URL:
+          'rediss://default:change%2Dbefore%2Dproduction@redis.example.test/0',
+      }),
+    'REDIS_URL',
+    'INSECURE'
   );
 });
 

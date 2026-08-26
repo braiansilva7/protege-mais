@@ -42,9 +42,14 @@ Toda resposta devolve os dois cabeçalhos. Sem correlação externa válida,
 Um produtor de job deve publicar somente o resultado de
 `correlationMetadata(request)`, nunca headers, body ou o logger inteiro. O
 consumer usa `createWorkerJobLogger`: ele preserva o `correlationId`, cria um
-novo `requestId` para a tentativa e devolve um child logger com ambos. Redis e
-filas ainda não existem; esta é a fronteira obrigatória para os tickets que os
-adicionarem.
+novo `requestId` para a tentativa e devolve um child logger com ambos. Redis já
+está disponível, mas filas e publicação de jobs pertencem ao `PROT-010`; esta é
+a fronteira obrigatória quando forem adicionadas.
+
+Conexões Redis usam somente `redis.connection.ready`,
+`redis.connection.reconnecting`, `redis.connection.error` e
+`redis.connection.closed`. Esses eventos não incluem URL, host, porta, database,
+chave, valor ou mensagem original do cliente.
 
 ## Allowlist
 

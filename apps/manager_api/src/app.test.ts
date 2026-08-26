@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { test } from 'node:test';
 import type { ManagerApiEnvironment } from '@protege-mais/config';
+import type { RedisConnection } from '@protege-mais/plugins';
 import type { ErrorResponse } from '@protege-mais/schema';
 import { buildServer } from './app.js';
 import { registerShutdownSignals } from './lifecycle.js';
@@ -12,11 +13,47 @@ const testConfiguration: ManagerApiEnvironment = Object.freeze({
   port: 3000,
   corsOrigins: Object.freeze(['http://localhost:5173']),
   databaseUrl: 'postgresql://test:test@127.0.0.1:5432/protege_mais_test',
+  redisUrl: 'redis://127.0.0.1:6379/0',
   logLevel: 'silent',
 });
 
+function createTestRedisConnection(
+  isAvailable: () => boolean = () => true,
+  onClose: () => void = () => undefined
+): RedisConnection {
+  const values = new Map<string, string>();
+
+  return {
+    namespace: 'protege-mais:local:',
+    commands: {
+      get: (key) => Promise.resolve(values.get(key) ?? null),
+      set: (key, value) => {
+        values.set(key, value);
+        return Promise.resolve();
+      },
+      setWithExpiration: (key, value) => {
+        values.set(key, value);
+        return Promise.resolve();
+      },
+      delete: (key) => Promise.resolve(values.delete(key) ? 1 : 0),
+      expire: (key) => Promise.resolve(values.has(key)),
+    },
+    connect: () => Promise.resolve(),
+    start: () => undefined,
+    isReady: () => Promise.resolve(isAvailable()),
+    close: () => {
+      onClose();
+      return Promise.resolve();
+    },
+  };
+}
+
+function buildTestServer(redisConnection = createTestRedisConnection()) {
+  return buildServer(testConfiguration, { redisConnection });
+}
+
 void test('separa liveness e readiness fora do prefixo de negócio', async () => {
-  const app = await buildServer(testConfiguration);
+  const app = await buildTestServer();
 
   try {
     const health = await app.inject({ method: 'GET', url: '/health' });
@@ -38,7 +75,7 @@ void test('separa liveness e readiness fora do prefixo de negócio', async () =>
 });
 
 void test('responde 503 sanitizado enquanto probe obrigatório está indisponível', async () => {
-  const app = await buildServer(testConfiguration);
+  const app = await buildTestServer();
   const internalDiagnostic = 'database-secret-diagnostic-prot-006';
   let available = false;
 
@@ -80,8 +117,32 @@ void test('responde 503 sanitizado enquanto probe obrigatório está indisponív
   }
 });
 
+void test('identifica Redis indisponível separadamente e reconhece retomada', async () => {
+  let redisAvailable = false;
+  const app = await buildTestServer(
+    createTestRedisConnection(() => redisAvailable)
+  );
+
+  try {
+    const unavailable = await app.inject({ method: 'GET', url: '/ready' });
+
+    assert.equal(unavailable.statusCode, 503);
+    assert.equal(unavailable.json<ErrorResponse>().code, 'SERVICE_NOT_READY');
+    assert.deepEqual(await app.redisConnection.isReady(), false);
+
+    redisAvailable = true;
+    const recovered = await app.inject({ method: 'GET', url: '/ready' });
+
+    assert.equal(recovered.statusCode, 200);
+    assert.deepEqual(recovered.json(), { status: 'ok' });
+    assert.deepEqual(await app.redisConnection.isReady(), true);
+  } finally {
+    await app.close();
+  }
+});
+
 void test('aceita, gera e devolve IDs de correlação seguros', async () => {
-  const app = await buildServer(testConfiguration);
+  const app = await buildTestServer();
 
   try {
     const accepted = await app.inject({
@@ -117,7 +178,15 @@ void test('aceita, gera e devolve IDs de correlação seguros', async () => {
 });
 
 void test('SIGTERM encerra o listener, o pool e o estado de readiness uma vez', async () => {
-  const app = await buildServer(testConfiguration);
+  let redisCloses = 0;
+  const app = await buildTestServer(
+    createTestRedisConnection(
+      () => true,
+      () => {
+        redisCloses += 1;
+      }
+    )
+  );
   const signalSource = new EventEmitter();
   let closeHooks = 0;
   let shutdownError: unknown;
@@ -152,6 +221,7 @@ void test('SIGTERM encerra o listener, o pool e o estado de readiness uma vez', 
     assert.equal(shutdownError, undefined);
     assert.equal(app.server.listening, false);
     assert.equal(app.dbPool.ended, true);
+    assert.equal(redisCloses, 1);
     assert.equal(closeHooks, 1);
     assert.equal(signalSource.listenerCount('SIGINT'), 0);
     assert.equal(signalSource.listenerCount('SIGTERM'), 0);

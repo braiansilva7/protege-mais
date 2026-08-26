@@ -2,14 +2,15 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-008`. A arquitetura
+Este documento registra somente o que existe após o `PROT-009`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
 O monorepo possui quatro apps executáveis e dez packages compartilhados. Ainda
 não existem domínio de negócio, autenticação, autorização, tabelas, migrations,
-seeds, Redis ou filas. Os contratos de configuração dessas capacidades já são
-validados de forma isolada. A API possui contrato global de erros,
+seeds ou filas. Redis já é uma dependência compartilhada com namespace por
+ambiente, reconexão, timeouts e encerramento gracioso. A API possui contrato
+global de erros,
 internacionalização em `pt-BR`, `en` e `es`, liveness, readiness extensível,
 encerramento gracioso e logs JSON correlacionados. Seus contratos HTTP geram
 OpenAPI 3.1 e a exposição do Swagger segue uma política por ambiente, sem ativar
@@ -30,7 +31,7 @@ protege-mais/
 │   │       ├── app.ts         # Composição testável do Fastify
 │   │       ├── lifecycle.ts   # Readiness e shutdown por sinais
 │   │       └── server.ts      # Entrada do processo
-│   ├── worker/               # Processo ocioso com logs JSON seguros
+│   ├── worker/               # Shell conectado ao Redis, ainda sem filas
 │   │   └── src/
 │   │       ├── app.ts         # Shell e contexto correlacionado de jobs
 │   │       ├── lifecycle.ts   # Espera e remoção de sinais
@@ -46,7 +47,7 @@ protege-mais/
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
 │   ├── models/               # Schema Drizzle, atualmente vazio
-│   ├── plugins/              # Logging, erros, readiness e plugins Fastify
+│   ├── plugins/              # Logging, erros, readiness, Redis e plugins Fastify
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
 │   ├── services/             # Capacidades reutilizáveis futuras
@@ -125,44 +126,47 @@ Dependências, builds e caches são ignorados pelo lint e formatter. O lockfile
 `packages/config` é a única fronteira que acessa `process.env`. O package
 carrega o `.env` da raiz, preserva valores injetados pelo processo e expõe
 objetos congelados para Manager API, Worker, Web e Mobile. Banco, Redis, JWT,
-criptografia, S3 e SMTP possuem validadores separados; somente o banco é exigido
-pela API neste estágio. A matriz está em `docs/CONFIGURATION.md`.
+criptografia, S3 e SMTP possuem validadores separados. Banco é exigido pela API;
+Redis é exigido pela API e pelo Worker. A matriz está em
+`docs/CONFIGURATION.md`.
 
 ## Responsabilidade dos apps
 
-| App           | Responsabilidade atual                                | Não faz neste baseline              |
-| ------------- | ----------------------------------------------------- | ----------------------------------- |
-| `manager_api` | Config, logs, probes, OpenAPI, erros e `/api/v1`      | Regra de negócio, auth ou permissão |
-| `web`         | Valida config pública e serve o shell                 | Chamada de API ou fluxo funcional   |
-| `mobile`      | Valida config pública e inicia o shell Expo           | Storage, API ou fluxo de proteção   |
-| `worker`      | Valida config, registra ciclo de vida e aguarda sinal | Redis, filas, processors ou jobs    |
+| App           | Responsabilidade atual                                  | Não faz neste baseline              |
+| ------------- | ------------------------------------------------------- | ----------------------------------- |
+| `manager_api` | Config, Redis, logs, probes, OpenAPI, erros e `/api/v1` | Regra de negócio, auth ou permissão |
+| `web`         | Valida config pública e serve o shell                   | Chamada de API ou fluxo funcional   |
+| `mobile`      | Valida config pública e inicia o shell Expo             | Storage, API ou fluxo de proteção   |
+| `worker`      | Config, Redis, logs e espera graciosa por sinal         | Filas, processors ou jobs           |
 
 O worker usa um timer referenciado de longa duração apenas para manter o event
-loop ativo, sem polling ou busy loop. `SIGINT` e `SIGTERM` cancelam a espera e
-encerram o shell. Redis e processamento assíncrono serão implementados por
-`PROT-009` e `PROT-010`.
+loop ativo, sem polling ou busy loop. Ele inicia a conexão Redis compartilhada;
+`SIGINT` e `SIGTERM` cancelam a espera, fecham a conexão e encerram o shell.
+Filas e processamento assíncrono serão implementados pelo `PROT-010`.
 
 ## API
 
-O bootstrap valida ambiente, host, porta, log, CORS e banco antes de criar o
-Fastify. Depois registra, nesta ordem:
+O bootstrap valida ambiente, host, porta, log, CORS, banco e Redis antes de
+criar o Fastify. Depois registra, nesta ordem:
 
 1. logging seguro e headers de correlação;
 2. handler global de erros e de rota inexistente;
 3. registry de readiness;
-4. pool PostgreSQL/Drizzle;
-5. parser multipart;
-6. CORS;
-7. i18n;
-8. Swagger;
-9. `GET /health` e `GET /ready`;
-10. agregador vazio sob `/api/v1`.
+4. cliente Redis e seu probe;
+5. pool PostgreSQL/Drizzle;
+6. parser multipart;
+7. CORS;
+8. i18n;
+9. Swagger;
+10. `GET /health` e `GET /ready`;
+11. agregador vazio sob `/api/v1`.
 
 `GET /health` verifica somente liveness e não consulta dependências.
 `GET /ready` executa todos os probes obrigatórios registrados e responde 503
-com `SERVICE_NOT_READY` quando um deles retorna falso ou falha. Ainda não há
-probe concreto no baseline: Redis e PostgreSQL serão registrados em `PROT-009`
-e `PROT-011`. Os detalhes internos dos probes não entram na resposta.
+com `SERVICE_NOT_READY` quando um deles retorna falso ou falha. O probe Redis
+exige conexão pronta e `PING` dentro do timeout; indisponibilidade e retomada são
+refletidas sem reiniciar a API. PostgreSQL será registrado no `PROT-011`. Os
+detalhes internos dos probes não entram na resposta.
 
 O processo trata `SIGINT` e `SIGTERM` por uma rotina idempotente. Ela bloqueia
 readiness antes de fechar o Fastify, que para de aceitar conexões e executa os
@@ -219,6 +223,18 @@ falha de getter, ciclo ou serialização recebe marcador e não interrompe o flu
 da aplicação. A allowlist, denylist e as consultas operacionais estão em
 `docs/OBSERVABILITY.md`.
 
+## Redis
+
+`packages/plugins/redis` encapsula o cliente oficial, aplica automaticamente
+`protege-mais:<ambiente>:` a todas as chaves expostas, limita conexão e comandos,
+desabilita offline queue e agenda reconexão com backoff e jitter. A API e o
+Worker usam a mesma fábrica e fecham a conexão em seus ciclos de vida.
+
+O Compose fornece Redis local com AOF, healthcheck e volume próprio. A
+capacidade oferece comandos mínimos de `get`, `set`, expiração e exclusão; não
+cria filas, locks de domínio ou caches antes dos tickets consumidores. Usos
+permitidos e operação estão em `docs/REDIS.md`.
+
 ## Web e Mobile
 
 O Web contém uma página estática traduzida informando que a fundação está em
@@ -234,26 +250,28 @@ continua preservada como capacidade genérica, mas sua consolidação pertence a
 
 ## Comandos do monorepo
 
-| Comando                             | Resultado                                         |
-| ----------------------------------- | ------------------------------------------------- |
-| `pnpm dev`                          | Inicia os quatro apps pelo Turbo                  |
-| `pnpm dev:manager_api`              | Inicia somente a API                              |
-| `pnpm dev:web`                      | Inicia somente o Web                              |
-| `pnpm dev:mobile`                   | Inicia somente o Mobile                           |
-| `pnpm dev:worker`                   | Inicia somente o worker ocioso                    |
-| `pnpm lint`                         | Valida os quatro apps e os dez packages           |
-| `pnpm typecheck`                    | Valida os quatro apps e os dez packages           |
-| `pnpm test`                         | Testa config, erros, i18n, logs, probes e OpenAPI |
-| `pnpm format:check`                 | Confere a formatação do repositório               |
-| `pnpm -r --if-present format:check` | Confere a formatação por workspace                |
-| `pnpm build`                        | Gera os quatro builds a partir da raiz            |
-| `pnpm -r list --depth -1`           | Lista raiz, quatro apps e dez packages            |
+| Comando                                          | Resultado                                                |
+| ------------------------------------------------ | -------------------------------------------------------- |
+| `pnpm dev`                                       | Inicia os quatro apps pelo Turbo                         |
+| `pnpm dev:manager_api`                           | Inicia somente a API                                     |
+| `pnpm dev:web`                                   | Inicia somente o Web                                     |
+| `pnpm dev:mobile`                                | Inicia somente o Mobile                                  |
+| `pnpm dev:worker`                                | Inicia somente o worker ocioso                           |
+| `pnpm lint`                                      | Valida os quatro apps e os dez packages                  |
+| `pnpm typecheck`                                 | Valida os quatro apps e os dez packages                  |
+| `pnpm test`                                      | Testa config, Redis, erros, i18n, logs, probes e OpenAPI |
+| `pnpm --filter @protege-mais/plugins test:redis` | Integra Redis real, TTL e reconexão                      |
+| `pnpm format:check`                              | Confere a formatação do repositório                      |
+| `pnpm -r --if-present format:check`              | Confere a formatação por workspace                       |
+| `pnpm build`                                     | Gera os quatro builds a partir da raiz                   |
+| `pnpm -r list --depth -1`                        | Lista raiz, quatro apps e dez packages                   |
 
 ## Inventário e recuperação
 
 A classificação do legado removido permanece em
 `docs/implementation/PROT-000_LEGACY_INVENTORY.md`. Os arquivos removidos são
-recuperáveis pelo histórico Git; o `PROT-008` não criou nem alterou dados.
+recuperáveis pelo histórico Git; o `PROT-009` não criou tabelas, migrations ou
+dados de domínio. O volume Redis local contém somente dados técnicos efêmeros.
 
 ---
 

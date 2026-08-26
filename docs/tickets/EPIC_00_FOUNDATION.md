@@ -263,7 +263,7 @@ redaction com token, CPF, endereço, relato e coordenadas.
 
 | Campo        | Valor              |
 | ------------ | ------------------ |
-| Status       | Pendente           |
+| Status       | Concluído          |
 | Tipo         | Technical Story    |
 | Prioridade   | P0                 |
 | Dependências | PROT-003, PROT-006 |

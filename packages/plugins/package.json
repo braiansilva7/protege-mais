@@ -6,13 +6,15 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test error-handler/error-handler.test.ts i18next/i18next.test.ts logging/logging.test.ts readiness/readiness.test.ts",
+    "test": "tsx --test error-handler/error-handler.test.ts i18next/i18next.test.ts logging/logging.test.ts readiness/readiness.test.ts redis/redis.test.ts",
+    "test:redis": "APP_ENVIRONMENT=LOCAL REDIS_URL=redis://127.0.0.1:6379/0 tsx --test redis/redis.integration.test.ts",
     "format": "prettier --write . --ignore-path ../../.prettierignore",
     "format:check": "prettier --check . --ignore-path ../../.prettierignore"
   },
   "exports": {
     ".": "./index.ts",
-    "./logging": "./logging/index.ts"
+    "./logging": "./logging/index.ts",
+    "./redis": "./redis/index.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
@@ -25,11 +27,13 @@
     "fastify-plugin": "^5.0.1",
     "i18next": "^26.3.6",
     "i18next-fs-backend": "^2.6.6",
-    "pino": "^10.3.1",
     "pg": "^8.22.0",
+    "pino": "^10.3.1",
+    "redis": "6.2.1",
     "tsyringe": "^4.10.0"
   },
   "devDependencies": {
+    "@protege-mais/config": "workspace:*",
     "@types/node": "^24.10.0",
     "tsx": "^4.22.4"
   }

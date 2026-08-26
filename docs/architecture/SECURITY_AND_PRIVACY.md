@@ -61,6 +61,19 @@ notificação/revisão posterior. Nunca equivale a acesso irrestrito permanente.
   sensível em log.
 - Dead letter exige monitoramento e procedimento operacional documentado.
 
+## Redis
+
+- `REDIS_URL`, credenciais, chaves e valores nunca aparecem em logs ou erros;
+- produção usa rede restrita e TLS quando oferecido pelo provedor;
+- namespace por ambiente evita colisão, mas não substitui isolamento de rede e
+  credencial;
+- cache, rate limit e locks não recebem dados pessoais ou sensíveis sem revisão
+  explícita de finalidade, TTL e impacto de perda;
+- Redis não substitui PostgreSQL, auditoria ou controle de autorização.
+
+Usos permitidos, formato das chaves e operação local estão em
+[`../REDIS.md`](../REDIS.md).
+
 ## Evidências e objetos
 
 - O banco armazena metadados; o conteúdo fica em storage privado.

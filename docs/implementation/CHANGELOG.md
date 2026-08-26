@@ -3,6 +3,79 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-26 — PROT-009 — Configurar Redis
+
+Status: Concluído
+
+### Resultado
+
+Manager API e Worker agora compartilham um cliente Redis com namespace por
+ambiente, conexão e comandos limitados por timeout, offline queue desabilitada,
+reconexão com backoff e fechamento idempotente. A API registra o Redis como
+probe obrigatório: readiness responde 503 durante indisponibilidade e volta a
+200 após a reconexão, sem afetar liveness.
+
+O contrato oferece `get`, `set`, escrita com expiração, expiração posterior e
+exclusão. Todas as chaves recebem automaticamente
+`protege-mais:<ambiente>:`. Nenhuma URL, credencial, chave, valor ou mensagem
+original do cliente entra nos eventos seguros de conexão.
+
+### Arquivos e dados
+
+- criado `packages/plugins/redis` com cliente gerenciado, integração Fastify,
+  comandos compartilhados, namespace, timeouts, backoff, readiness e lifecycle;
+- Manager API e Worker passaram a exigir `REDIS_URL`; a validação aceita
+  `redis://` e `rediss://`, database numérico opcional, rejeita query, fragment e
+  credencial de exemplo em produção;
+- a Manager API registra o plugin depois do registry de readiness e fecha Redis
+  pelo hook `onClose`; o Worker inicia a mesma conexão e a fecha em seu bloco de
+  encerramento, inclusive quando a espera por sinal falha;
+- o Compose ganhou `redis:8.10.0-alpine`, AOF `everysec`, healthcheck, volume
+  próprio, porta restrita a `127.0.0.1` e dependência saudável da Manager API;
+- o cliente oficial `redis` `6.2.1`, versão mais recente consultada no registro,
+  foi adicionado a `packages/plugins`; manifests, aliases e lockfile foram
+  sincronizados;
+- adicionados testes unitários de namespace, backoff, plugin, readiness,
+  retomada, shutdown e não vazamento, além de integração real para set/get, TTL
+  e reconexão após queda simulada;
+- criado `docs/REDIS.md`; README, configuração, arquitetura atual, segurança,
+  observabilidade, API, qualidade, roadmap e índices foram atualizados;
+- nenhuma tabela, migration, seed, permissão, rota de negócio ou dado de domínio
+  foi criado. As chaves de integração expiraram ou foram removidas.
+
+### Validação
+
+- `pnpm test`: 50 testes aprovados em cinco workspaces;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes aprovados contra
+  Redis real, cobrindo namespace, set/get, TTL, indisponibilidade e retomada;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem warnings
+  ou erros;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`, com variáveis públicas locais fictícias: Manager API, Worker,
+  Web e Mobile gerados; permanece somente o aviso não bloqueante já conhecido
+  do bundle Web maior que 500 kB;
+- `docker compose config --quiet` e healthcheck `redis-cli ping`: configuração e
+  serviço local aprovados;
+- `docker compose build manager_api`: imagem gerada com instalação por lockfile
+  congelado e cliente Redis presente no runtime;
+- smoke dos artefatos compilados: API e Worker conectaram ao Redis real,
+  encerraram a conexão por sinal e finalizaram com código 0;
+- prova ponta a ponta de readiness: 200 com Redis disponível, 503 após a queda e
+  200 após retomada automática, sem reinício da API.
+
+### Decisões e pendências
+
+- nenhum ADR adicional foi necessário: Redis e sua fronteira em
+  `packages/plugins` já estavam aprovados na arquitetura-alvo; o cliente Node é
+  um detalhe substituível dessa implementação;
+- filas, processors, contratos de job, retry e idempotência permanecem no
+  `PROT-010`;
+- o probe PostgreSQL permanece no `PROT-011`;
+- `PROT-010` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-25 — PROT-008 — Implantar logging estruturado e seguro
 
 Status: Concluído

@@ -17,6 +17,8 @@ O `PROT-007` tornou `packages/schema` a fonte oficial dos contratos HTTP,
 consolidou o OpenAPI 3.1 e restringiu a exposição do Swagger por ambiente.
 O `PROT-008` implantou logs JSON seguros na API e no Worker, com correlação,
 rotas normalizadas e redaction defensiva.
+O `PROT-009` adicionou Redis compartilhado, namespaces por ambiente, probe de
+readiness, reconexão limitada e fechamento gracioso na API e no Worker.
 
 ## Pré-requisitos
 
@@ -50,9 +52,18 @@ pnpm dev:mobile
 pnpm dev:worker
 ```
 
-O Worker permanece ocioso até receber `SIGINT` ou `SIGTERM` e registra seu
-ciclo de vida em JSON. Ele ainda não conecta ao Redis e não processa filas ou
-jobs.
+O Worker conecta ao Redis, permanece ocioso até receber `SIGINT` ou `SIGTERM` e
+registra seu ciclo de vida em JSON. Filas, processors e jobs continuam fora
+deste incremento e pertencem ao `PROT-010`.
+
+Para iniciar apenas a dependência local compartilhada:
+
+```bash
+docker compose up -d --wait redis
+```
+
+A convenção de chaves, timeouts, readiness, usos permitidos e operação local
+estão em [`docs/REDIS.md`](docs/REDIS.md).
 
 ## Qualidade e build
 
@@ -65,9 +76,11 @@ pnpm build
 ```
 
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
-cobrem configuração, erros, i18n, registry de readiness, endpoints operacionais,
-OpenAPI, logging, redaction, correlação e shutdown; o build cobre Manager API,
-Worker, Web e Mobile. Use `pnpm format` para aplicar a formatação e
+cobrem configuração, erros, i18n, Redis, registry de readiness, endpoints
+operacionais, OpenAPI, logging, redaction, correlação e shutdown; o build cobre
+Manager API, Worker, Web e Mobile. A integração real do Redis é executada com
+`pnpm --filter @protege-mais/plugins test:redis` depois de subir o serviço
+local. Use `pnpm format` para aplicar a formatação e
 `pnpm -r --if-present format:check` para conferir cada workspace explicitamente.
 As regras de TypeScript, ESLint, Prettier e uso excepcional de `any` estão em
 [`docs/QUALITY.md`](docs/QUALITY.md).
@@ -104,8 +117,8 @@ consolidada em `PROT-011`.
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-009`:
+O próximo ticket liberado é `PROT-010`:
 
 ```text
-Implemente o ticket PROT-009 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-010 seguindo toda a documentação do projeto.
 ```

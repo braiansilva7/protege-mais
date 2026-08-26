@@ -8,12 +8,17 @@ import {
   createWorkerCorrelationContext,
   type CorrelationMetadata,
 } from '@protege-mais/plugins/logging';
+import {
+  createRedisConnection,
+  type RedisConnection,
+} from '@protege-mais/plugins/redis';
 import { waitForShutdown } from './lifecycle.js';
 
 export type WorkerLogger = ReturnType<typeof createStructuredLogger>;
 
 export interface WorkerShellOptions {
   readonly logger?: WorkerLogger;
+  readonly redisConnection?: RedisConnection;
   readonly waitForSignal?: () => Promise<NodeJS.Signals>;
 }
 
@@ -40,11 +45,24 @@ export async function runWorkerShell(
       level: configuration.logLevel,
     });
   const waitForSignal = options.waitForSignal ?? waitForShutdown;
+  const redisConnection =
+    options.redisConnection ??
+    createRedisConnection({
+      redisUrl: configuration.redisUrl,
+      environment: configuration.appEnvironment,
+      logger,
+    });
 
+  redisConnection.start();
   logger.info(
     { event: 'worker.ready' },
     'Worker aguardando configuração de filas.'
   );
-  const signal = await waitForSignal();
+  let signal: NodeJS.Signals;
+  try {
+    signal = await waitForSignal();
+  } finally {
+    await redisConnection.close();
+  }
   logger.info({ event: 'worker.stopped', signal }, 'Worker encerrado.');
 }
