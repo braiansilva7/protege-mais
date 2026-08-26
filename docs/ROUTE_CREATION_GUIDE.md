@@ -71,7 +71,10 @@ PATCH  /victims/:id
 DELETE /victims/:id
 ```
 
-As rotas registradas em `apps/manager_api/src/routes/index.ts` recebem o prefixo `/api/v1` no `server.ts`. Não repetir esse prefixo no arquivo da rota.
+As rotas registradas em `apps/manager_api/src/routes/index.ts` recebem o prefixo
+`/api/v1` em `app.ts`. Não repetir esse prefixo no arquivo da rota. Health,
+readiness e outras rotas estritamente operacionais ficam fora do agregador de
+negócio.
 
 ### 2. CRIAR INTERFACES
 

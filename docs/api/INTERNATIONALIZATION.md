@@ -41,6 +41,7 @@ As chaves usam grupos semânticos separados por ponto e segmentos em
 ```text
 errors.validation
 health.ok
+health.notReady
 authentication.invalidCredentials
 victims.errors.notFound
 ```
@@ -75,8 +76,10 @@ o texto traduzido.
 ## Chaves comuns atuais
 
 - `errors.*`: aplicação, validação, acesso negado, recurso ausente, conflito,
-  regra de negócio, infraestrutura, falha interna e erro genérico de request;
+  regra de negócio, infraestrutura, indisponibilidade, falha interna e erro
+  genérico de request;
 - `health.ok`: processo operacional;
+- `health.notReady`: processo indisponível para receber tráfego;
 - `authentication.required` e `authentication.invalidCredentials`: mensagens
   públicas comuns de autenticação.
 

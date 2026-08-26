@@ -4,13 +4,54 @@
 
 O baseline não possui rotas de autenticação, usuários, papéis ou negócio.
 
-| Rota          | Autenticação | Estado                       | Observação                             |
-| ------------- | ------------ | ---------------------------- | -------------------------------------- |
-| `GET /health` | Não          | Disponível                   | Retorna `{ "status": "ok" }`           |
-| `/swagger/`   | Não          | Disponível no baseline local | Documenta somente o contrato atual     |
-| `/api/v1/*`   | —            | Sem rotas                    | Prefixo reservado para tickets futuros |
+| Rota          | Autenticação | Estado                       | Observação                                     |
+| ------------- | ------------ | ---------------------------- | ---------------------------------------------- |
+| `GET /health` | Não          | Disponível                   | Liveness; retorna `{ "status": "ok" }`         |
+| `GET /ready`  | Não          | Disponível                   | Readiness dos probes obrigatórios              |
+| `/swagger/`   | Não          | Disponível no baseline local | Documenta somente o contrato atual             |
+| `/api/v1/*`   | —            | Sem rotas                    | Prefixo exclusivo das rotas futuras de domínio |
 
-`GET /ready` será criado em `PROT-006` e não deve ser simulado antes disso.
+## Health, readiness e ciclo de vida
+
+`GET /health` confirma somente que o processo HTTP está vivo. Ele não consulta
+banco, Redis ou serviço externo e continua retornando 200 enquanto o processo
+puder responder. Use-o como liveness probe.
+
+`GET /ready` confirma que a instância pode receber tráfego. Cada integração
+obrigatória registra um probe com nome único no `ReadinessRegistry`; todos os
+probes registrados são obrigatórios. Retorno `true` de todos produz 200 e:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+Retorno `false` ou exceção de qualquer probe produz 503 pelo contrato global,
+sem expor nome do probe, causa ou diagnóstico:
+
+```json
+{
+  "code": "SERVICE_NOT_READY",
+  "message": "O serviço não está pronto para receber tráfego.",
+  "requestId": "req-42"
+}
+```
+
+Neste incremento não há probe obrigatório registrado, portanto uma instância
+inicializada responde pronta. O Redis registrará seu probe em `PROT-009`; o
+PostgreSQL passará a integrar readiness quando sua fundação for consolidada em
+`PROT-011`. O mecanismo não define timeout: cada integração deve executar um
+check curto e limitado pelo timeout apropriado ao respectivo cliente.
+
+Ao receber `SIGINT` ou `SIGTERM`, a API marca readiness como indisponível antes
+de chamar o fechamento do Fastify. O encerramento é idempotente, para de aceitar
+novas conexões e executa os hooks `onClose`, incluindo o fechamento do pool
+PostgreSQL existente.
+
+Rotas operacionais e Swagger permanecem fora de `/api/v1`. Toda rota de
+negócio deve ser registrada pelo agregador versionado, sem repetir o prefixo no
+arquivo da rota.
 
 ## Contrato global de erro
 
@@ -44,22 +85,24 @@ chaves estão em [`INTERNATIONALIZATION.md`](INTERNATIONALIZATION.md).
 
 ## Classes e mapeamentos
 
-| Classe                | Status | Código default          |
-| --------------------- | -----: | ----------------------- |
-| `ApplicationError`    |    500 | `APPLICATION_ERROR`     |
-| `ValidationError`     |    400 | `VALIDATION_ERROR`      |
-| `UnauthorizedError`   |    401 | `UNAUTHORIZED`          |
-| `ForbiddenError`      |    403 | `FORBIDDEN`             |
-| `NotFoundError`       |    404 | `NOT_FOUND`             |
-| `ConflictError`       |    409 | `CONFLICT`              |
-| `BusinessRuleError`   |    422 | `BUSINESS_RULE_ERROR`   |
-| `InfrastructureError` |    500 | `INFRASTRUCTURE_ERROR`  |
-| Erro desconhecido     |    500 | `INTERNAL_SERVER_ERROR` |
+| Classe                    | Status | Código default          |
+| ------------------------- | -----: | ----------------------- |
+| `ApplicationError`        |    500 | `APPLICATION_ERROR`     |
+| `ValidationError`         |    400 | `VALIDATION_ERROR`      |
+| `UnauthorizedError`       |    401 | `UNAUTHORIZED`          |
+| `ForbiddenError`          |    403 | `FORBIDDEN`             |
+| `NotFoundError`           |    404 | `NOT_FOUND`             |
+| `ConflictError`           |    409 | `CONFLICT`              |
+| `BusinessRuleError`       |    422 | `BUSINESS_RULE_ERROR`   |
+| `InfrastructureError`     |    500 | `INFRASTRUCTURE_ERROR`  |
+| `ServiceUnavailableError` |    503 | `SERVICE_UNAVAILABLE`   |
+| Erro desconhecido         |    500 | `INTERNAL_SERVER_ERROR` |
 
 Erros do Fastify que já possuem status 400, 401, 403, 404, 409 ou 422 são
 convertidos para a classe correspondente. Outros erros HTTP de cliente mantêm
-o status e usam `REQUEST_ERROR`. Status interno ou erro sem mapeamento sempre
-vira o 500 genérico.
+o status e usam `REQUEST_ERROR`. Erros de aplicação 5xx, como readiness,
+preservam sua classe e seu código público; falha desconhecida continua virando o
+500 genérico.
 
 Uma regra prevista em controller ou use case deve lançar a subclasse
 correspondente, nunca `Error` genérico. Código e mensagem públicos podem ser

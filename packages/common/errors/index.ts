@@ -154,3 +154,20 @@ export class InfrastructureError extends ApplicationError {
     });
   }
 }
+
+export class ServiceUnavailableError extends ApplicationError {
+  public constructor(options: SpecializedErrorOptions = {}) {
+    super({
+      ...options,
+      code: options.code ?? 'SERVICE_UNAVAILABLE',
+      message:
+        options.message ?? 'O serviço está temporariamente indisponível.',
+      messageKey:
+        options.messageKey ??
+        (options.message === undefined
+          ? 'errors.serviceUnavailable'
+          : undefined),
+      statusCode: 503,
+    });
+  }
+}

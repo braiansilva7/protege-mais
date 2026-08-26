@@ -186,7 +186,7 @@ automático de paridade de chaves.
 
 | Campo        | Valor              |
 | ------------ | ------------------ |
-| Status       | Pendente           |
+| Status       | Concluído          |
 | Tipo         | Technical Story    |
 | Prioridade   | P0                 |
 | Dependências | PROT-003, PROT-004 |

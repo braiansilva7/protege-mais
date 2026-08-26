@@ -6,6 +6,7 @@ export {
   ForbiddenError,
   InfrastructureError,
   NotFoundError,
+  ServiceUnavailableError,
   UnauthorizedError,
   ValidationError,
   type ApplicationErrorOptions,

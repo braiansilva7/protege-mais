@@ -7,6 +7,7 @@ import {
   ForbiddenError,
   InfrastructureError,
   NotFoundError,
+  ServiceUnavailableError,
   UnauthorizedError,
   ValidationError,
 } from './index.js';
@@ -30,6 +31,12 @@ void test('mapeia cada classe para código e status HTTP estáveis', () => {
       'INFRASTRUCTURE_ERROR',
       'errors.infrastructure',
       500,
+    ],
+    [
+      new ServiceUnavailableError(),
+      'SERVICE_UNAVAILABLE',
+      'errors.serviceUnavailable',
+      503,
     ],
   ] as const;
 

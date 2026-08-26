@@ -3,6 +3,75 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-25 — PROT-006 — Consolidar API base, health e readiness
+
+Status: Concluído
+
+### Resultado
+
+A Manager API agora separa liveness em `GET /health` de readiness em
+`GET /ready`. Um registry compartilhado executa todos os probes obrigatórios e
+trata retorno falso ou exceção como indisponibilidade, respondendo 503 pelo
+contrato global sem revelar diagnósticos internos.
+
+O bootstrap testável formaliza `/api/v1` como prefixo exclusivo das futuras
+rotas de negócio. `SIGINT` e `SIGTERM` iniciam uma única rotina de shutdown, que
+interrompe readiness antes de fechar o listener e os recursos registrados no
+Fastify.
+
+### Arquivos e dados
+
+- separado o bootstrap Fastify em `app.ts`, a entrada de processo em
+  `server.ts` e o ciclo de vida testável em `lifecycle.ts`;
+- criado em `packages/plugins/readiness` um registry extensível, com nomes
+  únicos, suporte a probes síncronos/assíncronos e estado terminal de shutdown;
+- criado `GET /ready`, com schema 200/503, mensagem traduzida nos três idiomas e
+  código estável `SERVICE_NOT_READY`; `GET /health` preserva exatamente o
+  contrato anterior;
+- adicionada `ServiceUnavailableError` com status 503 às classes comuns;
+- formalizada a constante de prefixo `/api/v1`; health, readiness e Swagger
+  permanecem fora do agregador de negócio;
+- o shutdown idempotente passou a marcar readiness como indisponível, parar o
+  listener e executar `onClose`, incluindo `pool.end()`;
+- incluídos testes do registry, integração dos endpoints, degradação/recuperação
+  de probe, sanitização e `SIGTERM`; a Manager API ganhou configuração de build
+  que não emite os testes;
+- atualizados catálogo da API, i18n, README, arquitetura atual, qualidade, guia
+  de rotas, roadmap e índices;
+- nenhuma dependência foi adicionada ou atualizada; nenhuma migration, seed,
+  tabela, permissão, rota de negócio ou dado foi criado ou alterado.
+
+### Validação
+
+- `pnpm test`: 31 testes aprovados em quatro workspaces, incluindo liveness,
+  readiness pronta/indisponível/recuperada, exceção de probe e shutdown;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`, com as variáveis públicas locais exigidas: Manager API, Worker,
+  Web e Mobile gerados; permanece apenas o aviso não bloqueante já conhecido do
+  bundle Web maior que 500 kB;
+- inspeção do artefato: arquivos de teste não foram emitidos;
+- smoke do artefato compilado: `/health` e `/ready` retornaram 200; `SIGTERM`
+  encerrou o processo com código 0 e a porta deixou de aceitar conexões;
+- `docker compose config --quiet`: configuração válida;
+- build e smoke da imagem da Manager API: health e readiness retornaram 200 e
+  `docker stop` encerrou o container com código 0; container e imagem temporários
+  foram removidos.
+
+### Decisões e pendências
+
+- nenhum ADR adicional foi necessário: o ticket concretiza o ciclo de vida e a
+  extensão de infraestrutura previstos, sem trocar tecnologia ou fronteira;
+- todos os probes registrados são obrigatórios; neste incremento a lista é
+  vazia. Redis e PostgreSQL registrarão probes em `PROT-009` e `PROT-011`;
+- timeout é responsabilidade do cliente de cada integração, para que o registry
+  não imponha uma política incompatível com dependências diferentes;
+- `PROT-007` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-25 — PROT-005 — Consolidar internacionalização do backend
 
 Status: Concluído

@@ -26,7 +26,9 @@ O `tsconfig.json` da raiz especializa essa base para Node.js e mantém os aliase
 explícitos `@protege-mais/*`. Manager API e Worker estendem a configuração Node;
 Web combina a base com o modo Bundler; Mobile combina a base com a configuração
 do Expo. Cada package possui seu próprio `tsconfig.json`, de modo que também
-pode ser validado isoladamente.
+pode ser validado isoladamente. A Manager API inclui os testes em seu
+`tsconfig.json` de qualidade e usa `tsconfig.build.json` para excluí-los do
+artefato de produção.
 
 ## ESLint e uso de `any`
 
@@ -72,10 +74,10 @@ pnpm build
 ```
 
 `lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `test` executa as
-suítes de configuração, classes comuns, handler Fastify, resolução de locale e
-paridade de catálogos nos workspaces que as possuem; `build` gera os quatro
-apps. As configurações compartilhadas fazem parte das dependências globais do
-cache do Turbo, portanto sua alteração invalida as tarefas afetadas.
+suítes de configuração, classes comuns, handler Fastify, i18n, readiness,
+endpoints operacionais e shutdown nos workspaces que as possuem; `build` gera
+os quatro apps. As configurações compartilhadas fazem parte das dependências
+globais do cache do Turbo, portanto sua alteração invalida as tarefas afetadas.
 Para conferir explicitamente o formatter em cada workspace:
 
 ```bash

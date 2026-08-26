@@ -12,9 +12,11 @@
     "internalServer": "Se produjo un error interno del servidor.",
     "notFound": "Recurso no encontrado.",
     "request": "No se pudo procesar la solicitud.",
+    "serviceUnavailable": "El servicio no está disponible temporalmente.",
     "validation": "Los datos enviados no son válidos."
   },
   "health": {
+    "notReady": "El servicio no está listo para recibir tráfico.",
     "ok": "El servicio está operativo."
   }
 }

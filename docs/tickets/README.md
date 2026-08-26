@@ -18,7 +18,7 @@ Estados permitidos: `Pendente`, `Em andamento`, `Bloqueado` e `Concluído`.
 | [PROT-003](EPIC_00_FOUNDATION.md#prot-003)         | Centralizar e validar configurações        | P0         | PROT-001                     | Concluído |
 | [PROT-004](EPIC_00_FOUNDATION.md#prot-004)         | Implantar o padrão global de erros         | P0         | PROT-002                     | Concluído |
 | [PROT-005](EPIC_00_FOUNDATION.md#prot-005)         | Consolidar i18n do backend                 | P1         | PROT-004                     | Concluído |
-| [PROT-006](EPIC_00_FOUNDATION.md#prot-006)         | Consolidar API base, health e readiness    | P0         | PROT-003, PROT-004           | Pendente  |
+| [PROT-006](EPIC_00_FOUNDATION.md#prot-006)         | Consolidar API base, health e readiness    | P0         | PROT-003, PROT-004           | Concluído |
 | [PROT-007](EPIC_00_FOUNDATION.md#prot-007)         | Consolidar Swagger/OpenAPI                 | P1         | PROT-004, PROT-006           | Pendente  |
 | [PROT-008](EPIC_00_FOUNDATION.md#prot-008)         | Implantar logging estruturado e seguro     | P0         | PROT-003, PROT-006           | Pendente  |
 | [PROT-009](EPIC_00_FOUNDATION.md#prot-009)         | Configurar Redis                           | P0         | PROT-003, PROT-006           | Pendente  |

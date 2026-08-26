@@ -76,7 +76,7 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-`PROT-005` consolidou a internacionalização do backend em `pt-BR`, `en` e `es`,
-com fallback, negociação HTTP e paridade automática dos catálogos. O próximo
-trabalho de implementação deve começar por `PROT-006`, que consolidará a API
-base, health e readiness.
+`PROT-006` separou liveness de readiness, criou o mecanismo extensível de probes,
+formalizou `/api/v1` como entrada de rotas de negócio e garantiu shutdown
+gracioso da Manager API. O próximo trabalho de implementação deve começar por
+`PROT-007`, que consolidará Swagger/OpenAPI e os schemas compartilhados.
