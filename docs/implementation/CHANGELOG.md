@@ -3,6 +3,79 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-26 — PROT-012 — Habilitar e validar PostGIS
+
+Status: Concluído
+
+### Resultado
+
+PostGIS agora está disponível no PostgreSQL principal e no banco de
+desenvolvimento do Atlas. A primeira migration estrutural verifica se o
+servidor oferece a extensão, falha com diagnóstico acionável quando não oferece
+e executa `CREATE EXTENSION IF NOT EXISTS postgis` sem depender de seed.
+
+A integração real detecta as versões instalada e carregada, confirma SRID 4326
+e valida uma distância geodésica conhecida em metros. O schema Drizzle continua
+sem entidades de domínio; tabelas, constraints e índices espaciais permanecem
+nos tickets consumidores.
+
+### Arquivos e dados
+
+- `db` e `atlas-db` passaram de `postgres:16-alpine` para a imagem oficial
+  publicada `postgis/postgis:16-3.5-alpine`, preservando PostgreSQL 16, UTC,
+  volumes, healthchecks e rede local;
+- criada `atlas/prod/20260826000000_enable_postgis.sql`, com preflight em
+  `pg_available_extensions`, SQLSTATE `0A000`, mensagem e `HINT` seguros, além
+  do `CREATE EXTENSION IF NOT EXISTS`; o checksum `atlas.sum` foi recalculado;
+- ampliada a integração de banco com detecção em `pg_extension`,
+  `PostGIS_Lib_Version()`, SRID 4326 e `ST_Distance` sobre `geography`;
+- documentadas imagem obrigatória, migração de volumes existentes, diagnóstico
+  sem suporte, estratégia sem `DROP EXTENSION`, ordem longitude/latitude,
+  limites, unidade em metros e proibição de coordenadas em logs;
+- README, arquitetura atual, qualidade, guia de banco, roadmap, models e índices
+  de tickets foram sincronizados;
+- nenhuma tabela, enum, seed, rota, permissão ou dado de domínio foi criado. O
+  objeto `spatial_ref_sys` pertence e é gerenciado pela extensão.
+
+### Validação
+
+- manifest do tag `postgis/postgis:16-3.5-alpine`: publicado e compatível com a
+  arquitetura local;
+- `pnpm migrate:local`: habilitou PostGIS em um volume PostgreSQL 16 existente
+  que ainda não possuía a extensão; nova execução terminou sem migrations
+  pendentes;
+- base limpa criada de `template0`: a migration foi aplicada duas vezes, com
+  uma única extensão PostGIS `3.5.7`, SRID `4326` e distância
+  `111319.491` metros; a base temporária foi removida ao final;
+- PostgreSQL `16-alpine` sem os arquivos de PostGIS: apply rejeitado com
+  `ERROR` e `HINT` explícitos, sem criar a extensão; o container temporário foi
+  removido;
+- `atlas migrate validate`, `status` e `diff` no ambiente `prod`: checksum
+  válido, versão atual `20260826000000`, zero pendências e zero drift;
+- `pnpm --filter @protege-mais/plugins test:database`: três testes reais
+  aprovados para Drizzle/UTC, PostGIS/SRID/distância e queda/retomada/shutdown;
+- `pnpm test`: 66 testes aprovados em seis workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados;
+  `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso
+  não bloqueante já conhecido do bundle Web maior que 500 kB;
+- `docker compose config --quiet`: configuração válida.
+
+### Decisões e pendências
+
+- nenhum ADR adicional foi necessário: PostGIS, SRID 4326 e a fronteira Atlas
+  já estavam aprovados na arquitetura-alvo e no ticket;
+- não existe rollback automático com `DROP EXTENSION`, pois se tornará uma
+  operação destrutiva quando tabelas espaciais dependerem do PostGIS;
+- constraints, índices, nulabilidade, concorrência, soft delete e model de
+  referência permanecem no `PROT-013`, próximo ticket liberado;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-26 — PROT-011 — Consolidar PostgreSQL, Drizzle e Atlas
 
 Status: Concluído

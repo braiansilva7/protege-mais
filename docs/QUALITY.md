@@ -81,8 +81,9 @@ suítes de configuração, classes comuns, handler Fastify, i18n, PostgreSQL e
 Redis com conexões injetáveis, logging, redaction, correlação, filas,
 processors, casos de uso, readiness, endpoints operacionais, OpenAPI e
 shutdown. `test:database`, executado após
-`docker compose up -d --wait db atlas-db`, comprova query Drizzle, UTC,
-indisponibilidade, recuperação e fechamento contra PostgreSQL real. Os dois comandos
+`docker compose up -d --wait db atlas-db` e `pnpm migrate:local`, comprova query
+Drizzle, UTC, PostGIS, SRID 4326, distância geodésica, indisponibilidade,
+recuperação e fechamento contra PostgreSQL real. Os dois comandos
 `test:redis`, executados após `docker compose up -d --wait redis`, comprovam o
 cliente genérico e o pipeline real do Worker. A integração do Worker cobre
 retry/backoff reduzido, idempotência após reinício, falha terminal e shutdown

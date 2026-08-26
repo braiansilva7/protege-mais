@@ -25,6 +25,8 @@ processamento.
 O `PROT-011` consolidou o pool PostgreSQL/Drizzle, readiness e shutdown do
 banco, sessões UTC e o fluxo Atlas reproduzível com migrations estruturais
 independentes de seed.
+O `PROT-012` habilitou PostGIS por migration idempotente, fixou SRID 4326 para
+dados espaciais futuros e adicionou validação real de versão e distância.
 
 ## Pré-requisitos
 
@@ -115,9 +117,10 @@ convenção completa do OpenAPI está em
 permitidos/proibidos e consultas operacionais estão em
 [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
-PostgreSQL e Atlas formam a fundação oficial de persistência, mas o schema
-continua vazio: não há tabelas, migrations SQL, seeds ou dados de domínio.
-Migrations estruturais podem ser aplicadas em uma base limpa sem seed.
+PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
+de domínio continua vazio: não há tabelas, enums, seeds ou dados de domínio. A
+primeira migration estrutural habilita PostGIS de forma idempotente e pode ser
+aplicada em uma base limpa sem seed.
 
 ## Documentação e tickets
 
@@ -129,8 +132,8 @@ Migrations estruturais podem ser aplicadas em uma base limpa sem seed.
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-012`:
+O próximo ticket liberado é `PROT-013`:
 
 ```text
-Implemente o ticket PROT-012 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-013 seguindo toda a documentação do projeto.
 ```

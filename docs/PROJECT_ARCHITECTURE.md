@@ -2,14 +2,16 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-011`. A arquitetura
+Este documento registra somente o que existe após o `PROT-012`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
 O monorepo possui quatro apps executáveis e dez packages compartilhados. Ainda
-não existem domínio de negócio, autenticação, autorização, tabelas, migrations
-SQL ou seeds. Redis já é uma dependência compartilhada com namespace por ambiente,
-reconexão, timeouts e encerramento gracioso. As cinco filas base usam BullMQ,
+não existem domínio de negócio, autenticação, autorização, tabelas ou enums de
+domínio, seeds ou dados de domínio. PostGIS está habilitado pela primeira
+migration estrutural e validado com SRID 4326. Redis já é uma dependência
+compartilhada com namespace por ambiente, reconexão, timeouts e encerramento
+gracioso. As cinco filas base usam BullMQ,
 envelope v1, publicação idempotente, retry/backoff e falha controlada. A API
 possui pool PostgreSQL/Drizzle gerenciado, probes obrigatórios para PostgreSQL e
 Redis, contrato global de erros,
@@ -57,7 +59,7 @@ protege-mais/
 │   ├── services/             # Capacidades reutilizáveis futuras
 │   └── useCases/             # Contrato/registry de jobs e orquestração futura
 ├── atlas/
-│   ├── prod/                 # Checksum Atlas, sem migration SQL
+│   ├── prod/                 # Migration idempotente do PostGIS
 │   └── seed/dev/             # Checksum Atlas, sem seed
 ├── eslint.config.mjs       # Lint compartilhado e tipado
 ├── tsconfig.base.json      # Regras TypeScript comuns
@@ -282,11 +284,13 @@ erro e fechamento idempotente. A Manager API expõe o mesmo Drizzle como
 
 `atlas.hcl` usa o export Drizzle como estado desejado. `prod` mantém somente
 migrations estruturais em `atlas/prod`; `dev` mantém apenas seeds fictícios em
-`atlas/seed/dev`. Ambos possuem checksum de diretório vazio, sem SQL. O apply
-não recalcula hashes, uma base limpa aceita zero migrations repetidamente e o
-seed não é requisito. PostgreSQL principal e dev database do Atlas iniciam em
-UTC, têm healthcheck, shutdown gracioso e rede local; a porta publicada do
-banco é restrita a loopback. O fluxo completo está em
+`atlas/seed/dev`. O diretório estrutural possui a migration idempotente que
+diagnostica suporte e executa `CREATE EXTENSION IF NOT EXISTS postgis`; o seed
+continua vazio. O apply não recalcula hashes, uma base limpa aplica a estrutura
+sem seed e a repetição permanece sem pendências ou drift. PostgreSQL principal
+e dev database do Atlas usam `postgis/postgis:16-3.5-alpine`, iniciam em UTC,
+têm healthcheck, shutdown gracioso e rede local; a porta publicada do banco é
+restrita a loopback. O fluxo completo está em
 `docs/database/README.md`.
 
 ## Comandos do monorepo
@@ -301,7 +305,7 @@ banco é restrita a loopback. O fluxo completo está em
 | `pnpm lint`                                         | Valida os quatro apps e os dez packages                   |
 | `pnpm typecheck`                                    | Valida os quatro apps e os dez packages                   |
 | `pnpm test`                                         | Testa config, banco, filas, erros, logs, probes e OpenAPI |
-| `pnpm --filter @protege-mais/plugins test:database` | Integra Drizzle, UTC, queda, retomada e shutdown          |
+| `pnpm --filter @protege-mais/plugins test:database` | Integra Drizzle, UTC, PostGIS, retomada e shutdown        |
 | `pnpm --filter @protege-mais/plugins test:redis`    | Integra Redis real, TTL e reconexão                       |
 | `pnpm --filter @protege-mais/worker test:redis`     | Integra filas, retry, idempotência, falha e shutdown      |
 | `pnpm format:check`                                 | Confere a formatação do repositório                       |
@@ -316,7 +320,8 @@ banco é restrita a loopback. O fluxo completo está em
 A classificação do legado removido permanece em
 `docs/implementation/PROT-000_LEGACY_INVENTORY.md`. Os arquivos removidos são
 recuperáveis pelo histórico Git; o `PROT-011` não criou tabela, migration SQL,
-seed ou dado de domínio. A validação Atlas cria e remove somente uma base
+seed ou dado de domínio. O `PROT-012` criou somente a migration da extensão e
+não adicionou tabelas de domínio. A validação cria e remove somente uma base
 temporária com nome reservado; os volumes locais não são apagados. O volume
 Redis local contém somente metadados técnicos das filas e qualquer job fictício
 de teste é removido ao concluir a integração.

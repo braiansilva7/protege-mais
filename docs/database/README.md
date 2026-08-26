@@ -3,15 +3,16 @@
 ## Estado atual
 
 O `PROT-011` consolidou PostgreSQL, Drizzle e Atlas como a fundação oficial de
-persistência. A Manager API possui pool gerenciado, probe obrigatório e
-shutdown idempotente. O schema central continua intencionalmente vazio: não há
-tabelas, enums, migrations SQL, seeds ou dados de domínio neste incremento.
+persistência. O `PROT-012` acrescentou PostGIS por migration estrutural
+idempotente. A Manager API possui pool gerenciado, probe obrigatório e shutdown
+idempotente. O schema de domínio continua intencionalmente vazio: não há
+tabelas, enums, seeds ou dados de domínio.
 
 `packages/models/index.ts` é a única entrada do schema Drizzle. `atlas/prod`
-mantém migrations estruturais e `atlas/seed/dev` mantém somente dados de
-desenvolvimento. Os dois diretórios começam apenas com `atlas.sum` vazio; assim,
-uma base nova aceita `migrate` sem exigir seed e permanece sem tabelas de
-domínio.
+mantém a migration `20260826000000_enable_postgis.sql` e
+`atlas/seed/dev` permanece sem dados. Uma base nova aceita `migrate` sem exigir
+seed, habilita a extensão e permanece sem tabelas de domínio; `spatial_ref_sys`
+é um objeto interno gerenciado pelo próprio PostGIS.
 
 ## Conexão da aplicação
 
@@ -67,6 +68,45 @@ container inicia servidor e log timezone em UTC, inclusive quando um volume já
 existente foi inicializado com outro fuso. Não use `docker compose down -v` em
 um volume com dados que precisem ser preservados.
 
+## PostGIS e convenções espaciais
+
+Os serviços `db` e `atlas-db` usam a imagem oficial
+`postgis/postgis:16-3.5-alpine`. Ela preserva a major PostgreSQL 16 e torna os
+arquivos da extensão disponíveis tanto no banco principal quanto no banco de
+desenvolvimento do Atlas. Trocar a imagem não habilita a extensão em volumes já
+existentes; `pnpm migrate:local` continua obrigatório.
+
+A migration verifica `pg_available_extensions` antes de executar exatamente:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS postgis;
+```
+
+Se o servidor não oferecer PostGIS, o apply falha com SQLSTATE `0A000`, uma
+mensagem que identifica a ausência da extensão e um `HINT` para instalar
+PostGIS ou usar uma imagem compatível. A migration pode ser executada novamente
+sem recriar a extensão. Não existe rollback automático com `DROP EXTENSION`:
+removê-la se tornará destrutivo assim que tipos espaciais forem referenciados.
+Em validações descartáveis, reverta removendo somente a base temporária criada
+para o teste.
+
+Convenções congeladas por este ticket:
+
+- dados geográficos usam SRID 4326;
+- pontos futuros usam `geography(Point, 4326)` quando distâncias na superfície
+  terrestre forem necessárias;
+- a ordem de entrada é longitude, latitude; longitude fica entre -180 e 180 e
+  latitude entre -90 e 90;
+- `ST_Distance` entre valores `geography` retorna metros;
+- índices espaciais, constraints e models pertencem ao ticket da tabela que os
+  consumir;
+- coordenadas, distâncias ligadas a pessoas e locais protegidos nunca entram em
+  logs comuns.
+
+A integração `test:database` detecta as versões instalada e carregada, confirma
+SRID 4326 e calcula a distância geodésica conhecida entre dois pontos no
+equador. Ela deve ser executada somente depois da migration estrutural.
+
 ## Fluxo Atlas
 
 `atlas.hcl` oferece dois ambientes:
@@ -113,9 +153,9 @@ schema e nunca é pré-requisito de migration.
 - Drizzle é a fonte tipada dos models e Atlas é a fonte do histórico aplicado;
 - banco usa `snake_case` e TypeScript usa `camelCase`.
 
-O `PROT-012` adicionará PostGIS. O `PROT-013` definirá nomes de constraints,
-índices, nulabilidade, concorrência, soft delete e um model de referência; este
-ticket não antecipou essas decisões.
+PostGIS está habilitado e consultas espaciais usam SRID 4326. O `PROT-013`
+definirá nomes de constraints, índices, nulabilidade, concorrência, soft delete
+e um model de referência; o `PROT-012` não antecipou essas decisões.
 
 ---
 

@@ -79,6 +79,7 @@ integrações e garantia de histórico.
 ## Ordem imediata
 
 `PROT-011` iniciou a fundação de dados com pool PostgreSQL/Drizzle, readiness,
-shutdown, UTC e Atlas reproduzível sem tabelas ou seeds de domínio. O próximo
-trabalho de implementação deve começar por `PROT-012`, que habilitará e validará
-PostGIS sem antecipar entidades de domínio.
+shutdown, UTC e Atlas reproduzível sem tabelas ou seeds de domínio. O
+`PROT-012` habilitou e validou PostGIS com SRID 4326 sem antecipar entidades. O
+próximo trabalho de implementação deve começar por `PROT-013`, que congelará
+as convenções de tabelas e migrations antes do primeiro model de referência.

@@ -120,6 +120,47 @@ void test('PostgreSQL real conecta, executa Drizzle em UTC e fecha o pool', asyn
   }
 });
 
+void test('PostGIS real expõe versão, SRID 4326 e distância geodésica', async () => {
+  const configuration = databaseEnvironment();
+  const connection = createDatabaseConnection({
+    databaseUrl: configuration.databaseUrl,
+    applicationName: 'protege-mais:postgis-integration',
+    logger,
+  });
+
+  try {
+    await connection.connect();
+
+    const result = await connection.database.execute<{
+      readonly distanceMeters: number;
+      readonly extensionVersion: string;
+      readonly libraryVersion: string;
+      readonly srid: number;
+    }>(sql`
+      SELECT
+        ST_Distance(
+          ST_SetSRID(ST_MakePoint(0, 0), 4326)::geography,
+          ST_SetSRID(ST_MakePoint(1, 0), 4326)::geography
+        ) AS "distanceMeters",
+        extension.extversion AS "extensionVersion",
+        PostGIS_Lib_Version() AS "libraryVersion",
+        ST_SRID(ST_SetSRID(ST_MakePoint(0, 0), 4326)) AS "srid"
+      FROM pg_extension AS extension
+      WHERE extension.extname = 'postgis'
+    `);
+
+    assert.equal(result.rowCount, 1);
+    assert.match(result.rows[0]?.extensionVersion ?? '', /^\d+\.\d+/u);
+    assert.match(result.rows[0]?.libraryVersion ?? '', /^\d+\.\d+/u);
+    assert.equal(result.rows[0]?.srid, 4326);
+    assert.ok(
+      Math.abs((result.rows[0]?.distanceMeters ?? 0) - 111_319.490_793) < 0.01
+    );
+  } finally {
+    await connection.close();
+  }
+});
+
 void test('PostgreSQL real fecha readiness e retoma por um novo socket', async () => {
   const configuration = databaseEnvironment();
   const targetUrl = new URL(configuration.databaseUrl);

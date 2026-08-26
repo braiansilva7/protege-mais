@@ -33,11 +33,11 @@ divergência; conexão inválida.
 
 ### Habilitar e validar PostGIS
 
-| Campo        | Valor    |
-| ------------ | -------- |
-| Status       | Pendente |
-| Prioridade   | P0       |
-| Dependências | PROT-011 |
+| Campo        | Valor     |
+| ------------ | --------- |
+| Status       | Concluído |
+| Prioridade   | P0        |
+| Dependências | PROT-011  |
 
 **Objetivo:** preparar consultas geoespaciais futuras.
 
