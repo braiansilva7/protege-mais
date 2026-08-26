@@ -78,8 +78,7 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-`PROT-010` concluiu a fundação executável com as cinco filas do Worker, envelope
-versionado, idempotência de publicação, retry/backoff, falha controlada e
-shutdown durante processamento. O próximo trabalho de implementação deve
-começar por `PROT-011`, que consolidará PostgreSQL, Drizzle e Atlas sem antecipar
-entidades de domínio.
+`PROT-011` iniciou a fundação de dados com pool PostgreSQL/Drizzle, readiness,
+shutdown, UTC e Atlas reproduzível sem tabelas ou seeds de domínio. O próximo
+trabalho de implementação deve começar por `PROT-012`, que habilitará e validará
+PostGIS sem antecipar entidades de domínio.

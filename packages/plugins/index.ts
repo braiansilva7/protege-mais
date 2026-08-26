@@ -1,5 +1,17 @@
 export { registerCors } from './cors.js';
-export { registerDatabase, type AppDatabase } from './database/index.js';
+export {
+  createDatabaseConnection,
+  databaseConnectionTimeoutMs,
+  databaseDefaultMaximumPoolSize,
+  databaseIdleTimeoutMs,
+  databaseQueryTimeoutMs,
+  registerDatabase,
+  type AppDatabase,
+  type DatabaseConnection,
+  type DatabaseConnectionOptions,
+  type DatabaseLogger,
+  type DatabasePluginOptions,
+} from './database/index.js';
 export { registerErrorHandler } from './error-handler/index.js';
 export {
   defaultLocale,

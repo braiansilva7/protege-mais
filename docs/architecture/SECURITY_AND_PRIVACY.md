@@ -74,6 +74,19 @@ notificação/revisão posterior. Nunca equivale a acesso irrestrito permanente.
 Usos permitidos, formato das chaves e operação local estão em
 [`../REDIS.md`](../REDIS.md).
 
+## PostgreSQL e migrations
+
+- `DATABASE_URL`, `DB_DATABASE_URL`, `DB_ATLAS` e credenciais nunca aparecem em
+  logs, respostas ou saída deliberada de scripts;
+- produção usa rede privada e TLS conforme o provedor; a porta do Compose local
+  é restrita a loopback;
+- migrations de estrutura são versionadas, têm checksum e não dependem de seed;
+- seed aceita somente dados fictícios e não corrige schema;
+- timezone do servidor, das sessões e dos instantes persistidos é UTC.
+
+O fluxo reproduzível e os limites do pool estão em
+[`../database/README.md`](../database/README.md).
+
 ## Evidências e objetos
 
 - O banco armazena metadados; o conteúdo fica em storage privado.

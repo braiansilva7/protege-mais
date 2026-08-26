@@ -3,6 +3,99 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-26 — PROT-011 — Consolidar PostgreSQL, Drizzle e Atlas
+
+Status: Concluído
+
+### Resultado
+
+A Manager API agora usa uma conexão PostgreSQL gerenciada, um pool limitado por
+aplicação e o schema central do Drizzle. Cada sessão inicia em UTC; conexão,
+queries e transações ociosas possuem limites; erros de pool são tratados sem
+credenciais. O probe obrigatório `postgresql` fecha readiness durante falha e a
+reabre quando uma nova conexão funciona, enquanto liveness permanece isolada.
+O shutdown é idempotente e aguarda `pool.end()`.
+
+O Atlas usa o export Drizzle como estado desejado e mantém estrutura em
+`atlas/prod` separada dos dados fictícios em `atlas/seed/dev`. Apply não
+reescreve checksum, migration não depende de seed e ambos os diretórios têm um
+baseline vazio válido. O Compose executa PostgreSQL principal e dev database em
+UTC, com healthcheck, parada graciosa e porta local restrita a loopback.
+
+### Arquivos e dados
+
+- consolidado `packages/plugins/database` com fábrica injetável, pool máximo de
+  dez conexões, timeouts, `application_name`, sessões UTC, Drizzle tipado,
+  eventos seguros, readiness, retomada e fechamento idempotente;
+- a Manager API passou a injetar a conexão em testes e registrar o probe
+  `postgresql`; `DatabaseRw` e `DatabaseRo` compartilham o mesmo pool até uma
+  decisão explícita sobre réplica de leitura;
+- `packages/models/index.ts` foi confirmado como export central e permaneceu
+  vazio, sem antecipar enums, tabelas ou convenções do `PROT-013`;
+- `atlas.hcl` passou a consumir URLs somente pelo ambiente, executar o binário
+  local do Drizzle fixado no lockfile e separar os ambientes `prod` e `dev`;
+- scripts Atlas agora separam diff/hash/validate/status de apply; `migrate`
+  estrutural permanece independente de `seed`, e os dois diretórios ganharam
+  `atlas.sum` de conteúdo vazio;
+- a imagem local fixa Atlas `v1.3.0`; o Compose ganhou UTC efetivo, healthcheck
+  do `atlas-db`, dependência saudável e bind PostgreSQL em `127.0.0.1`;
+- `reflect-metadata` `0.2.2`, já resolvido no monorepo, tornou o package de
+  plugins autocontido sem atualizar bibliotecas existentes;
+- adicionados testes unitários e reais de configuração do pool, consulta
+  Drizzle, UTC, conexão inválida, logs sem credenciais, readiness, queda,
+  retomada e shutdown;
+- README, configuração, segurança, observabilidade, API, qualidade, arquitetura,
+  roadmap e guia de banco foram sincronizados;
+- nenhuma tabela, migration SQL, seed, permissão, rota ou dado de domínio foi
+  criado. A base temporária exclusiva da validação foi removida; nenhum volume
+  local foi apagado.
+
+### Validação
+
+- `pnpm test`: 66 testes aprovados em seis workspaces;
+- `pnpm --filter @protege-mais/plugins test:database`: dois testes contra
+  PostgreSQL real, cobrindo Drizzle, UTC, queda, retomada por novo socket e
+  fechamento;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes Redis reais
+  aprovados, e `pnpm --filter @protege-mais/worker test:redis`: pipeline real do
+  Worker aprovado;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`, com variáveis públicas locais fictícias: Manager API, Worker,
+  Web e Mobile gerados; permanece somente o aviso não bloqueante já conhecido
+  do bundle Web maior que 500 kB;
+- `docker compose config --quiet`, builds das imagens Atlas e Manager API e
+  smoke da imagem da API: configuração válida, Atlas `v1.3.0`, readiness 200 e
+  fechamento de PostgreSQL/Redis por sinal;
+- `atlas migrate validate` nos ambientes `prod` e `dev` e `atlas migrate diff`
+  em `prod`: checksums válidos e estado desejado sincronizado;
+- base limpa exclusiva: apply estrutural executado duas vezes, zero migrations
+  pendentes, `SELECT 1` aprovado, timezone `UTC`, zero tabelas de domínio e
+  remoção da base ao final; `migrate:local`, `seed:local` vazio e status também
+  aprovados;
+- prova ponta a ponta da API: `/ready` retornou 200, passou a 503 durante a
+  parada do PostgreSQL e voltou a 200 após a retomada sem reinício; `/health`
+  permaneceu 200 e as respostas/logs não exibiram credenciais;
+- `pnpm audit --prod --audit-level high`: manteve o baseline conhecido de 13
+  achados, sendo dez altos e três moderados; nenhuma versão existente foi
+  atualizada fora do escopo.
+
+### Decisões e pendências
+
+- nenhum ADR adicional foi necessário: PostgreSQL, Drizzle, Atlas, a separação
+  estrutura/seed e a fronteira em `packages/plugins` já estavam aprovados na
+  arquitetura-alvo e no próprio ticket;
+- o alerta conhecido do Drizzle para identificadores SQL permanece no baseline
+  de dependências; este ticket usa somente SQL estático e uma atualização exige
+  o ticket dedicado já recomendado pela auditoria;
+- PostGIS pertence ao `PROT-012`; convenções detalhadas, model de referência e
+  política de migrations pertencem ao `PROT-013`;
+- `PROT-012` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-26 — PROT-010 — Criar infraestrutura do Worker
 
 Status: Concluído

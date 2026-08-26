@@ -23,7 +23,7 @@ Estados permitidos: `Pendente`, `Em andamento`, `Bloqueado` e `Concluído`.
 | [PROT-008](EPIC_00_FOUNDATION.md#prot-008)         | Implantar logging estruturado e seguro     | P0         | PROT-003, PROT-006           | Concluído |
 | [PROT-009](EPIC_00_FOUNDATION.md#prot-009)         | Configurar Redis                           | P0         | PROT-003, PROT-006           | Concluído |
 | [PROT-010](EPIC_00_FOUNDATION.md#prot-010)         | Criar infraestrutura do Worker             | P0         | PROT-001, PROT-009           | Concluído |
-| [PROT-011](EPIC_01_DATA_FOUNDATION.md#prot-011)    | Consolidar PostgreSQL, Drizzle e Atlas     | P0         | PROT-003, PROT-006           | Pendente  |
+| [PROT-011](EPIC_01_DATA_FOUNDATION.md#prot-011)    | Consolidar PostgreSQL, Drizzle e Atlas     | P0         | PROT-003, PROT-006           | Concluído |
 | [PROT-012](EPIC_01_DATA_FOUNDATION.md#prot-012)    | Habilitar e validar PostGIS                | P0         | PROT-011                     | Pendente  |
 | [PROT-013](EPIC_01_DATA_FOUNDATION.md#prot-013)    | Definir convenções de tabelas e migrations | P0         | PROT-011                     | Pendente  |
 | [PROT-014](EPIC_01_DATA_FOUNDATION.md#prot-014)    | Criar enums fundamentais                   | P0         | PROT-013                     | Pendente  |

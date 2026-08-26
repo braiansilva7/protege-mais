@@ -22,6 +22,9 @@ readiness, reconexão limitada e fechamento gracioso na API e no Worker.
 O `PROT-010` adicionou as cinco filas do Worker, envelope versionado,
 idempotência de publicação, retry/backoff, falha controlada e shutdown durante
 processamento.
+O `PROT-011` consolidou o pool PostgreSQL/Drizzle, readiness e shutdown do
+banco, sessões UTC e o fluxo Atlas reproduzível com migrations estruturais
+independentes de seed.
 
 ## Pré-requisitos
 
@@ -61,14 +64,16 @@ interrompem novas coletas, aguardam o job ativo e fecham todas as conexões. O
 catálogo, envelope e runbook estão em
 [`docs/WORKER_QUEUES.md`](docs/WORKER_QUEUES.md).
 
-Para iniciar apenas a dependência local compartilhada:
+Para iniciar as dependências locais da API:
 
 ```bash
-docker compose up -d --wait redis
+docker compose up -d --wait db redis atlas-db
+pnpm migrate:local
 ```
 
 A convenção de chaves, timeouts, readiness, usos permitidos e operação local
-estão em [`docs/REDIS.md`](docs/REDIS.md).
+estão em [`docs/REDIS.md`](docs/REDIS.md). O setup PostgreSQL, os limites do
+pool e o fluxo Atlas estão em [`docs/database/README.md`](docs/database/README.md).
 
 ## Qualidade e build
 
@@ -81,10 +86,11 @@ pnpm build
 ```
 
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
-cobrem configuração, erros, i18n, Redis, registry de readiness, endpoints
-operacionais, OpenAPI, logging, redaction, correlação, filas e shutdown; o build
-cobre Manager API, Worker, Web e Mobile. Depois de subir o Redis local, as
-integrações reais são executadas com
+cobrem configuração, erros, i18n, PostgreSQL, Redis, registry de readiness,
+endpoints operacionais, OpenAPI, logging, redaction, correlação, filas e
+shutdown; o build cobre Manager API, Worker, Web e Mobile. Depois de subir as
+dependências locais, as integrações reais são executadas com
+`pnpm --filter @protege-mais/plugins test:database`,
 `pnpm --filter @protege-mais/plugins test:redis` e
 `pnpm --filter @protege-mais/worker test:redis`. Use `pnpm format` para aplicar a formatação e
 `pnpm -r --if-present format:check` para conferir cada workspace explicitamente.
@@ -109,9 +115,9 @@ convenção completa do OpenAPI está em
 permitidos/proibidos e consultas operacionais estão em
 [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
-PostgreSQL, Atlas e MinIO permanecem configurados como infraestrutura local,
-mas não há migrations nem seeds de domínio. A fundação de banco será
-consolidada em `PROT-011`.
+PostgreSQL e Atlas formam a fundação oficial de persistência, mas o schema
+continua vazio: não há tabelas, migrations SQL, seeds ou dados de domínio.
+Migrations estruturais podem ser aplicadas em uma base limpa sem seed.
 
 ## Documentação e tickets
 
@@ -123,8 +129,8 @@ consolidada em `PROT-011`.
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-011`:
+O próximo ticket liberado é `PROT-012`:
 
 ```text
-Implemente o ticket PROT-011 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-012 seguindo toda a documentação do projeto.
 ```

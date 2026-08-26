@@ -39,6 +39,7 @@ testes, decisões e pendências.
 | Estado atual do código                   | `docs/PROJECT_ARCHITECTURE.md`                       |
 | Runtime e convenções de qualidade        | `docs/QUALITY.md`                                    |
 | Configuração e matriz de variáveis       | `docs/CONFIGURATION.md`                              |
+| PostgreSQL, Drizzle e fluxo Atlas        | `docs/database/README.md`                            |
 | Redis, namespaces e operação local       | `docs/REDIS.md`                                      |
 | Filas, jobs e operação do Worker         | `docs/WORKER_QUEUES.md`                              |
 | Logging seguro e correlação              | `docs/OBSERVABILITY.md`                              |

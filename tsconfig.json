@@ -17,6 +17,9 @@
       "@protege-mais/middlewares": ["./packages/middlewares/index.ts"],
       "@protege-mais/models": ["./packages/models/index.ts"],
       "@protege-mais/plugins": ["./packages/plugins/index.ts"],
+      "@protege-mais/plugins/database": [
+        "./packages/plugins/database/index.ts"
+      ],
       "@protege-mais/plugins/logging": ["./packages/plugins/logging/index.ts"],
       "@protege-mais/plugins/queues": ["./packages/plugins/queues/index.ts"],
       "@protege-mais/plugins/redis": ["./packages/plugins/redis/index.ts"],

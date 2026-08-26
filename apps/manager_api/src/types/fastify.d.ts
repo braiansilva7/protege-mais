@@ -1,4 +1,4 @@
-import type { AppDatabase } from '@protege-mais/plugins';
+import type { AppDatabase, DatabaseConnection } from '@protege-mais/plugins';
 import type { Pool } from 'pg';
 
 declare module 'fastify' {
@@ -6,5 +6,6 @@ declare module 'fastify' {
     DatabaseRw: AppDatabase;
     DatabaseRo: AppDatabase;
     dbPool: Pool;
+    databaseConnection: DatabaseConnection;
   }
 }

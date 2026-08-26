@@ -76,22 +76,27 @@ valores `change-before-production` do `.env.example`, são rejeitados quando
 usados em campos secretos ou na credencial das URLs de banco e Redis.
 Parâmetros e algoritmos criptográficos continuam fora do escopo deste ticket e
 serão definidos pelos tickets de segurança. Timeouts, namespace e operação do
-Redis estão em [`REDIS.md`](REDIS.md).
+Redis estão em [`REDIS.md`](REDIS.md). O pool PostgreSQL recebe somente a URL
+já validada; limites, timeouts, sessões UTC e operação ficam em
+[`database/README.md`](database/README.md).
 
 ## Variáveis exclusivas de infraestrutura
 
 `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DB_DATABASE_URL` e
 `DB_ATLAS` são consumidas pelo Docker Compose, pelo PostgreSQL ou pelo Atlas.
 Elas permanecem no `.env.example`, mas não fazem parte do objeto de runtime dos
-apps.
+apps. As duas URLs Atlas devem limitar o `search_path` a `public`; são lidas
+pelo `atlas.hcl` a partir do ambiente e nunca impressas pelos scripts.
 
 ## Uso local
 
 1. Copie `.env.example` para `.env`.
 2. Substitua os marcadores locais conforme o ambiente. Em dispositivo físico,
    ajuste `EXPO_PUBLIC_API_URL` para um endereço alcançável pelo aparelho.
-3. Inicie o Redis com `docker compose up -d --wait redis`.
-4. Inicie o app desejado pelos scripts da raiz.
+3. Inicie PostgreSQL, Redis e a base de desenvolvimento do Atlas com
+   `docker compose up -d --wait db redis atlas-db`.
+4. Execute `pnpm migrate:local`; o seed continua opcional.
+5. Inicie o app desejado pelos scripts da raiz.
 
 O `.env` não é versionado. Variáveis fornecidas diretamente pelo processo têm
 prioridade sobre o arquivo, o que permite injeção segura por container ou

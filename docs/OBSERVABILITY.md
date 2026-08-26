@@ -53,6 +53,12 @@ Conexões Redis usam somente `redis.connection.ready`,
 `redis.connection.closed`. Esses eventos não incluem URL, host, porta, database,
 chave, valor ou mensagem original do cliente.
 
+PostgreSQL usa somente `database.connection.ready`,
+`database.connection.unavailable`, `database.pool.error` e
+`database.connection.closed`. Falhas incluem no máximo `errorType` sintético;
+`DATABASE_URL`, host, porta, usuário, database, mensagem, stack, causa e objeto
+original do driver permanecem proibidos.
+
 Eventos `worker.job.*` permitem somente `queue`, `processor`, `attempt`,
 `maxAttempts`, `durationMs`, `failureType` e `errorCode`, além do contexto
 comum. `failureType` usa `transient`, `terminal` ou `exhausted`. `jobId`, chave

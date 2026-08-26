@@ -1,17 +1,13 @@
-variable "DB_ATLAS" {
-  type = string
-}
-
 data "external_schema" "drizzle" {
   program = [
-    "pnpm",
-    "drizzle-kit",
+    "./node_modules/.bin/drizzle-kit",
     "export"
   ]
 }
 
 env "dev" {
-  dev = var.DB_ATLAS
+  url = getenv("DB_DATABASE_URL")
+  dev = getenv("DB_ATLAS")
 
   schema {
     src = data.external_schema.drizzle.url
@@ -23,7 +19,8 @@ env "dev" {
 }
 
 env "prod" {
-  dev = var.DB_ATLAS
+  url = getenv("DB_DATABASE_URL")
+  dev = getenv("DB_ATLAS")
 
   schema {
     src = data.external_schema.drizzle.url

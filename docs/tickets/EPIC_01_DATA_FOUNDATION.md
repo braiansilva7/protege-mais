@@ -9,7 +9,7 @@ de proteção. Todos os tickets estão inicialmente `Pendente`.
 
 | Campo        | Valor              |
 | ------------ | ------------------ |
-| Status       | Pendente           |
+| Status       | Concluído          |
 | Prioridade   | P0                 |
 | Dependências | PROT-003, PROT-006 |
 

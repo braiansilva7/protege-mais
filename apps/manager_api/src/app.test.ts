@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { test } from 'node:test';
+import { Pool } from 'pg';
 import type { ManagerApiEnvironment } from '@protege-mais/config';
-import type { RedisConnection } from '@protege-mais/plugins';
+import type {
+  AppDatabase,
+  DatabaseConnection,
+  RedisConnection,
+} from '@protege-mais/plugins';
 import type { ErrorResponse } from '@protege-mais/schema';
 import { buildServer } from './app.js';
 import { registerShutdownSignals } from './lifecycle.js';
@@ -48,8 +53,37 @@ function createTestRedisConnection(
   };
 }
 
-function buildTestServer(redisConnection = createTestRedisConnection()) {
-  return buildServer(testConfiguration, { redisConnection });
+function createTestDatabaseConnection(
+  isAvailable: () => boolean = () => true,
+  onClose: () => void = () => undefined
+): DatabaseConnection {
+  const pool = new Pool({ allowExitOnIdle: true });
+  let closeTask: Promise<void> | undefined;
+
+  return {
+    database: Object.create(null) as AppDatabase,
+    pool,
+    connect: () =>
+      isAvailable()
+        ? Promise.resolve()
+        : Promise.reject(new Error('PostgreSQL de teste indisponível.')),
+    start: () => undefined,
+    isReady: () => Promise.resolve(isAvailable()),
+    close: () => {
+      closeTask ??= pool.end().then(onClose);
+      return closeTask;
+    },
+  };
+}
+
+function buildTestServer(
+  redisConnection = createTestRedisConnection(),
+  databaseConnection = createTestDatabaseConnection()
+) {
+  return buildServer(testConfiguration, {
+    redisConnection,
+    databaseConnection,
+  });
 }
 
 void test('separa liveness e readiness fora do prefixo de negócio', async () => {
@@ -141,6 +175,31 @@ void test('identifica Redis indisponível separadamente e reconhece retomada', a
   }
 });
 
+void test('identifica PostgreSQL indisponível separadamente e reconhece retomada', async () => {
+  let databaseAvailable = false;
+  const app = await buildTestServer(
+    createTestRedisConnection(),
+    createTestDatabaseConnection(() => databaseAvailable)
+  );
+
+  try {
+    const unavailable = await app.inject({ method: 'GET', url: '/ready' });
+
+    assert.equal(unavailable.statusCode, 503);
+    assert.equal(unavailable.json<ErrorResponse>().code, 'SERVICE_NOT_READY');
+    assert.equal(await app.databaseConnection.isReady(), false);
+
+    databaseAvailable = true;
+    const recovered = await app.inject({ method: 'GET', url: '/ready' });
+
+    assert.equal(recovered.statusCode, 200);
+    assert.deepEqual(recovered.json(), { status: 'ok' });
+    assert.equal(await app.databaseConnection.isReady(), true);
+  } finally {
+    await app.close();
+  }
+});
+
 void test('aceita, gera e devolve IDs de correlação seguros', async () => {
   const app = await buildTestServer();
 
@@ -179,11 +238,18 @@ void test('aceita, gera e devolve IDs de correlação seguros', async () => {
 
 void test('SIGTERM encerra o listener, o pool e o estado de readiness uma vez', async () => {
   let redisCloses = 0;
+  let databaseCloses = 0;
   const app = await buildTestServer(
     createTestRedisConnection(
       () => true,
       () => {
         redisCloses += 1;
+      }
+    ),
+    createTestDatabaseConnection(
+      () => true,
+      () => {
+        databaseCloses += 1;
       }
     )
   );
@@ -222,6 +288,7 @@ void test('SIGTERM encerra o listener, o pool e o estado de readiness uma vez', 
     assert.equal(app.server.listening, false);
     assert.equal(app.dbPool.ended, true);
     assert.equal(redisCloses, 1);
+    assert.equal(databaseCloses, 1);
     assert.equal(closeHooks, 1);
     assert.equal(signalSource.listenerCount('SIGINT'), 0);
     assert.equal(signalSource.listenerCount('SIGTERM'), 0);

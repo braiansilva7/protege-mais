@@ -2,16 +2,17 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-010`. A arquitetura
+Este documento registra somente o que existe após o `PROT-011`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
 O monorepo possui quatro apps executáveis e dez packages compartilhados. Ainda
 não existem domínio de negócio, autenticação, autorização, tabelas, migrations
-ou seeds. Redis já é uma dependência compartilhada com namespace por ambiente,
+SQL ou seeds. Redis já é uma dependência compartilhada com namespace por ambiente,
 reconexão, timeouts e encerramento gracioso. As cinco filas base usam BullMQ,
 envelope v1, publicação idempotente, retry/backoff e falha controlada. A API
-possui contrato global de erros,
+possui pool PostgreSQL/Drizzle gerenciado, probes obrigatórios para PostgreSQL e
+Redis, contrato global de erros,
 internacionalização em `pt-BR`, `en` e `es`, liveness, readiness extensível,
 encerramento gracioso e logs JSON correlacionados. Seus contratos HTTP geram
 OpenAPI 3.1 e a exposição do Swagger segue uma política por ambiente, sem ativar
@@ -49,15 +50,15 @@ protege-mais/
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
-│   ├── models/               # Schema Drizzle, atualmente vazio
-│   ├── plugins/              # Logging, Redis, filas e plugins Fastify
+│   ├── models/               # Export central do Drizzle, ainda vazio
+│   ├── plugins/              # Banco, logging, Redis, filas e plugins Fastify
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
 │   ├── services/             # Capacidades reutilizáveis futuras
 │   └── useCases/             # Contrato/registry de jobs e orquestração futura
 ├── atlas/
-│   ├── prod/                 # Vazio
-│   └── seed/dev/             # Vazio
+│   ├── prod/                 # Checksum Atlas, sem migration SQL
+│   └── seed/dev/             # Checksum Atlas, sem seed
 ├── eslint.config.mjs       # Lint compartilhado e tipado
 ├── tsconfig.base.json      # Regras TypeScript comuns
 ├── tsconfig.json           # Node.js e aliases de packages
@@ -137,12 +138,12 @@ Redis é exigido pela API e pelo Worker. A matriz está em
 
 ## Responsabilidade dos apps
 
-| App           | Responsabilidade atual                                  | Não faz neste baseline              |
-| ------------- | ------------------------------------------------------- | ----------------------------------- |
-| `manager_api` | Config, Redis, logs, probes, OpenAPI, erros e `/api/v1` | Regra de negócio, auth ou permissão |
-| `web`         | Valida config pública e serve o shell                   | Chamada de API ou fluxo funcional   |
-| `mobile`      | Valida config pública e inicia o shell Expo             | Storage, API ou fluxo de proteção   |
-| `worker`      | Filas, processors, retry, logs e shutdown gracioso      | Regra de negócio ou persistência    |
+| App           | Responsabilidade atual                             | Não faz neste baseline              |
+| ------------- | -------------------------------------------------- | ----------------------------------- |
+| `manager_api` | Config, banco, Redis, probes, OpenAPI e `/api/v1`  | Regra de negócio, auth ou permissão |
+| `web`         | Valida config pública e serve o shell              | Chamada de API ou fluxo funcional   |
+| `mobile`      | Valida config pública e inicia o shell Expo        | Storage, API ou fluxo de proteção   |
+| `worker`      | Filas, processors, retry, logs e shutdown gracioso | Regra de negócio ou persistência    |
 
 ## Worker e filas
 
@@ -190,9 +191,10 @@ criar o Fastify. Depois registra, nesta ordem:
 `GET /health` verifica somente liveness e não consulta dependências.
 `GET /ready` executa todos os probes obrigatórios registrados e responde 503
 com `SERVICE_NOT_READY` quando um deles retorna falso ou falha. O probe Redis
-exige conexão pronta e `PING` dentro do timeout; indisponibilidade e retomada são
-refletidas sem reiniciar a API. PostgreSQL será registrado no `PROT-011`. Os
-detalhes internos dos probes não entram na resposta.
+exige conexão pronta e `PING` dentro do timeout. O probe `postgresql` executa
+`SELECT 1` dentro dos limites do pool. Indisponibilidade e retomada de qualquer
+uma das dependências são refletidas sem reiniciar a API; detalhes internos dos
+probes não entram na resposta.
 
 O processo trata `SIGINT` e `SIGTERM` por uma rotina idempotente. Ela bloqueia
 readiness antes de fechar o Fastify, que para de aceitar conexões e executa os
@@ -272,37 +274,52 @@ chama API, persiste token ou oferece fluxo funcional.
 
 ## Banco e Atlas
 
-`packages/models/index.ts` exporta um schema vazio. `atlas/prod` e
-`atlas/seed/dev` não contêm SQL nem checksums. A integração PostgreSQL/Drizzle
-continua preservada como capacidade genérica, mas sua consolidação pertence ao
-`PROT-011`.
+`packages/models/index.ts` é a entrada central e ainda exporta um schema vazio.
+`packages/plugins/database` cria por aplicação um pool com máximo de dez
+conexões, timeouts finitos, `application_name`, sessões UTC, listener seguro de
+erro e fechamento idempotente. A Manager API expõe o mesmo Drizzle como
+`DatabaseRw` e `DatabaseRo` e registra a conexão no readiness.
+
+`atlas.hcl` usa o export Drizzle como estado desejado. `prod` mantém somente
+migrations estruturais em `atlas/prod`; `dev` mantém apenas seeds fictícios em
+`atlas/seed/dev`. Ambos possuem checksum de diretório vazio, sem SQL. O apply
+não recalcula hashes, uma base limpa aceita zero migrations repetidamente e o
+seed não é requisito. PostgreSQL principal e dev database do Atlas iniciam em
+UTC, têm healthcheck, shutdown gracioso e rede local; a porta publicada do
+banco é restrita a loopback. O fluxo completo está em
+`docs/database/README.md`.
 
 ## Comandos do monorepo
 
-| Comando                                          | Resultado                                                 |
-| ------------------------------------------------ | --------------------------------------------------------- |
-| `pnpm dev`                                       | Inicia os quatro apps pelo Turbo                          |
-| `pnpm dev:manager_api`                           | Inicia somente a API                                      |
-| `pnpm dev:web`                                   | Inicia somente o Web                                      |
-| `pnpm dev:mobile`                                | Inicia somente o Mobile                                   |
-| `pnpm dev:worker`                                | Inicia somente os consumers do Worker                     |
-| `pnpm lint`                                      | Valida os quatro apps e os dez packages                   |
-| `pnpm typecheck`                                 | Valida os quatro apps e os dez packages                   |
-| `pnpm test`                                      | Testa config, filas, Redis, erros, logs, probes e OpenAPI |
-| `pnpm --filter @protege-mais/plugins test:redis` | Integra Redis real, TTL e reconexão                       |
-| `pnpm --filter @protege-mais/worker test:redis`  | Integra filas, retry, idempotência, falha e shutdown      |
-| `pnpm format:check`                              | Confere a formatação do repositório                       |
-| `pnpm -r --if-present format:check`              | Confere a formatação por workspace                        |
-| `pnpm build`                                     | Gera os quatro builds a partir da raiz                    |
-| `pnpm -r list --depth -1`                        | Lista raiz, quatro apps e dez packages                    |
+| Comando                                             | Resultado                                                 |
+| --------------------------------------------------- | --------------------------------------------------------- |
+| `pnpm dev`                                          | Inicia os quatro apps pelo Turbo                          |
+| `pnpm dev:manager_api`                              | Inicia somente a API                                      |
+| `pnpm dev:web`                                      | Inicia somente o Web                                      |
+| `pnpm dev:mobile`                                   | Inicia somente o Mobile                                   |
+| `pnpm dev:worker`                                   | Inicia somente os consumers do Worker                     |
+| `pnpm lint`                                         | Valida os quatro apps e os dez packages                   |
+| `pnpm typecheck`                                    | Valida os quatro apps e os dez packages                   |
+| `pnpm test`                                         | Testa config, banco, filas, erros, logs, probes e OpenAPI |
+| `pnpm --filter @protege-mais/plugins test:database` | Integra Drizzle, UTC, queda, retomada e shutdown          |
+| `pnpm --filter @protege-mais/plugins test:redis`    | Integra Redis real, TTL e reconexão                       |
+| `pnpm --filter @protege-mais/worker test:redis`     | Integra filas, retry, idempotência, falha e shutdown      |
+| `pnpm format:check`                                 | Confere a formatação do repositório                       |
+| `pnpm -r --if-present format:check`                 | Confere a formatação por workspace                        |
+| `pnpm build`                                        | Gera os quatro builds a partir da raiz                    |
+| `pnpm migrate:local`                                | Aplica migrations estruturais Atlas localmente            |
+| `ENV=prod pnpm atlas:validate:docker`               | Valida o diretório estrutural e seu checksum              |
+| `pnpm -r list --depth -1`                           | Lista raiz, quatro apps e dez packages                    |
 
 ## Inventário e recuperação
 
 A classificação do legado removido permanece em
 `docs/implementation/PROT-000_LEGACY_INVENTORY.md`. Os arquivos removidos são
-recuperáveis pelo histórico Git; o `PROT-010` não criou tabelas, migrations ou
-dados de domínio. O volume Redis local contém somente metadados técnicos das
-filas e qualquer job fictício de teste é removido ao concluir a integração.
+recuperáveis pelo histórico Git; o `PROT-011` não criou tabela, migration SQL,
+seed ou dado de domínio. A validação Atlas cria e remove somente uma base
+temporária com nome reservado; os volumes locais não são apagados. O volume
+Redis local contém somente metadados técnicos das filas e qualquer job fictício
+de teste é removido ao concluir a integração.
 
 ---
 

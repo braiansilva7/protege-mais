@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { Pool } from 'pg';
 import type { ManagerApiEnvironment } from '@protege-mais/config';
-import type { RedisConnection } from '@protege-mais/plugins';
+import type {
+  AppDatabase,
+  DatabaseConnection,
+  RedisConnection,
+} from '@protege-mais/plugins';
 import {
   apiTags,
   bearerAuthSecurity,
@@ -38,11 +43,29 @@ function createReadyRedisConnection(): RedisConnection {
   };
 }
 
+function createReadyDatabaseConnection(): DatabaseConnection {
+  const pool = new Pool({ allowExitOnIdle: true });
+  let closeTask: Promise<void> | undefined;
+
+  return {
+    database: Object.create(null) as AppDatabase,
+    pool,
+    connect: () => Promise.resolve(),
+    start: () => undefined,
+    isReady: () => Promise.resolve(true),
+    close: () => {
+      closeTask ??= pool.end();
+      return closeTask;
+    },
+  };
+}
+
 function buildOpenApiServer(
   configuration: ManagerApiEnvironment = baseConfiguration
 ) {
   return buildServer(configuration, {
     redisConnection: createReadyRedisConnection(),
+    databaseConnection: createReadyDatabaseConnection(),
   });
 }
 

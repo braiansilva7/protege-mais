@@ -50,10 +50,12 @@ sem expor nome do probe, causa ou diagnóstico:
 O Redis registra um probe obrigatório chamado `redis`. Uma instância responde
 pronta somente depois que a conexão estiver operacional e um `PING` limitado a
 1 segundo retornar `PONG`; uma queda posterior produz 503 e a reconexão torna o
-probe pronto novamente. O PostgreSQL passará a integrar readiness quando sua
-fundação for consolidada em `PROT-011`. O registry não define timeout global:
-cada integração executa um check curto e limitado pelo respectivo cliente. A
-operação do Redis está em [`../REDIS.md`](../REDIS.md).
+probe pronto novamente. O PostgreSQL registra o probe `postgresql`, executa
+`SELECT 1` dentro dos limites do pool e também fecha/reabre readiness sem
+reiniciar o processo. O registry não define timeout global: cada integração
+executa um check curto e limitado pelo respectivo cliente. A operação está em
+[`../REDIS.md`](../REDIS.md) e
+[`../database/README.md`](../database/README.md).
 
 Ao receber `SIGINT` ou `SIGTERM`, a API marca readiness como indisponível antes
 de chamar o fechamento do Fastify. O encerramento é idempotente, para de aceitar

@@ -13,6 +13,7 @@ import {
   registerMultipart,
   registerReadiness,
   registerRedis,
+  type DatabaseConnection,
   type RedisConnection,
 } from '@protege-mais/plugins';
 import {
@@ -26,6 +27,7 @@ import healthRoutes from './routes/health.route.js';
 import routes, { apiV1Prefix } from './routes/index.js';
 
 export interface BuildServerOptions {
+  readonly databaseConnection?: DatabaseConnection;
   readonly logDestination?: LogDestination;
   readonly redisConnection?: RedisConnection;
 }
@@ -62,6 +64,8 @@ export async function buildServer(
   });
   await app.register(registerDatabase, {
     databaseUrl: configuration.databaseUrl,
+    applicationName: 'protege-mais:manager-api',
+    connection: options.databaseConnection,
   });
   await app.register(registerMultipart);
   await app.register(registerCors, {
