@@ -77,16 +77,16 @@ function mapClientError(error: unknown): ApplicationError | undefined {
   }
 }
 
-function errorForLog(error: unknown) {
-  if (error instanceof ApplicationError && error.cause instanceof Error) {
-    return error.cause;
-  }
+function errorType(error: unknown) {
+  const diagnostic =
+    error instanceof ApplicationError && error.cause !== undefined
+      ? error.cause
+      : error;
 
-  return error instanceof Error
-    ? error
-    : new Error('Valor não-Error lançado durante a requisição.', {
-        cause: error,
-      });
+  return diagnostic instanceof Error &&
+    /^[A-Za-z][A-Za-z0-9_.-]{0,63}$/u.test(diagnostic.name)
+    ? diagnostic.name
+    : 'Error';
 }
 
 function logApplicationError(
@@ -95,16 +95,15 @@ function logApplicationError(
   originalError: unknown
 ) {
   const context = {
+    event: 'http.request.failed',
     errorCode: error.code,
+    errorType: errorType(originalError),
     requestId: request.id,
     statusCode: error.statusCode,
   };
 
   if (error.statusCode >= 500) {
-    request.log.error(
-      { ...context, err: errorForLog(originalError) },
-      'Falha interna durante a requisição.'
-    );
+    request.log.error(context, 'Falha interna durante a requisição.');
     return;
   }
 
@@ -144,8 +143,9 @@ function errorHandlerPlugin(fastify: FastifyInstance) {
 
     request.log.error(
       {
-        err: errorForLog(error),
+        event: 'http.request.failed',
         errorCode: internalServerError.code,
+        errorType: errorType(error),
         requestId: request.id,
         statusCode: internalServerError.statusCode,
       },

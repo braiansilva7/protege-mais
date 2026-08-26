@@ -237,7 +237,7 @@ UI conforme política de ambiente.
 
 | Campo        | Valor              |
 | ------------ | ------------------ |
-| Status       | Pendente           |
+| Status       | Concluído          |
 | Tipo         | Technical Story    |
 | Prioridade   | P0                 |
 | Dependências | PROT-003, PROT-006 |

@@ -3,6 +3,83 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-25 — PROT-008 — Implantar logging estruturado e seguro
+
+Status: Concluído
+
+### Resultado
+
+Manager API e Worker agora emitem um objeto JSON por linha com serviço,
+ambiente, nível e evento. Cada requisição aceita ou gera `requestId`, recebe um
+`correlationId` e devolve ambos nos headers; o registro de conclusão contém
+somente método, template da rota, status e duração.
+
+Uma allowlist operacional e uma denylist recursiva impedem o registro de
+request bruto, URL, payload, segredos, PII, dados de proteção, evidências e
+geolocalização. Erros conservam apenas tipo e código seguros; ciclos, getters
+hostis e valores não serializáveis recebem marcadores sem interromper a
+aplicação. O Worker cria um novo `requestId` por tentativa futura de job e
+preserva o `correlationId` publicado pela API.
+
+### Arquivos e dados
+
+- criado `packages/plugins/logging` com contrato de correlação, geração UUIDv7,
+  logger Pino compartilhado, sanitização defensiva e plugin Fastify;
+- a Manager API passou a desabilitar o request log automático que continha URL
+  bruta, registrar o plugin antes dos demais, normalizar rotas e devolver
+  `x-request-id` e `x-correlation-id` em todas as respostas;
+- o handler global deixou de serializar mensagem, stack e causa de erros 5xx;
+  os bootstraps da API e do Worker também passaram a emitir falhas sanitizadas
+  em JSON;
+- o Worker foi separado em composição, lifecycle e entrypoint, recebeu logger
+  injetável para teste e a fronteira `createWorkerJobLogger` para jobs futuros;
+- adicionados testes de IDs aceitos/gerados, propagação API/worker, sucesso e
+  erro HTTP, template de rota, ciclo de vida do Worker, serialização hostil e
+  redaction de token, CPF, endereço, relato e coordenadas;
+- criada `docs/OBSERVABILITY.md` com campos permitidos/proibidos, headers,
+  propagação e consultas `jq`; README, arquitetura atual, segurança, API,
+  qualidade, configuração, guia de rotas, roadmap e índices foram atualizados;
+- Pino `10.3.1`, já resolvido indiretamente no lockfile, passou a ser dependência
+  direta de `packages/plugins`; nenhuma versão resolvida foi alterada;
+- nenhuma migration, seed, tabela, permissão, rota de negócio ou dado foi criado
+  ou alterado.
+
+### Validação
+
+- `pnpm install --frozen-lockfile --offline`: os 15 projetos permaneceram
+  sincronizados sem download;
+- `pnpm test`: 43 testes aprovados em cinco workspaces, incluindo captura de
+  logs JSON em sucesso/erro, correlação, redaction e falha de serialização;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem warnings
+  ou erros;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`, com variáveis locais fictícias: Manager API, Worker, Web e
+  Mobile gerados; permanece apenas o aviso não bloqueante já conhecido do bundle
+  Web maior que 500 kB;
+- inspeção dos artefatos: nenhum arquivo de teste foi emitido pela Manager API
+  ou pelo Worker;
+- smoke dos artefatos: a API devolveu os headers, registrou `/health` e
+  `unmatched` sem expor path/query sensíveis, e o Worker registrou ready/stop;
+  ambos encerraram por `SIGTERM` com código 0;
+- `docker compose config --quiet`: configuração válida;
+- build e smoke da imagem da Manager API em `PROD`: health e headers aprovados,
+  logs JSON normalizados sem o ID/token da URL e encerramento com código 0;
+  container e imagem temporários foram removidos.
+
+### Decisões e pendências
+
+- nenhum ADR adicional foi necessário: o ticket concretiza o plugin de logging,
+  Pino e a correlação já previstos na arquitetura-alvo, sem trocar tecnologia
+  ou fronteira de camada;
+- Redis, filas e processors ainda não existem; os tickets futuros devem usar a
+  fronteira de metadata e logger correlacionado criada neste incremento;
+- identificadores de conta, usuário, organização, unidade e recurso permanecem
+  bloqueados até aprovação explícita da política operacional;
+- `PROT-009` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-25 — PROT-007 — Consolidar Swagger/OpenAPI
 
 Status: Concluído

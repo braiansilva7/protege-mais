@@ -173,7 +173,7 @@ void test('traduz mensagem HTTP sem alterar código, status ou requestId', async
   }
 });
 
-void test('transforma erro desconhecido em 500 e mantém o original só no log', async () => {
+void test('transforma erro desconhecido em 500 sem registrar diagnóstico sensível', async () => {
   const logChunks: string[] = [];
   const logStream = new Writable({
     write(chunk, _encoding, callback) {
@@ -219,8 +219,10 @@ void test('transforma erro desconhecido em 500 e mantém o original só no log',
     );
 
     const logs = logChunks.join('');
-    assert.match(logs, new RegExp(internalDiagnostic));
-    assert.match(logs, new RegExp(infrastructureDiagnostic));
+    assert.doesNotMatch(logs, new RegExp(internalDiagnostic));
+    assert.doesNotMatch(logs, new RegExp(infrastructureDiagnostic));
+    assert.match(logs, /"event":"http\.request\.failed"/);
+    assert.match(logs, /"errorType":"Error"/);
     assert.match(logs, new RegExp(requestId));
   } finally {
     await server.close();

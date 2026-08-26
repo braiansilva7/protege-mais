@@ -11,6 +11,32 @@ export {
 } from './i18next/index.js';
 export { registerMultipart } from './multipart/index.js';
 export {
+  correlationIdHeader,
+  correlationMetadata,
+  createCorrelatedLogger,
+  createCorrelationContext,
+  createRequestLogger,
+  createStructuredLogger,
+  createStructuredLoggerOptions,
+  createWorkerCorrelationContext,
+  normalizedRequestRoute,
+  pinoRedactionPaths,
+  redactedLogValue,
+  registerLogging,
+  requestIdFromRequest,
+  requestIdHeader,
+  safeErrorSerializer,
+  sanitizeLogValue,
+  validCorrelationIdentifier,
+  type CorrelationContext,
+  type CorrelationHeaderValue,
+  type CorrelationInput,
+  type CorrelationMetadata,
+  type IdentifierGenerator,
+  type LogDestination,
+  type StructuredLoggerConfiguration,
+} from './logging/index.js';
+export {
   ReadinessRegistry,
   registerReadiness,
   type ReadinessProbe,

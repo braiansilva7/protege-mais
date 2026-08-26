@@ -78,9 +78,13 @@ Toda falha processada pela Manager API responde somente com estes campos:
   pelo domínio;
 - `message` é um texto público seguro traduzido em `pt-BR`, `en` ou `es`
   conforme `Accept-Language`, com fallback para `pt-BR`;
-- `requestId` é o identificador gerado pelo Fastify para correlacionar a
-  resposta com o log. Aceitação e propagação de correlação externa pertencem
-  ao `PROT-008`.
+- `requestId` é aceito por `x-request-id` quando seguro ou gerado como UUIDv7,
+  e correlaciona a resposta com o log.
+
+Toda resposta também devolve `x-request-id` e `x-correlation-id`. Sem um
+`x-correlation-id` externo válido, a correlação usa o próprio `requestId`. O
+formato aceito e a propagação para jobs estão em
+[`OBSERVABILITY.md`](../OBSERVABILITY.md).
 
 Stack, causa interna, corpo recebido e detalhes do validador nunca fazem parte
 do contrato. Erros de schema retornam a mensagem genérica de validação, sem
@@ -124,11 +128,10 @@ throw new NotFoundError({
 });
 ```
 
-Falhas 4xx geram somente metadados operacionais no log. Em falhas 5xx, o erro
-desconhecido ou a causa original de infraestrutura fica no campo interno `err`,
-associado ao `requestId`, e não é reutilizado na resposta. O handler não registra
-body nem detalhes de validação. A política ampla de redaction e logging
-estruturado será consolidada em `PROT-008`.
+Falhas geram somente metadados operacionais. Em 5xx, o log conserva
+`errorCode`, um `errorType` sintético e a correlação, nunca mensagem, stack,
+causa, body ou detalhes de validação. O evento de conclusão usa `warn` para 4xx
+e `error` para 5xx.
 
 ## Regra de atualização
 

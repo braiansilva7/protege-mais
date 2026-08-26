@@ -74,12 +74,14 @@ pnpm build
 ```
 
 `lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `test` executa as
-suítes de configuração, classes comuns, handler Fastify, i18n, readiness,
-endpoints operacionais, OpenAPI e shutdown nos workspaces que as possuem;
+suítes de configuração, classes comuns, handler Fastify, i18n, logging,
+redaction, correlação, readiness, endpoints operacionais, OpenAPI e shutdown;
 `build` gera os quatro apps. O teste de OpenAPI valida estrutura e referências,
 contrato operacional, exemplos, security e exposição da UI por ambiente. As
 configurações compartilhadas fazem parte das dependências globais do cache do
-Turbo, portanto sua alteração invalida as tarefas afetadas.
+Turbo, portanto sua alteração invalida as tarefas afetadas. Objetos hostis e
+campos proibidos devem fazer parte dos testes sempre que um novo contexto de
+log for criado.
 Para conferir explicitamente o formatter em cada workspace:
 
 ```bash

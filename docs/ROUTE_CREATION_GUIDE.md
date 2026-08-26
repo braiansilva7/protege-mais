@@ -220,6 +220,18 @@ catálogos. Não retornar mensagens em português diretamente no controller ou
 use case. A convenção completa está em
 `docs/api/INTERNATIONALIZATION.md`.
 
+## LOGGING DA ROTA
+
+O evento HTTP comum já registra `requestId`, `correlationId`, método, template
+da rota, status e duração. Controller, use case e middleware não devem repetir
+esses campos nem registrar request, reply, body, params, query, headers ou URL.
+
+Um evento adicional deve declarar um nome estável e construir somente campos
+da allowlist. Nunca passar objetos de domínio completos ou erros brutos ao
+logger. Para trabalho assíncrono, publique apenas o metadata de correlação e
+use o logger correlacionado do Worker. A política completa está em
+`docs/OBSERVABILITY.md`.
+
 ## ARQUITETURA DO FRONT-END
 
 ### RESPONSABILIDADE DAS PASTAS

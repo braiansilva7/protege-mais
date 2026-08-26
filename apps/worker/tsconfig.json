@@ -5,5 +5,11 @@
     "outDir": "dist",
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "../../packages/config/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "../../packages/common/**/*.ts",
+    "../../packages/config/**/*.ts",
+    "../../packages/plugins/logging/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
 }

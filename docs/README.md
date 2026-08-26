@@ -39,6 +39,7 @@ testes, decisões e pendências.
 | Estado atual do código                   | `docs/PROJECT_ARCHITECTURE.md`                       |
 | Runtime e convenções de qualidade        | `docs/QUALITY.md`                                    |
 | Configuração e matriz de variáveis       | `docs/CONFIGURATION.md`                              |
+| Logging seguro e correlação              | `docs/OBSERVABILITY.md`                              |
 | Rotas base, probes e erros HTTP          | `docs/api/README.md`                                 |
 | Contratos HTTP, OpenAPI e Swagger        | `docs/api/OPENAPI.md`                                |
 | Idiomas e chaves do backend              | `docs/api/INTERNATIONALIZATION.md`                   |

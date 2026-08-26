@@ -15,6 +15,8 @@ O `PROT-006` separou liveness de readiness, formalizou o prefixo `/api/v1` e
 adicionou encerramento gracioso da Manager API.
 O `PROT-007` tornou `packages/schema` a fonte oficial dos contratos HTTP,
 consolidou o OpenAPI 3.1 e restringiu a exposição do Swagger por ambiente.
+O `PROT-008` implantou logs JSON seguros na API e no Worker, com correlação,
+rotas normalizadas e redaction defensiva.
 
 ## Pré-requisitos
 
@@ -48,8 +50,9 @@ pnpm dev:mobile
 pnpm dev:worker
 ```
 
-O Worker permanece ocioso até receber `SIGINT` ou `SIGTERM`. Ele ainda não
-conecta ao Redis e não processa filas ou jobs.
+O Worker permanece ocioso até receber `SIGINT` ou `SIGTERM` e registra seu
+ciclo de vida em JSON. Ele ainda não conecta ao Redis e não processa filas ou
+jobs.
 
 ## Qualidade e build
 
@@ -63,8 +66,8 @@ pnpm build
 
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
 cobrem configuração, erros, i18n, registry de readiness, endpoints operacionais,
-OpenAPI, política do Swagger e shutdown; o build cobre Manager API, Worker, Web
-e Mobile. Use `pnpm format` para aplicar a formatação e
+OpenAPI, logging, redaction, correlação e shutdown; o build cobre Manager API,
+Worker, Web e Mobile. Use `pnpm format` para aplicar a formatação e
 `pnpm -r --if-present format:check` para conferir cada workspace explicitamente.
 As regras de TypeScript, ESLint, Prettier e uso excepcional de `any` estão em
 [`docs/QUALITY.md`](docs/QUALITY.md).
@@ -83,7 +86,9 @@ fazem parte da resposta. A tabela de mapeamentos e as regras de uso estão em
 shutdown; idiomas e convenção de chaves estão em
 [`docs/api/INTERNATIONALIZATION.md`](docs/api/INTERNATIONALIZATION.md), e a
 convenção completa do OpenAPI está em
-[`docs/api/OPENAPI.md`](docs/api/OPENAPI.md).
+[`docs/api/OPENAPI.md`](docs/api/OPENAPI.md). Os headers de correlação, campos
+permitidos/proibidos e consultas operacionais estão em
+[`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
 PostgreSQL, Atlas e MinIO permanecem configurados como infraestrutura local,
 mas não há migrations nem seeds de domínio. A fundação de banco será
@@ -99,8 +104,8 @@ consolidada em `PROT-011`.
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-008`:
+O próximo ticket liberado é `PROT-009`:
 
 ```text
-Implemente o ticket PROT-008 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-009 seguindo toda a documentação do projeto.
 ```

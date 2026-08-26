@@ -80,6 +80,42 @@ void test('responde 503 sanitizado enquanto probe obrigatório está indisponív
   }
 });
 
+void test('aceita, gera e devolve IDs de correlação seguros', async () => {
+  const app = await buildServer(testConfiguration);
+
+  try {
+    const accepted = await app.inject({
+      method: 'GET',
+      url: '/health',
+      headers: {
+        'x-request-id': 'request-manager-prot-008',
+        'x-correlation-id': 'correlation-manager-prot-008',
+      },
+    });
+    const generated = await app.inject({
+      method: 'GET',
+      url: '/health',
+      headers: { 'x-request-id': 'valor com espaço' },
+    });
+
+    assert.equal(accepted.headers['x-request-id'], 'request-manager-prot-008');
+    assert.equal(
+      accepted.headers['x-correlation-id'],
+      'correlation-manager-prot-008'
+    );
+    assert.match(
+      String(generated.headers['x-request-id']),
+      /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u
+    );
+    assert.equal(
+      generated.headers['x-correlation-id'],
+      generated.headers['x-request-id']
+    );
+  } finally {
+    await app.close();
+  }
+});
+
 void test('SIGTERM encerra o listener, o pool e o estado de readiness uma vez', async () => {
   const app = await buildServer(testConfiguration);
   const signalSource = new EventEmitter();

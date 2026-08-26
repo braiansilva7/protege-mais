@@ -26,6 +26,8 @@ localização e evidências. Este documento é normativo para todos os tickets.
 
 Logs devem usar `requestId` e `correlationId`. Identificadores de conta ou
 organização só aparecem quando necessários e aprovados pela política de logs.
+A allowlist aplicada, a defesa recursiva e as consultas seguras estão em
+`docs/OBSERVABILITY.md`.
 
 ## Autenticação e sessão
 

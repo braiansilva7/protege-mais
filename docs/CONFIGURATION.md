@@ -65,7 +65,10 @@ o app passa a carregá-la.
 | SMTP         | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Host, porta, booleano estrito e remetente com e-mail válido         |
 
 `LOG_LEVEL` aceita `trace`, `debug`, `info`, `warn`, `error`, `fatal` e
-`silent`. `SMTP_SECURE` aceita somente `true` ou `false`.
+`silent`. O valor controla Manager API e Worker sem alterar o formato JSON ou a
+política de redaction; nenhum nível permite dados sensíveis. `SMTP_SECURE`
+aceita somente `true` ou `false`. O contrato dos logs está em
+[`OBSERVABILITY.md`](OBSERVABILITY.md).
 
 Em produção, marcadores conhecidos de exemplo, como `change-me`, `admin` e os
 valores `change-before-production` do `.env.example`, são rejeitados quando

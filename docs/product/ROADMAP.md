@@ -76,7 +76,7 @@ integrações e garantia de histórico.
 
 ## Ordem imediata
 
-`PROT-007` consolidou `packages/schema` como fonte oficial dos contratos HTTP,
-gerou OpenAPI 3.1 com schemas e segurança compartilhados e restringiu o Swagger
-por ambiente. O próximo trabalho de implementação deve começar por `PROT-008`,
-que implantará logging estruturado, correlação e redaction segura.
+`PROT-008` implantou logging JSON na Manager API e no Worker, com IDs validados,
+propagação de correlação, rota normalizada e redaction defensiva. O próximo
+trabalho de implementação deve começar por `PROT-009`, que configurará Redis,
+readiness e namespaces por ambiente.

@@ -2,7 +2,7 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-007`. A arquitetura
+Este documento registra somente o que existe após o `PROT-008`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
@@ -10,9 +10,11 @@ O monorepo possui quatro apps executáveis e dez packages compartilhados. Ainda
 não existem domínio de negócio, autenticação, autorização, tabelas, migrations,
 seeds, Redis ou filas. Os contratos de configuração dessas capacidades já são
 validados de forma isolada. A API possui contrato global de erros,
-internacionalização em `pt-BR`, `en` e `es`, liveness, readiness extensível e
-encerramento gracioso. Seus contratos HTTP geram OpenAPI 3.1 e a exposição do
-Swagger segue uma política por ambiente, sem ativar as integrações futuras.
+internacionalização em `pt-BR`, `en` e `es`, liveness, readiness extensível,
+encerramento gracioso e logs JSON correlacionados. Seus contratos HTTP geram
+OpenAPI 3.1 e a exposição do Swagger segue uma política por ambiente, sem ativar
+as integrações futuras. O Worker usa o mesmo logger seguro e possui a fronteira
+de correlação preparada para jobs futuros.
 
 ## Estrutura executável atual
 
@@ -28,8 +30,11 @@ protege-mais/
 │   │       ├── app.ts         # Composição testável do Fastify
 │   │       ├── lifecycle.ts   # Readiness e shutdown por sinais
 │   │       └── server.ts      # Entrada do processo
-│   ├── worker/               # Processo ocioso aguardando infraestrutura
-│   │   └── src/index.ts
+│   ├── worker/               # Processo ocioso com logs JSON seguros
+│   │   └── src/
+│   │       ├── app.ts         # Shell e contexto correlacionado de jobs
+│   │       ├── lifecycle.ts   # Espera e remoção de sinais
+│   │       └── index.ts       # Entrada do processo
 │   ├── web/                  # Shell institucional Vue
 │   │   └── src/
 │   └── mobile/               # Shell Expo/React Native
@@ -41,7 +46,7 @@ protege-mais/
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
 │   ├── models/               # Schema Drizzle, atualmente vazio
-│   ├── plugins/              # Erros, readiness, banco, CORS, multipart e i18n
+│   ├── plugins/              # Logging, erros, readiness e plugins Fastify
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
 │   ├── services/             # Capacidades reutilizáveis futuras
@@ -125,12 +130,12 @@ pela API neste estágio. A matriz está em `docs/CONFIGURATION.md`.
 
 ## Responsabilidade dos apps
 
-| App           | Responsabilidade atual                               | Não faz neste baseline              |
-| ------------- | ---------------------------------------------------- | ----------------------------------- |
-| `manager_api` | Config, probes, shutdown, OpenAPI, erros e `/api/v1` | Regra de negócio, auth ou permissão |
-| `web`         | Valida config pública e serve o shell                | Chamada de API ou fluxo funcional   |
-| `mobile`      | Valida config pública e inicia o shell Expo          | Storage, API ou fluxo de proteção   |
-| `worker`      | Valida config, aguarda e encerra por sinal           | Redis, filas, processors ou jobs    |
+| App           | Responsabilidade atual                                | Não faz neste baseline              |
+| ------------- | ----------------------------------------------------- | ----------------------------------- |
+| `manager_api` | Config, logs, probes, OpenAPI, erros e `/api/v1`      | Regra de negócio, auth ou permissão |
+| `web`         | Valida config pública e serve o shell                 | Chamada de API ou fluxo funcional   |
+| `mobile`      | Valida config pública e inicia o shell Expo           | Storage, API ou fluxo de proteção   |
+| `worker`      | Valida config, registra ciclo de vida e aguarda sinal | Redis, filas, processors ou jobs    |
 
 O worker usa um timer referenciado de longa duração apenas para manter o event
 loop ativo, sem polling ou busy loop. `SIGINT` e `SIGTERM` cancelam a espera e
@@ -142,15 +147,16 @@ encerram o shell. Redis e processamento assíncrono serão implementados por
 O bootstrap valida ambiente, host, porta, log, CORS e banco antes de criar o
 Fastify. Depois registra, nesta ordem:
 
-1. handler global de erros e de rota inexistente;
-2. registry de readiness;
-3. pool PostgreSQL/Drizzle;
-4. parser multipart;
-5. CORS;
-6. i18n;
-7. Swagger;
-8. `GET /health` e `GET /ready`;
-9. agregador vazio sob `/api/v1`.
+1. logging seguro e headers de correlação;
+2. handler global de erros e de rota inexistente;
+3. registry de readiness;
+4. pool PostgreSQL/Drizzle;
+5. parser multipart;
+6. CORS;
+7. i18n;
+8. Swagger;
+9. `GET /health` e `GET /ready`;
+10. agregador vazio sob `/api/v1`.
 
 `GET /health` verifica somente liveness e não consulta dependências.
 `GET /ready` executa todos os probes obrigatórios registrados e responde 503
@@ -180,7 +186,7 @@ sem alterar código ou status. `packages/plugins` converte essas classes, erros
 de schema e erros HTTP conhecidos em `{ code, message, requestId }`. O tipo
 desse contrato HTTP deriva de `packages/schema`. Falhas desconhecidas recebem
 `INTERNAL_SERVER_ERROR` e 500; stack, causa e detalhes do schema não são
-serializados para o cliente.
+serializados para o cliente nem mantidos como diagnóstico textual no log.
 
 O plugin i18n resolve `Accept-Language` desde `onRequest`, respeita pesos `q`,
 normaliza variantes de português para `pt-BR` e variantes regionais de inglês
@@ -192,6 +198,26 @@ erros está em `docs/api/README.md` e a convenção de idiomas e chaves em
 
 Não há JWT, middleware de autenticação, usuário autenticado ou permissão no
 baseline. Esses componentes serão redesenhados em seus tickets próprios.
+
+## Logging e correlação
+
+`packages/plugins/logging` concentra o Pino, sanitização recursiva, geração
+de UUIDv7 e integração Fastify. Manager API e Worker escrevem JSON por linha
+com `service`, `environment`, nível e evento. O nível validado em
+`packages/config` é aplicado igualmente nos dois processos.
+
+A API aceita IDs externos com formato limitado, gera valores para entradas
+ausentes ou inválidas e sempre devolve `x-request-id` e `x-correlation-id`. O
+evento de conclusão HTTP inclui somente método, template da rota, status e
+duração; a URL bruta e os logs automáticos do Fastify ficam desabilitados. O
+Worker pode criar um logger de job que preserva `correlationId` e gera um novo
+`requestId` por tentativa.
+
+Uma denylist recursiva bloqueia payloads e dados de autenticação, pessoais, de
+proteção, evidência e geolocalização. Erros conservam somente um tipo seguro;
+falha de getter, ciclo ou serialização recebe marcador e não interrompe o fluxo
+da aplicação. A allowlist, denylist e as consultas operacionais estão em
+`docs/OBSERVABILITY.md`.
 
 ## Web e Mobile
 
@@ -208,26 +234,26 @@ continua preservada como capacidade genérica, mas sua consolidação pertence a
 
 ## Comandos do monorepo
 
-| Comando                             | Resultado                                                  |
-| ----------------------------------- | ---------------------------------------------------------- |
-| `pnpm dev`                          | Inicia os quatro apps pelo Turbo                           |
-| `pnpm dev:manager_api`              | Inicia somente a API                                       |
-| `pnpm dev:web`                      | Inicia somente o Web                                       |
-| `pnpm dev:mobile`                   | Inicia somente o Mobile                                    |
-| `pnpm dev:worker`                   | Inicia somente o worker ocioso                             |
-| `pnpm lint`                         | Valida os quatro apps e os dez packages                    |
-| `pnpm typecheck`                    | Valida os quatro apps e os dez packages                    |
-| `pnpm test`                         | Testa config, erros, i18n, probes, OpenAPI e ciclo de vida |
-| `pnpm format:check`                 | Confere a formatação do repositório                        |
-| `pnpm -r --if-present format:check` | Confere a formatação por workspace                         |
-| `pnpm build`                        | Gera os quatro builds a partir da raiz                     |
-| `pnpm -r list --depth -1`           | Lista raiz, quatro apps e dez packages                     |
+| Comando                             | Resultado                                         |
+| ----------------------------------- | ------------------------------------------------- |
+| `pnpm dev`                          | Inicia os quatro apps pelo Turbo                  |
+| `pnpm dev:manager_api`              | Inicia somente a API                              |
+| `pnpm dev:web`                      | Inicia somente o Web                              |
+| `pnpm dev:mobile`                   | Inicia somente o Mobile                           |
+| `pnpm dev:worker`                   | Inicia somente o worker ocioso                    |
+| `pnpm lint`                         | Valida os quatro apps e os dez packages           |
+| `pnpm typecheck`                    | Valida os quatro apps e os dez packages           |
+| `pnpm test`                         | Testa config, erros, i18n, logs, probes e OpenAPI |
+| `pnpm format:check`                 | Confere a formatação do repositório               |
+| `pnpm -r --if-present format:check` | Confere a formatação por workspace                |
+| `pnpm build`                        | Gera os quatro builds a partir da raiz            |
+| `pnpm -r list --depth -1`           | Lista raiz, quatro apps e dez packages            |
 
 ## Inventário e recuperação
 
 A classificação do legado removido permanece em
 `docs/implementation/PROT-000_LEGACY_INVENTORY.md`. Os arquivos removidos são
-recuperáveis pelo histórico Git; o `PROT-007` não criou nem alterou dados.
+recuperáveis pelo histórico Git; o `PROT-008` não criou nem alterou dados.
 
 ---
 
