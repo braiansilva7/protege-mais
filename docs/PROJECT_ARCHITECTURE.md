@@ -2,20 +2,21 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-013`. A arquitetura
+Este documento registra somente o que existe após o `PROT-014`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
 O monorepo possui quatro apps executáveis e dez packages compartilhados. Ainda
-não existem domínio de negócio, autenticação, autorização, tabelas ou enums de
-domínio, seeds ou dados de domínio. PostGIS está habilitado pela primeira
-migration estrutural e validado com SRID 4326. As convenções de persistência
-estão congeladas e comprovadas por um fixture Drizzle/Atlas isolado do schema
-de produção. Redis já é uma dependência compartilhada com namespace por
-ambiente, reconexão, timeouts e encerramento gracioso. As cinco filas base usam
-BullMQ, envelope v1, publicação idempotente, retry/backoff e falha controlada. A API
-possui pool PostgreSQL/Drizzle gerenciado, probes obrigatórios para PostgreSQL e
-Redis, contrato global de erros,
+não existe domínio de negócio, autenticação, autorização, tabelas, seeds ou
+dados de domínio. Existem 14 tipos enum fundamentais, sem tabelas consumidoras,
+com values compartilhados entre TypeScript e Drizzle. PostGIS está habilitado
+pela primeira migration estrutural e validado com SRID 4326. As convenções de
+persistência estão congeladas e comprovadas por um fixture Drizzle/Atlas isolado
+do schema de produção. Redis já é uma dependência compartilhada com namespace
+por ambiente, reconexão, timeouts e encerramento gracioso. As cinco filas base
+usam BullMQ, envelope v1, publicação idempotente, retry/backoff e falha
+controlada. A API possui pool PostgreSQL/Drizzle gerenciado, probes obrigatórios
+para PostgreSQL e Redis, contrato global de erros,
 internacionalização em `pt-BR`, `en` e `es`, liveness, readiness extensível,
 encerramento gracioso e logs JSON correlacionados. Seus contratos HTTP geram
 OpenAPI 3.1 e a exposição do Swagger segue uma política por ambiente, sem ativar
@@ -49,18 +50,18 @@ protege-mais/
 │       ├── App.tsx
 │       └── index.ts
 ├── packages/
-│   ├── common/               # Erros, constantes e funções comuns
+│   ├── common/               # Enums, erros, constantes e funções comuns
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
-│   ├── models/               # Helpers Drizzle e fixture isolado de convenções
+│   ├── models/               # Enums, helpers e fixture isolado Drizzle
 │   ├── plugins/              # Banco, logging, Redis, filas e plugins Fastify
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
 │   ├── services/             # Capacidades reutilizáveis futuras
 │   └── useCases/             # Contrato/registry de jobs e orquestração futura
 ├── atlas/
-│   ├── prod/                 # Migration idempotente do PostGIS
+│   ├── prod/                 # Migrations de PostGIS e enums fundamentais
 │   └── seed/dev/             # Checksum Atlas, sem seed
 ├── drizzle.reference.config.ts # Export do fixture, fora de produção
 ├── eslint.config.mjs       # Lint compartilhado e tipado
@@ -281,10 +282,12 @@ chama API, persiste token ou oferece fluxo funcional.
 `packages/models/index.ts` é a entrada central de produção. Ele ainda não
 exporta tabelas, mas oferece helpers para UUID v7 gerado na aplicação,
 `TIMESTAMPTZ(3)`, timestamps comuns, versionamento otimista e soft delete
-opt-in. `packages/models/reference` comprova mapeamento `camelCase` para
-`snake_case`, nulabilidade, nomes de constraints e índices, ações de FK,
-unicidade parcial e concorrência. Esse fixture não faz parte da entrada pública
-nem do estado desejado de produção.
+opt-in. Também exporta 14 `pgEnum` que reutilizam as tuples literais e os types
+de `packages/common/enums`. Nenhum enum possui default ou regra de transição.
+`packages/models/reference` comprova mapeamento `camelCase` para `snake_case`,
+nulabilidade, nomes de constraints e índices, ações de FK, unicidade parcial e
+concorrência. Esse fixture não faz parte da entrada pública nem do estado
+desejado de produção.
 
 `packages/plugins/database` cria por aplicação um pool com máximo de dez
 conexões, timeouts finitos, `application_name`, sessões UTC, listener seguro de
@@ -296,38 +299,38 @@ migrations estruturais em `atlas/prod`; `dev` mantém apenas seeds fictícios em
 `atlas/seed/dev`; `reference`, sem URL de deploy, mantém a prova executável em
 `packages/models/reference/atlas`. O diretório estrutural possui a migration
 idempotente que diagnostica suporte e executa
-`CREATE EXTENSION IF NOT EXISTS postgis`; o seed continua vazio. O apply não
-recalcula hashes, uma base limpa aplica a estrutura sem seed e a repetição
-permanece sem pendências ou drift. PostgreSQL principal e dev database do Atlas
-usam `postgis/postgis:16-3.5-alpine`, iniciam em UTC, têm healthcheck, shutdown
-gracioso e rede local; a porta publicada do banco é restrita a loopback. O
-fluxo completo está em
+`CREATE EXTENSION IF NOT EXISTS postgis` e a migration que cria os 14 enums; o
+seed continua vazio. O apply não recalcula hashes, uma base limpa aplica a
+estrutura sem seed e a repetição permanece sem pendências ou drift. PostgreSQL
+principal e dev database do Atlas usam `postgis/postgis:16-3.5-alpine`, iniciam
+em UTC, têm healthcheck, shutdown gracioso e rede local; a porta publicada do
+banco é restrita a loopback. O fluxo completo está em
 `docs/database/README.md`.
 
 ## Comandos do monorepo
 
-| Comando                                             | Resultado                                                  |
-| --------------------------------------------------- | ---------------------------------------------------------- |
-| `pnpm dev`                                          | Inicia os quatro apps pelo Turbo                           |
-| `pnpm dev:manager_api`                              | Inicia somente a API                                       |
-| `pnpm dev:web`                                      | Inicia somente o Web                                       |
-| `pnpm dev:mobile`                                   | Inicia somente o Mobile                                    |
-| `pnpm dev:worker`                                   | Inicia somente os consumers do Worker                      |
-| `pnpm lint`                                         | Valida os quatro apps e os dez packages                    |
-| `pnpm typecheck`                                    | Valida os quatro apps e os dez packages                    |
-| `pnpm test`                                         | Testa config, models, banco, filas, logs, probes e OpenAPI |
-| `pnpm --filter @protege-mais/plugins test:database` | Integra Drizzle, UTC, PostGIS, retomada e shutdown         |
-| `pnpm --filter @protege-mais/plugins test:redis`    | Integra Redis real, TTL e reconexão                        |
-| `pnpm --filter @protege-mais/worker test:redis`     | Integra filas, retry, idempotência, falha e shutdown       |
-| `pnpm format:check`                                 | Confere a formatação do repositório                        |
-| `pnpm -r --if-present format:check`                 | Confere a formatação por workspace                         |
-| `pnpm build`                                        | Gera os quatro builds a partir da raiz                     |
-| `pnpm migrate:local`                                | Aplica migrations estruturais Atlas localmente             |
-| `ENV=prod pnpm atlas:validate:docker`               | Valida o diretório estrutural e seu checksum               |
-| `pnpm model:reference:export`                       | Exibe o DDL do fixture Drizzle                             |
-| `pnpm model:reference:validate`                     | Valida a migration isolada de convenções                   |
-| `pnpm model:reference:diff`                         | Confirma zero drift no fixture                             |
-| `pnpm -r list --depth -1`                           | Lista raiz, quatro apps e dez packages                     |
+| Comando                                             | Resultado                                            |
+| --------------------------------------------------- | ---------------------------------------------------- |
+| `pnpm dev`                                          | Inicia os quatro apps pelo Turbo                     |
+| `pnpm dev:manager_api`                              | Inicia somente a API                                 |
+| `pnpm dev:web`                                      | Inicia somente o Web                                 |
+| `pnpm dev:mobile`                                   | Inicia somente o Mobile                              |
+| `pnpm dev:worker`                                   | Inicia somente os consumers do Worker                |
+| `pnpm lint`                                         | Valida os quatro apps e os dez packages              |
+| `pnpm typecheck`                                    | Valida os quatro apps e os dez packages              |
+| `pnpm test`                                         | Testa config, enums, models, filas, logs e OpenAPI   |
+| `pnpm --filter @protege-mais/plugins test:database` | Integra enums, Drizzle, UTC, PostGIS e retomada      |
+| `pnpm --filter @protege-mais/plugins test:redis`    | Integra Redis real, TTL e reconexão                  |
+| `pnpm --filter @protege-mais/worker test:redis`     | Integra filas, retry, idempotência, falha e shutdown |
+| `pnpm format:check`                                 | Confere a formatação do repositório                  |
+| `pnpm -r --if-present format:check`                 | Confere a formatação por workspace                   |
+| `pnpm build`                                        | Gera os quatro builds a partir da raiz               |
+| `pnpm migrate:local`                                | Aplica migrations estruturais Atlas localmente       |
+| `ENV=prod pnpm atlas:validate:docker`               | Valida o diretório estrutural e seu checksum         |
+| `pnpm model:reference:export`                       | Exibe o DDL do fixture Drizzle                       |
+| `pnpm model:reference:validate`                     | Valida a migration isolada de convenções             |
+| `pnpm model:reference:diff`                         | Confirma zero drift no fixture                       |
+| `pnpm -r list --depth -1`                           | Lista raiz, quatro apps e dez packages               |
 
 ## Inventário e recuperação
 
@@ -337,10 +340,11 @@ recuperáveis pelo histórico Git; o `PROT-011` não criou tabela, migration SQL
 seed ou dado de domínio. O `PROT-012` criou somente a migration da extensão e
 não adicionou tabelas de domínio. O `PROT-013` adicionou somente tabelas de
 referência em um diretório e ambiente Atlas sem deploy; o schema `prod` continua
-sem elas. A validação cria e remove somente uma base temporária com nome
-reservado; os volumes locais não são apagados. O volume Redis local contém
-somente metadados técnicos das filas e qualquer job fictício de teste é removido
-ao concluir a integração.
+sem elas. O `PROT-014` adicionou 14 tipos enum e nenhuma tabela ou dado. A
+validação cria e remove somente uma base temporária com nome reservado; os
+volumes locais não são apagados. O volume Redis local contém somente metadados
+técnicos das filas e qualquer job fictício de teste é removido ao concluir a
+integração.
 
 ---
 

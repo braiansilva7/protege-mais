@@ -30,6 +30,9 @@ dados espaciais futuros e adicionou validação real de versão e distância.
 O `PROT-013` congelou as convenções de models e migrations, adicionou helpers
 Drizzle reutilizáveis e uma referência isolada que comprova o fluxo Atlas sem
 introduzir tabelas fictícias no schema de produção.
+O `PROT-014` centralizou os enums fundamentais no TypeScript e no PostgreSQL,
+com catálogo semântico, migration sem seed e testes reais de paridade e rejeição
+de valores inválidos.
 
 ## Pré-requisitos
 
@@ -93,9 +96,9 @@ pnpm build
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
 cobrem configuração, erros, i18n, PostgreSQL, Redis, registry de readiness,
 endpoints operacionais, OpenAPI, logging, redaction, correlação, filas e
-shutdown, além das convenções Drizzle/Atlas; o build cobre Manager API, Worker,
-Web e Mobile. Depois de subir as dependências locais, as integrações reais são
-executadas com
+shutdown, além das convenções e enums Drizzle/Atlas; o build cobre Manager API,
+Worker, Web e Mobile. Depois de subir as dependências locais, as integrações
+reais são executadas com
 `pnpm --filter @protege-mais/plugins test:database`,
 `pnpm --filter @protege-mais/plugins test:redis` e
 `pnpm --filter @protege-mais/worker test:redis`. Use `pnpm format` para aplicar a formatação e
@@ -122,10 +125,11 @@ permitidos/proibidos e consultas operacionais estão em
 [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
 PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
-de domínio continua vazio: não há tabelas, enums, seeds ou dados de domínio. A
-primeira migration estrutural habilita PostGIS de forma idempotente e pode ser
-aplicada em uma base limpa sem seed. As convenções, exemplos e checklist estão
-em [`docs/database/CONVENTIONS.md`](docs/database/CONVENTIONS.md) e
+de domínio ainda não possui tabelas, seeds ou dados; possui 14 tipos enum
+fundamentais. As migrations estruturais habilitam PostGIS e criam esses tipos
+em uma base limpa sem seed. As convenções, o catálogo e o checklist estão em
+[`docs/database/CONVENTIONS.md`](docs/database/CONVENTIONS.md),
+[`docs/database/ENUM_CATALOG.md`](docs/database/ENUM_CATALOG.md) e
 [`docs/database/MIGRATION_CHECKLIST.md`](docs/database/MIGRATION_CHECKLIST.md).
 
 ## Documentação e tickets
@@ -138,8 +142,8 @@ em [`docs/database/CONVENTIONS.md`](docs/database/CONVENTIONS.md) e
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-014`:
+O próximo ticket liberado é `PROT-015`:
 
 ```text
-Implemente o ticket PROT-014 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-015 seguindo toda a documentação do projeto.
 ```

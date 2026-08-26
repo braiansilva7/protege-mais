@@ -83,11 +83,11 @@ de referência prova o mapeamento; revisão automatizada cobre o que for viável
 
 ### Criar enums fundamentais
 
-| Campo        | Valor    |
-| ------------ | -------- |
-| Status       | Pendente |
-| Prioridade   | P0       |
-| Dependências | PROT-013 |
+| Campo        | Valor     |
+| ------------ | --------- |
+| Status       | Concluído |
+| Prioridade   | P0        |
+| Dependências | PROT-013  |
 
 **Objetivo:** evitar strings mágicas e alinhar banco/TypeScript.
 

@@ -19,6 +19,9 @@ justificado na revisão do ticket; não deve ser ignorado silenciosamente.
       estão definidos.
 - [ ] `audit_logs`, `alert_events` e `risk_assessments` não receberam soft
       delete automático.
+- [ ] Enum novo ou alterado reutiliza a tuple de `@protege-mais/common`, possui
+      nome/labels `snake_case`, catálogo semântico atualizado e nenhum default
+      implícito.
 
 ## Revisão do SQL gerado
 
@@ -35,6 +38,9 @@ justificado na revisão do ticket; não deve ser ignorado silenciosamente.
 - [ ] O SQL não contém segredo, PII, dado sensível ou coordenada real.
 - [ ] Uma edição deliberada foi seguida por `atlas migrate hash`; apply nunca
       recalcula checksum.
+- [ ] Adição de label considera a ordem de deploy e o commit antes do primeiro
+      uso; remoção/reorder usa tipo substituto e expand/contract, sem reescrever
+      histórico.
 
 ## Validação reproduzível
 
@@ -46,6 +52,8 @@ justificado na revisão do ticket; não deve ser ignorado silenciosamente.
 - [ ] `ENV=prod pnpm atlas:diff:docker` retorna zero drift.
 - [ ] Testes de constraints cobrem sucesso, `NOT NULL`, FK, unicidade, check e
       concorrência relevantes.
+- [ ] Enums alterados comprovam paridade TypeScript/Drizzle/PostgreSQL e
+      rejeição de label inválido.
 - [ ] Queries justificadoras de novos índices foram verificadas com plano
       representativo quando aplicável.
 - [ ] Forward e recuperação foram exercitados conforme a estratégia do ticket;

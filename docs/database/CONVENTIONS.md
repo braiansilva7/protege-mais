@@ -86,6 +86,26 @@ domínio, usa `date`, não meia-noite fictícia em `TIMESTAMPTZ`. Não usar
 - alterar `NULL` para `NOT NULL` em tabela populada exige backfill e validação
   planejados na migration.
 
+## Enums
+
+- conjuntos fundamentais e estáveis usam um `pgEnum` PostgreSQL por conceito;
+- o nome do tipo e seus labels usam inglês em `snake_case` e respeitam o limite
+  de 63 bytes;
+- tuples em `@protege-mais/common` são a fonte dos values e literal union types;
+  `@protege-mais/models` reutiliza essas tuples, sem copiar labels;
+- labels são case-sensitive, persistentes e não são textos de interface;
+- conceitos distintos não compartilham o mesmo tipo PostgreSQL apenas porque
+  possuem labels iguais;
+- não declare default para status ou tipo sem decisão explícita no ticket
+  consumidor;
+- não use a ordem do enum para prioridade, transição ou autorização.
+
+O catálogo, a semântica e a estratégia de evolução estão em
+[`ENUM_CATALOG.md`](ENUM_CATALOG.md). Adição de label usa nova migration
+forward; remoção, reorder ou mudança incompatível exige tipo substituto,
+mapeamento explícito e expand/contract. Nunca edite uma migration aplicada para
+alterar um enum.
+
 ## Integridade, FKs e índices
 
 Invariantes persistentes pertencem ao banco sempre que puderem ser expressas

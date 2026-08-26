@@ -3,6 +3,80 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-26 — PROT-014 — Criar enums fundamentais
+
+Status: Concluído
+
+### Resultado
+
+Os 14 enums fundamentais agora possuem uma fonte imutável compartilhada no
+TypeScript, definições `pgEnum` equivalentes no Drizzle e tipos nativos no
+PostgreSQL. O catálogo cobre identidade, organização, proteção, risco,
+incidentes, termos de medida protetiva, emergência, evidência e notificação
+sem criar tabelas, defaults, permissões ou máquinas de estado antecipadas.
+
+O banco permanece como garantia final contra labels inválidos. Testes unitários
+e uma integração PostgreSQL real protegem a ordem e a paridade dos 55 labels
+entre catálogo, Drizzle, migration e schema aplicado.
+
+### Arquivos e dados
+
+- criado `packages/common/enums/index.ts` com tuples literais congeladas, tipos
+  derivados e o catálogo central dos 14 nomes PostgreSQL;
+- criado `packages/models/enums.ts` com um `pgEnum` distinto por conceito e sem
+  cópia local dos values; as entradas públicas de `common` e `models` concentram
+  todos os exports;
+- gerada por diff real a migration estrutural
+  `20260826231424_fundamental_enums.sql`, com 14 `CREATE TYPE`, 55 labels e
+  nenhuma tabela ou dado; o checksum Atlas foi atualizado;
+- adicionados cinco testes unitários/contratuais para conjunto aprovado,
+  imutabilidade, nomes, derivação de tipos, paridade Drizzle/migration e ausência
+  de tabela ou seed;
+- ampliada a integração PostgreSQL com introspecção de `pg_type`/`pg_enum`,
+  inserção válida e rejeição individual de label inválido com SQLSTATE
+  `22P02`;
+- criado `docs/database/ENUM_CATALOG.md` com a semântica inicial e a estratégia
+  de evolução; convenções, checklist, guia de banco, arquitetura, qualidade,
+  roadmap, índices e READMEs foram sincronizados;
+- criado o `ADR-003` para registrar enums PostgreSQL nativos, fonte TypeScript
+  única, separação entre conceitos e evolução forward/expand-contract;
+- nenhuma versão de dependência ou lockfile foi alterada.
+
+### Validação
+
+- migration completa em base temporária criada de `template0`: duas migrations
+  e 16 instruções aplicadas; segunda execução sem pendências; 14 tipos, 55
+  labels e zero tabelas de domínio; a base foi removida ao final;
+- `atlas migrate validate`, `status` e `diff` no ambiente `prod`: checksum
+  válido, versão `20260826231424`, zero pendências e zero drift;
+- `pnpm model:reference:validate` e `pnpm model:reference:diff`: fixture de
+  convenções válido e sem drift;
+- `pnpm --filter @protege-mais/plugins test:database`: quatro testes reais
+  aprovados, incluindo paridade dos enums, inserts inválidos, Drizzle/UTC,
+  PostGIS/SRID/distância e retomada/shutdown;
+- `pnpm test`: 75 testes aprovados em sete workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados;
+  `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso
+  não bloqueante já conhecido do bundle Web maior que 500 kB;
+- `docker compose config --quiet`: configuração válida.
+
+### Decisões e pendências
+
+- o `ADR-003` impede dependência de ordinal, duplicidade de arrays e uso de um
+  enum genérico para conceitos que evoluem separadamente;
+- adicionar label exige migration antes do produtor; remoção ou mudança
+  incompatível exige tipo substituto, mapeamento explícito e expand/contract;
+- transições, defaults, autorização e regras jurídicas continuam nos tickets
+  consumidores;
+- `PROT-015` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-26 — PROT-013 — Definir convenções de tabelas e migrations
 
 Status: Concluído

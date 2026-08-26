@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { connect, createServer, type Server, type Socket } from 'node:net';
 import { test } from 'node:test';
+import { fundamentalEnumCatalog } from '@protege-mais/common';
 import { databaseEnvironment } from '@protege-mais/config';
 import { sql } from 'drizzle-orm';
 import { createDatabaseConnection, type DatabaseLogger } from './index.js';
@@ -9,6 +10,104 @@ const logger: DatabaseLogger = {
   info: () => undefined,
   warn: () => undefined,
 };
+
+void test('PostgreSQL mantém paridade dos enums e rejeita inserts inválidos', async () => {
+  const configuration = databaseEnvironment();
+  const connection = createDatabaseConnection({
+    databaseUrl: configuration.databaseUrl,
+    applicationName: 'protege-mais:enum-integration',
+    logger,
+  });
+
+  try {
+    await connection.connect();
+
+    const catalogResult = await connection.database.execute<{
+      readonly databaseName: string;
+      readonly enumValue: string;
+    }>(sql`
+      SELECT
+        enum_type.typname AS "databaseName",
+        enum_value.enumlabel AS "enumValue"
+      FROM pg_type AS enum_type
+      INNER JOIN pg_namespace AS enum_namespace
+        ON enum_namespace.oid = enum_type.typnamespace
+      INNER JOIN pg_enum AS enum_value
+        ON enum_value.enumtypid = enum_type.oid
+      WHERE enum_namespace.nspname = 'public'
+      ORDER BY enum_type.typname, enum_value.enumsortorder
+    `);
+    const actualValues = new Map<string, string[]>();
+    for (const row of catalogResult.rows) {
+      const values = actualValues.get(row.databaseName) ?? [];
+      values.push(row.enumValue);
+      actualValues.set(row.databaseName, values);
+    }
+
+    assert.deepEqual(
+      [...actualValues.keys()],
+      Object.values(fundamentalEnumCatalog)
+        .map((definition) => definition.databaseName)
+        .sort()
+    );
+    for (const definition of Object.values(fundamentalEnumCatalog)) {
+      assert.deepEqual(
+        actualValues.get(definition.databaseName),
+        definition.values
+      );
+    }
+
+    const client = await connection.pool.connect();
+    const definitions = Object.values(fundamentalEnumCatalog);
+    const columnNames = definitions.map(
+      (definition) => `"${definition.databaseName}"`
+    );
+    const createColumns = definitions.map(
+      (definition) =>
+        `"${definition.databaseName}" "${definition.databaseName}" NOT NULL`
+    );
+    const placeholders = definitions.map((_, index) => `$${index + 1}`);
+    const insertStatement = `
+      INSERT INTO prot_014_enum_validation (${columnNames.join(', ')})
+      VALUES (${placeholders.join(', ')})
+    `;
+    const validValues: string[] = definitions.map(
+      (definition) => definition.values[0]
+    );
+
+    try {
+      await client.query('BEGIN');
+      await client.query(`
+        CREATE TEMP TABLE prot_014_enum_validation (
+          ${createColumns.join(',\n')}
+        ) ON COMMIT DROP
+      `);
+      await client.query(insertStatement, validValues);
+
+      for (const [index] of definitions.entries()) {
+        const savepoint = `invalid_enum_${index}`;
+        const invalidValues = [...validValues];
+        invalidValues[index] = 'invalid_value';
+
+        await client.query(`SAVEPOINT ${savepoint}`);
+        await assert.rejects(
+          client.query(insertStatement, invalidValues),
+          (error: unknown) =>
+            typeof error === 'object' &&
+            error !== null &&
+            'code' in error &&
+            error.code === '22P02'
+        );
+        await client.query(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+      }
+    } finally {
+      await client.query('ROLLBACK');
+      client.release();
+    }
+  } finally {
+    await connection.close();
+  }
+});
 
 async function waitUntil(
   predicate: () => boolean | Promise<boolean>,

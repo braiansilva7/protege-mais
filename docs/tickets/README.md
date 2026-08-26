@@ -26,7 +26,7 @@ Estados permitidos: `Pendente`, `Em andamento`, `Bloqueado` e `Concluído`.
 | [PROT-011](EPIC_01_DATA_FOUNDATION.md#prot-011)    | Consolidar PostgreSQL, Drizzle e Atlas     | P0         | PROT-003, PROT-006           | Concluído |
 | [PROT-012](EPIC_01_DATA_FOUNDATION.md#prot-012)    | Habilitar e validar PostGIS                | P0         | PROT-011                     | Concluído |
 | [PROT-013](EPIC_01_DATA_FOUNDATION.md#prot-013)    | Definir convenções de tabelas e migrations | P0         | PROT-011                     | Concluído |
-| [PROT-014](EPIC_01_DATA_FOUNDATION.md#prot-014)    | Criar enums fundamentais                   | P0         | PROT-013                     | Pendente  |
+| [PROT-014](EPIC_01_DATA_FOUNDATION.md#prot-014)    | Criar enums fundamentais                   | P0         | PROT-013                     | Concluído |
 | [PROT-015](EPIC_01_DATA_FOUNDATION.md#prot-015)    | Criar tabela accounts                      | P0         | PROT-014                     | Pendente  |
 | [PROT-016](EPIC_01_DATA_FOUNDATION.md#prot-016)    | Criar tabela auth_sessions                 | P0         | PROT-015                     | Pendente  |
 | [PROT-017](EPIC_01_DATA_FOUNDATION.md#prot-017)    | Criar estrutura de roles e permissions     | P0         | PROT-013, PROT-015           | Pendente  |
