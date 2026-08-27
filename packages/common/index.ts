@@ -12,6 +12,7 @@ export {
   type SpecializedErrorOptions,
 } from './errors/index.js';
 export { createUuidV7 } from './functions/uuid.js';
+export { normalizeAccountEmail } from './accounts/index.js';
 export {
   accountStatusValues,
   accountTypeValues,

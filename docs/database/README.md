@@ -6,17 +6,20 @@ O `PROT-011` consolidou PostgreSQL, Drizzle e Atlas como a fundação oficial de
 persistência. O `PROT-012` acrescentou PostGIS por migration estrutural
 idempotente. O `PROT-013` congelou as convenções de models e migrations. O
 `PROT-014` criou os enums fundamentais com uma fonte de valores compartilhada
-entre TypeScript e Drizzle. A Manager API possui pool gerenciado, probe
-obrigatório e shutdown idempotente. O schema ainda não possui tabelas, seeds ou
-dados de domínio; possui 14 tipos enum nativos para os tickets consumidores.
+entre TypeScript e Drizzle. O `PROT-015` criou `accounts`, primeira tabela de
+domínio, com identidades locais/externas e unicidade parcial de identificadores
+ativos. A Manager API possui pool gerenciado, probe obrigatório e shutdown
+idempotente. O schema possui uma tabela e 14 tipos enum nativos, sem seed ou
+dado de domínio.
 
 `packages/models/index.ts` é a única entrada do schema Drizzle de produção e
-exporta os helpers e `pgEnum` comuns, mas ainda nenhuma tabela. `atlas/prod`
-mantém as migrations `20260826000000_enable_postgis.sql` e
-`20260826231424_fundamental_enums.sql`; `atlas/seed/dev` permanece sem dados.
-Uma base nova aceita `migrate` sem exigir seed, habilita a extensão, cria os 14
-tipos e permanece sem tabelas de domínio; `spatial_ref_sys` é um objeto interno
-gerenciado pelo próprio PostGIS.
+exporta helpers, `pgEnum`, `accounts`, seus tipos e a projeção sem hash.
+`atlas/prod` mantém as migrations `20260826000000_enable_postgis.sql`,
+`20260826231424_fundamental_enums.sql` e
+`20260826233758_create_accounts.sql`; `atlas/seed/dev` permanece sem dados. Uma
+base nova aceita `migrate` sem exigir seed, habilita a extensão, cria os 14
+tipos e `accounts`; `spatial_ref_sys` é um objeto interno gerenciado pelo
+próprio PostGIS.
 
 O guia normativo está em [CONVENTIONS.md](CONVENTIONS.md), o checklist de cada
 mudança estrutural está em
@@ -26,6 +29,9 @@ registrada no
 significados e regras de evolução dos enums estão em
 [ENUM_CATALOG.md](ENUM_CATALOG.md) e no
 [ADR-003](../decisions/ADR-003-native-postgresql-enums.md).
+O dicionário completo de `accounts` está em [ACCOUNTS.md](ACCOUNTS.md), e a
+reutilização de identificadores ativos foi registrada no
+[ADR-004](../decisions/ADR-004-active-account-identifier-reuse.md).
 
 ## Conexão da aplicação
 
@@ -70,7 +76,8 @@ eventos. Os únicos metadados de falha são `event` e `errorType` sintético.
    pnpm migrate:local
    ```
 
-4. Valide a conexão real, enums, Drizzle, UTC, indisponibilidade e retomada:
+4. Valide contas, constraints/concorrência, enums, Drizzle, UTC,
+   indisponibilidade e retomada:
 
    ```bash
    pnpm --filter @protege-mais/plugins test:database
@@ -181,9 +188,11 @@ schema e nunca é pré-requisito de migration.
 
 PostGIS está habilitado e consultas espaciais usam SRID 4326. O fixture em
 `packages/models/reference` prova nomes, mapeamento, nulabilidade, concorrência
-e soft delete sem criar entidade de domínio. O catálogo fundamental possui 14
-tipos e nenhuma tabela consumidora. O próximo ticket liberado, `PROT-015`, pode
-usar os enums de conta ao criar `accounts`.
+e soft delete sem criar entidade fictícia no schema de produção. O catálogo
+fundamental possui 14 tipos e `accounts` consome `account_type` e
+`account_status` sem defaults de negócio. Seus três identificadores são únicos
+entre contas ativas e reutilizáveis depois do soft delete. O próximo ticket
+liberado, `PROT-016`, pode referenciar `accounts` ao criar `auth_sessions`.
 
 ---
 

@@ -2,10 +2,10 @@
 
 ## Objetivo e fonte de verdade
 
-Este catálogo define os valores internos iniciais usados pelos futuros models
-de identidade, organização, proteção, emergência, evidência e notificação. Ele
-serve para manter PostgreSQL e TypeScript equivalentes antes da criação das
-tabelas consumidoras.
+Este catálogo define os valores internos iniciais usados pelos models de
+identidade, organização, proteção, emergência, evidência e notificação. Ele
+mantém PostgreSQL e TypeScript equivalentes; `accounts` é a primeira tabela
+consumidora, enquanto as demais entidades permanecem futuras.
 
 As tuples em `packages/common/enums/index.ts` são a fonte dos valores e dos
 literal union types TypeScript. Os `pgEnum` em `packages/models/enums.ts`
@@ -28,6 +28,8 @@ enum define permissão, default, transição automática ou conclusão jurídica
 
 O motivo, a autoria e as transições pertencem aos tickets de conta e
 autenticação. `active` não concede papel, organização ou permissão.
+`accounts.status` é obrigatório e não possui default, portanto cada caso de uso
+futuro precisa declarar o estado inicial deliberadamente.
 
 ### `account_type` / `AccountType`
 
@@ -37,8 +39,8 @@ autenticação. `active` não concede papel, organização ou permissão.
 | `service` | Identidade técnica não humana, sem fluxo de credencial definido aqui. |
 
 O tipo não substitui perfil de vítima, membership, papel ou autorização.
-Este ticket não habilita contas técnicas; apenas reserva a distinção
-estrutural para que uma identidade não humana nunca seja tratada como pessoa.
+`accounts.type` é obrigatório e não possui default. O model aceita a distinção
+estrutural, mas ainda não existe fluxo que cadastre ou autentique contas.
 
 ### `organization_type` / `OrganizationType`
 

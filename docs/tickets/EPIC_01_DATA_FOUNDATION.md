@@ -108,11 +108,11 @@ aprovadas.
 
 ### Criar tabela accounts
 
-| Campo        | Valor    |
-| ------------ | -------- |
-| Status       | Pendente |
-| Prioridade   | P0       |
-| Dependências | PROT-014 |
+| Campo        | Valor     |
+| ------------ | --------- |
+| Status       | Concluído |
+| Prioridade   | P0        |
+| Dependências | PROT-014  |
 
 **Objetivo:** persistir identidades de acesso, separadas de perfis de vítima ou
 profissional.

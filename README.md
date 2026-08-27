@@ -5,7 +5,7 @@ Fundação técnica do **Protege Mais**.
 O legado foi removido pelo `PROT-000`, a estrutura do monorepo foi consolidada
 pelo `PROT-001`, a qualidade comum foi entregue pelo `PROT-002` e as variáveis
 de ambiente foram centralizadas pelo `PROT-003`. O `PROT-004` acrescentou o
-padrão global de erros da API. Neste baseline não existem tabelas, dados,
+padrão global de erros da API. Neste baseline ainda não existem dados,
 autenticação, permissões ou rotas de negócio. API, Worker, Web e Mobile
 permanecem como shells mínimos para evolução incremental.
 
@@ -33,6 +33,9 @@ introduzir tabelas fictícias no schema de produção.
 O `PROT-014` centralizou os enums fundamentais no TypeScript e no PostgreSQL,
 com catálogo semântico, migration sem seed e testes reais de paridade e rejeição
 de valores inválidos.
+O `PROT-015` criou `accounts` para identidades locais e externas, com
+normalização, unicidade atômica entre contas ativas, reutilização explícita após
+soft delete e projeção que exclui hashes e chaves internas.
 
 ## Pré-requisitos
 
@@ -96,9 +99,9 @@ pnpm build
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
 cobrem configuração, erros, i18n, PostgreSQL, Redis, registry de readiness,
 endpoints operacionais, OpenAPI, logging, redaction, correlação, filas e
-shutdown, além das convenções e enums Drizzle/Atlas; o build cobre Manager API,
-Worker, Web e Mobile. Depois de subir as dependências locais, as integrações
-reais são executadas com
+shutdown, além das convenções, enums e contas em Drizzle/Atlas; o build cobre
+Manager API, Worker, Web e Mobile. Depois de subir as dependências locais, as
+integrações reais são executadas com
 `pnpm --filter @protege-mais/plugins test:database`,
 `pnpm --filter @protege-mais/plugins test:redis` e
 `pnpm --filter @protege-mais/worker test:redis`. Use `pnpm format` para aplicar a formatação e
@@ -125,10 +128,11 @@ permitidos/proibidos e consultas operacionais estão em
 [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
 PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
-de domínio ainda não possui tabelas, seeds ou dados; possui 14 tipos enum
-fundamentais. As migrations estruturais habilitam PostGIS e criam esses tipos
-em uma base limpa sem seed. As convenções, o catálogo e o checklist estão em
+de domínio possui a tabela `accounts` e 14 tipos enum fundamentais, sem seed ou
+dado. As migrations estruturais recriam esse estado em uma base limpa. As
+convenções, o dicionário de contas, o catálogo e o checklist estão em
 [`docs/database/CONVENTIONS.md`](docs/database/CONVENTIONS.md),
+[`docs/database/ACCOUNTS.md`](docs/database/ACCOUNTS.md),
 [`docs/database/ENUM_CATALOG.md`](docs/database/ENUM_CATALOG.md) e
 [`docs/database/MIGRATION_CHECKLIST.md`](docs/database/MIGRATION_CHECKLIST.md).
 
@@ -142,8 +146,8 @@ em uma base limpa sem seed. As convenções, o catálogo e o checklist estão em
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-015`:
+O próximo ticket liberado é `PROT-016`:
 
 ```text
-Implemente o ticket PROT-015 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-016 seguindo toda a documentação do projeto.
 ```

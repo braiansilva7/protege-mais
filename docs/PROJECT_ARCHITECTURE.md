@@ -2,18 +2,20 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-014`. A arquitetura
+Este documento registra somente o que existe após o `PROT-015`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
-O monorepo possui quatro apps executáveis e dez packages compartilhados. Ainda
-não existe domínio de negócio, autenticação, autorização, tabelas, seeds ou
-dados de domínio. Existem 14 tipos enum fundamentais, sem tabelas consumidoras,
-com values compartilhados entre TypeScript e Drizzle. PostGIS está habilitado
-pela primeira migration estrutural e validado com SRID 4326. As convenções de
-persistência estão congeladas e comprovadas por um fixture Drizzle/Atlas isolado
-do schema de produção. Redis já é uma dependência compartilhada com namespace
-por ambiente, reconexão, timeouts e encerramento gracioso. As cinco filas base
+O monorepo possui quatro apps executáveis e dez packages compartilhados. A
+primeira entidade persistente é `accounts`, separada de perfis e protegida por
+constraints de identidade, unicidade ativa e projeção sem hash. Ainda não
+existem autenticação, autorização, rotas/repositórios de negócio, seeds ou dados
+de domínio. Existem 14 tipos enum fundamentais, com `account_type` e
+`account_status` consumidos pela tabela. PostGIS está habilitado pela primeira
+migration estrutural e validado com SRID 4326. As convenções de persistência
+estão congeladas e comprovadas por um fixture Drizzle/Atlas isolado do schema
+de produção. Redis já é uma dependência compartilhada com namespace por
+ambiente, reconexão, timeouts e encerramento gracioso. As cinco filas base
 usam BullMQ, envelope v1, publicação idempotente, retry/backoff e falha
 controlada. A API possui pool PostgreSQL/Drizzle gerenciado, probes obrigatórios
 para PostgreSQL e Redis, contrato global de erros,
@@ -50,18 +52,18 @@ protege-mais/
 │       ├── App.tsx
 │       └── index.ts
 ├── packages/
-│   ├── common/               # Enums, erros, constantes e funções comuns
+│   ├── common/               # Enums, erros, UUID e normalização de e-mail
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
-│   ├── models/               # Enums, helpers e fixture isolado Drizzle
+│   ├── models/               # Accounts, enums, helpers e fixture Drizzle
 │   ├── plugins/              # Banco, logging, Redis, filas e plugins Fastify
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
 │   ├── services/             # Capacidades reutilizáveis futuras
 │   └── useCases/             # Contrato/registry de jobs e orquestração futura
 ├── atlas/
-│   ├── prod/                 # Migrations de PostGIS e enums fundamentais
+│   ├── prod/                 # Migrations de PostGIS, enums e accounts
 │   └── seed/dev/             # Checksum Atlas, sem seed
 ├── drizzle.reference.config.ts # Export do fixture, fora de produção
 ├── eslint.config.mjs       # Lint compartilhado e tipado
@@ -279,11 +281,18 @@ chama API, persiste token ou oferece fluxo funcional.
 
 ## Banco e Atlas
 
-`packages/models/index.ts` é a entrada central de produção. Ele ainda não
-exporta tabelas, mas oferece helpers para UUID v7 gerado na aplicação,
-`TIMESTAMPTZ(3)`, timestamps comuns, versionamento otimista e soft delete
-opt-in. Também exporta 14 `pgEnum` que reutilizam as tuples literais e os types
-de `packages/common/enums`. Nenhum enum possui default ou regra de transição.
+`packages/models/index.ts` é a entrada central de produção. Ele exporta
+`accounts`, tipos de inserção/leitura, nomes dos índices ativos e uma projeção
+que exclui hash e chaves internas. A tabela usa UUID v7 gerado na aplicação,
+`TIMESTAMPTZ(3)`, timestamps comuns, versionamento otimista e soft delete. E-mail
+original/normalizado, telefone E.164 e provider/subject são validados por checks;
+três índices parciais resolvem unicidade entre contas ativas. `packages/common`
+expõe a normalização canônica de e-mail. O dicionário está em
+`docs/database/ACCOUNTS.md`.
+
+O mesmo entrypoint exporta 14 `pgEnum` que reutilizam as tuples literais e os
+types de `packages/common/enums`. Nenhum enum possui default ou regra de
+transição.
 `packages/models/reference` comprova mapeamento `camelCase` para `snake_case`,
 nulabilidade, nomes de constraints e índices, ações de FK, unicidade parcial e
 concorrência. Esse fixture não faz parte da entrada pública nem do estado
@@ -299,12 +308,13 @@ migrations estruturais em `atlas/prod`; `dev` mantém apenas seeds fictícios em
 `atlas/seed/dev`; `reference`, sem URL de deploy, mantém a prova executável em
 `packages/models/reference/atlas`. O diretório estrutural possui a migration
 idempotente que diagnostica suporte e executa
-`CREATE EXTENSION IF NOT EXISTS postgis` e a migration que cria os 14 enums; o
-seed continua vazio. O apply não recalcula hashes, uma base limpa aplica a
-estrutura sem seed e a repetição permanece sem pendências ou drift. PostgreSQL
-principal e dev database do Atlas usam `postgis/postgis:16-3.5-alpine`, iniciam
-em UTC, têm healthcheck, shutdown gracioso e rede local; a porta publicada do
-banco é restrita a loopback. O fluxo completo está em
+`CREATE EXTENSION IF NOT EXISTS postgis`, a migration dos 14 enums e
+`20260826233758_create_accounts.sql`; o seed continua vazio. O apply não
+recalcula hashes, uma base limpa aplica a estrutura sem seed e a repetição
+permanece sem pendências ou drift. PostgreSQL principal e dev database do Atlas
+usam `postgis/postgis:16-3.5-alpine`, iniciam em UTC, têm healthcheck, shutdown
+gracioso e rede local; a porta publicada do banco é restrita a loopback. O
+fluxo completo está em
 `docs/database/README.md`.
 
 ## Comandos do monorepo
@@ -318,8 +328,8 @@ banco é restrita a loopback. O fluxo completo está em
 | `pnpm dev:worker`                                   | Inicia somente os consumers do Worker                |
 | `pnpm lint`                                         | Valida os quatro apps e os dez packages              |
 | `pnpm typecheck`                                    | Valida os quatro apps e os dez packages              |
-| `pnpm test`                                         | Testa config, enums, models, filas, logs e OpenAPI   |
-| `pnpm --filter @protege-mais/plugins test:database` | Integra enums, Drizzle, UTC, PostGIS e retomada      |
+| `pnpm test`                                         | Testa config, contas, enums, filas, logs e OpenAPI   |
+| `pnpm --filter @protege-mais/plugins test:database` | Integra contas, enums, PostGIS, UTC e retomada       |
 | `pnpm --filter @protege-mais/plugins test:redis`    | Integra Redis real, TTL e reconexão                  |
 | `pnpm --filter @protege-mais/worker test:redis`     | Integra filas, retry, idempotência, falha e shutdown |
 | `pnpm format:check`                                 | Confere a formatação do repositório                  |
@@ -340,11 +350,12 @@ recuperáveis pelo histórico Git; o `PROT-011` não criou tabela, migration SQL
 seed ou dado de domínio. O `PROT-012` criou somente a migration da extensão e
 não adicionou tabelas de domínio. O `PROT-013` adicionou somente tabelas de
 referência em um diretório e ambiente Atlas sem deploy; o schema `prod` continua
-sem elas. O `PROT-014` adicionou 14 tipos enum e nenhuma tabela ou dado. A
-validação cria e remove somente uma base temporária com nome reservado; os
-volumes locais não são apagados. O volume Redis local contém somente metadados
-técnicos das filas e qualquer job fictício de teste é removido ao concluir a
-integração.
+sem elas. O `PROT-014` adicionou 14 tipos enum e nenhuma tabela ou dado. O
+`PROT-015` adicionou somente `accounts`, sem seed, dado, rota ou fluxo de
+autenticação. A validação cria e remove somente uma base temporária com nome
+reservado; os volumes locais não são apagados. O volume Redis local contém
+somente metadados técnicos das filas e qualquer job fictício de teste é removido
+ao concluir a integração.
 
 ---
 

@@ -44,3 +44,4 @@ ou registro de implementação.
 - [ADR-001 — BullMQ sobre Redis para filas do Worker](ADR-001-bullmq-redis-queues.md)
 - [ADR-002 — Convenções de models e migrations](ADR-002-database-conventions.md)
 - [ADR-003 — Enums nativos do PostgreSQL e fonte TypeScript única](ADR-003-native-postgresql-enums.md)
+- [ADR-004 — Unicidade e reutilização de identificadores ativos](ADR-004-active-account-identifier-reuse.md)

@@ -83,6 +83,7 @@ shutdown, UTC e Atlas reproduzível sem tabelas ou seeds de domínio. O
 `PROT-012` habilitou e validou PostGIS com SRID 4326 sem antecipar entidades. O
 `PROT-013` congelou as convenções de tabelas e migrations e as comprovou com um
 fixture isolado do schema de produção. O `PROT-014` criou e validou os enums
-fundamentais no banco e no TypeScript, ainda sem tabelas consumidoras. O próximo
-trabalho de implementação deve começar por `PROT-015`, que criará a tabela
-`accounts`.
+fundamentais no banco e no TypeScript. O `PROT-015` criou a primeira tabela
+consumidora, `accounts`, e congelou a unicidade e reutilização de identificadores
+ativos. O próximo trabalho de implementação deve começar por `PROT-016`, que
+criará `auth_sessions` sem persistir refresh token puro.

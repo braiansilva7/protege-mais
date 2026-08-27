@@ -3,6 +3,82 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-26 — PROT-015 — Criar tabela accounts
+
+Status: Concluído
+
+### Resultado
+
+`accounts` inaugura o schema de domínio com identidades de acesso separadas de
+perfis. O model persiste identidade local por e-mail/hash, identidade externa
+por provider/subject ou ambas, além de telefone E.164, tipo/status explícitos,
+MFA, último login, timestamps, versão e soft delete.
+
+Checks nomeados rejeitam combinações incoerentes e três índices únicos parciais
+arbitram atomicamente e-mail, telefone e principal externo entre contas ativas.
+Identificadores são liberados após soft delete; uma restauração conflita se o
+valor tiver sido reutilizado. A projeção de saída exclui hash, chave normalizada,
+subject externo e marcador de exclusão.
+
+### Arquivos e dados
+
+- criado `packages/common/accounts` com normalização determinística de e-mail
+  por trim/lowercase e dois testes de idempotência/comportamento;
+- criado `packages/models/accounts.ts` com 15 colunas, UUID v7 gerado na
+  aplicação, `TIMESTAMPTZ(3)`, optimistic locking, seis checks nomeados, três
+  índices únicos parciais e tipos/projeção públicos;
+- gerada por diff real a migration estrutural
+  `20260826233758_create_accounts.sql`, sem seed, dado, default de UUID ou
+  default de tipo/status/MFA; o checksum Atlas foi atualizado;
+- adicionados quatro testes de model/migration e quatro integrações PostgreSQL
+  reais para persistência válida, serialização segura, checks, plano de consulta,
+  conflitos, concorrência e reutilização;
+- criado `docs/database/ACCOUNTS.md` com o dicionário de dados, métodos de
+  identidade, integridade, segurança e fronteiras do ticket;
+- criado o `ADR-004` para registrar unicidade parcial, reutilização após soft
+  delete e conflito explícito de restauração; README, arquitetura, qualidade,
+  banco, catálogo, roadmap, índices e tickets foram sincronizados;
+- nenhuma versão de dependência ou lockfile foi alterada; não foram criados
+  rota, repositório, seed, dado, permissão, algoritmo de senha ou fluxo de auth.
+
+### Validação
+
+- migration completa em base temporária criada de `template0`: três migrations
+  e 20 instruções aplicadas; segunda execução sem pendências; 14 tipos, 55 labels,
+  uma tabela `accounts` com 15 colunas, três índices ativos e zero registros; a
+  base foi removida ao final;
+- `atlas migrate validate`, `status` e `diff` no ambiente `prod`: checksum
+  válido, versão `20260826233758`, zero pendências e zero drift;
+- `pnpm model:reference:validate` e `pnpm model:reference:diff`: fixture de
+  convenções válido e sem drift;
+- `pnpm --filter @protege-mais/plugins test:database`: oito testes reais
+  aprovados, incluindo os quatro cenários de conta, paridade dos enums,
+  Drizzle/UTC, PostGIS/SRID/distância e retomada/shutdown;
+- `pnpm test`: 81 testes aprovados em sete workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados;
+  `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso
+  não bloqueante já conhecido do bundle Web maior que 500 kB;
+- `docker compose config --quiet`: configuração válida.
+
+### Decisões e pendências
+
+- `external_subject` acompanha o provider porque o nome do provider sozinho
+  não identifica um principal externo;
+- telefone é identificador de contato neste ticket, não método de autenticação
+  isolado;
+- e-mail, telefone, hash e subject externo não entram em logs; conflitos futuros
+  devem ser mapeados por SQLSTATE/nome do índice sem propagar o detail do driver;
+- verificação de posse, hash de senha, login, sessão, MFA, autorização, retenção
+  e hard delete permanecem nos tickets próprios;
+- `PROT-016` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-26 — PROT-014 — Criar enums fundamentais
 
 Status: Concluído

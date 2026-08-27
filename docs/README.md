@@ -41,6 +41,7 @@ testes, decisões e pendências.
 | Configuração e matriz de variáveis       | `docs/CONFIGURATION.md`                              |
 | PostgreSQL, Drizzle e fluxo Atlas        | `docs/database/README.md`                            |
 | Convenções de models e persistência      | `docs/database/CONVENTIONS.md`                       |
+| Dicionário da tabela de contas           | `docs/database/ACCOUNTS.md`                          |
 | Catálogo e evolução de enums             | `docs/database/ENUM_CATALOG.md`                      |
 | Revisão obrigatória de migrations        | `docs/database/MIGRATION_CHECKLIST.md`               |
 | Redis, namespaces e operação local       | `docs/REDIS.md`                                      |

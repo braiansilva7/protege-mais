@@ -1,10 +1,19 @@
 /**
  * Fonte central do schema Drizzle do Protege Mais.
  *
- * O schema de produção permanece sem tabelas após o PROT-014. A extensão
+ * A tabela accounts inaugura o schema de domínio no PROT-015. A extensão
  * PostGIS é gerenciada pela migration Atlas; colunas comuns e enums
  * fundamentais materializam os contratos aprovados para os próximos models.
  */
+export {
+  accountActiveIdentifierIndexNames,
+  accountPublicSelection,
+  accounts,
+  serializePublicAccount,
+  type Account,
+  type NewAccount,
+  type PublicAccount,
+} from './accounts.js';
 export {
   createdAtColumn,
   deletedAtColumn,
