@@ -36,6 +36,9 @@ de valores inválidos.
 O `PROT-015` criou `accounts` para identidades locais e externas, com
 normalização, unicidade atômica entre contas ativas, reutilização explícita após
 soft delete e projeção que exclui hashes e chaves internas.
+O `PROT-016` criou `auth_sessions` com hash de refresh token, metadata de
+dispositivo sanitizada, expiração/revogação, integridade referencial e revogação
+atômica sem persistir token ou IP em claro.
 
 ## Pré-requisitos
 
@@ -99,9 +102,9 @@ pnpm build
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
 cobrem configuração, erros, i18n, PostgreSQL, Redis, registry de readiness,
 endpoints operacionais, OpenAPI, logging, redaction, correlação, filas e
-shutdown, além das convenções, enums e contas em Drizzle/Atlas; o build cobre
-Manager API, Worker, Web e Mobile. Depois de subir as dependências locais, as
-integrações reais são executadas com
+shutdown, além das convenções, enums, contas e sessões em Drizzle/Atlas; o build
+cobre Manager API, Worker, Web e Mobile. Depois de subir as dependências locais,
+as integrações reais são executadas com
 `pnpm --filter @protege-mais/plugins test:database`,
 `pnpm --filter @protege-mais/plugins test:redis` e
 `pnpm --filter @protege-mais/worker test:redis`. Use `pnpm format` para aplicar a formatação e
@@ -128,11 +131,12 @@ permitidos/proibidos e consultas operacionais estão em
 [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
 PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
-de domínio possui a tabela `accounts` e 14 tipos enum fundamentais, sem seed ou
-dado. As migrations estruturais recriam esse estado em uma base limpa. As
-convenções, o dicionário de contas, o catálogo e o checklist estão em
+de domínio possui `accounts`, `auth_sessions` e 14 tipos enum fundamentais, sem
+seed ou dado. As migrations estruturais recriam esse estado em uma base limpa.
+As convenções, os dicionários, o catálogo e o checklist estão em
 [`docs/database/CONVENTIONS.md`](docs/database/CONVENTIONS.md),
 [`docs/database/ACCOUNTS.md`](docs/database/ACCOUNTS.md),
+[`docs/database/AUTH_SESSIONS.md`](docs/database/AUTH_SESSIONS.md),
 [`docs/database/ENUM_CATALOG.md`](docs/database/ENUM_CATALOG.md) e
 [`docs/database/MIGRATION_CHECKLIST.md`](docs/database/MIGRATION_CHECKLIST.md).
 
@@ -146,8 +150,8 @@ convenções, o dicionário de contas, o catálogo e o checklist estão em
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-016`:
+O próximo ticket liberado é `PROT-017`:
 
 ```text
-Implemente o ticket PROT-016 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-017 seguindo toda a documentação do projeto.
 ```

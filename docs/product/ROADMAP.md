@@ -85,5 +85,7 @@ shutdown, UTC e Atlas reproduzível sem tabelas ou seeds de domínio. O
 fixture isolado do schema de produção. O `PROT-014` criou e validou os enums
 fundamentais no banco e no TypeScript. O `PROT-015` criou a primeira tabela
 consumidora, `accounts`, e congelou a unicidade e reutilização de identificadores
-ativos. O próximo trabalho de implementação deve começar por `PROT-016`, que
-criará `auth_sessions` sem persistir refresh token puro.
+ativos. O `PROT-016` criou `auth_sessions` com hash de refresh token, metadata
+mínima e revogação concorrente sem ativar os fluxos de autenticação. O próximo
+trabalho de implementação deve começar por `PROT-017`, que criará a estrutura de
+roles e permissions.

@@ -24,15 +24,15 @@ deve ser exportado por `packages/models/index.ts`.
 
 Padrão para objetos nomeados:
 
-| Objeto               | Formato                            | Exemplo                                 |
-| -------------------- | ---------------------------------- | --------------------------------------- |
-| primary key          | `<tabela>_pkey`                    | `accounts_pkey`                         |
-| foreign key          | `<tabela>_<colunas>_fkey`          | `auth_sessions_account_id_fkey`         |
-| unique constraint    | `<tabela>_<colunas>_key`           | `roles_code_key`                        |
-| check constraint     | `<tabela>_<regra>_check`           | `accounts_identity_check`               |
-| índice B-tree comum  | `<tabela>_<colunas>_idx`           | `auth_sessions_account_id_idx`          |
-| índice único parcial | `<tabela>_<colunas>_<escopo>_uidx` | `accounts_email_normalized_active_uidx` |
-| índice espacial GiST | `<tabela>_<colunas>_gix`           | `organization_units_position_gix`       |
+| Objeto               | Formato                            | Exemplo                                              |
+| -------------------- | ---------------------------------- | ---------------------------------------------------- |
+| primary key          | `<tabela>_pkey`                    | `accounts_pkey`                                      |
+| foreign key          | `<tabela>_<colunas>_fkey`          | `auth_sessions_account_id_fkey`                      |
+| unique constraint    | `<tabela>_<colunas>_key`           | `roles_code_key`                                     |
+| check constraint     | `<tabela>_<regra>_check`           | `accounts_identity_check`                            |
+| índice B-tree comum  | `<tabela>_<colunas>_idx`           | `auth_sessions_account_id_revoked_at_expires_at_idx` |
+| índice único parcial | `<tabela>_<colunas>_<escopo>_uidx` | `accounts_email_normalized_active_uidx`              |
+| índice espacial GiST | `<tabela>_<colunas>_gix`           | `organization_units_position_gix`                    |
 
 FKs, constraints e índices devem receber nome explícito no model. A primary
 key simples `id` pode usar o nome determinístico gerado pelo PostgreSQL/Atlas,

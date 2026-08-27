@@ -8,18 +8,21 @@ idempotente. O `PROT-013` congelou as convenções de models e migrations. O
 `PROT-014` criou os enums fundamentais com uma fonte de valores compartilhada
 entre TypeScript e Drizzle. O `PROT-015` criou `accounts`, primeira tabela de
 domínio, com identidades locais/externas e unicidade parcial de identificadores
-ativos. A Manager API possui pool gerenciado, probe obrigatório e shutdown
-idempotente. O schema possui uma tabela e 14 tipos enum nativos, sem seed ou
-dado de domínio.
+ativos. O `PROT-016` acrescentou `auth_sessions`, com hash opaco do refresh
+token, metadados minimizados, expiração e revogação concorrente. A Manager API
+possui pool gerenciado, probe obrigatório e shutdown idempotente. O schema possui
+duas tabelas e 14 tipos enum nativos, sem seed ou dado de domínio.
 
 `packages/models/index.ts` é a única entrada do schema Drizzle de produção e
-exporta helpers, `pgEnum`, `accounts`, seus tipos e a projeção sem hash.
+exporta helpers, `pgEnum`, `accounts`, `authSessions`, seus tipos e as projeções
+que excluem hashes.
 `atlas/prod` mantém as migrations `20260826000000_enable_postgis.sql`,
 `20260826231424_fundamental_enums.sql` e
-`20260826233758_create_accounts.sql`; `atlas/seed/dev` permanece sem dados. Uma
-base nova aceita `migrate` sem exigir seed, habilita a extensão, cria os 14
-tipos e `accounts`; `spatial_ref_sys` é um objeto interno gerenciado pelo
-próprio PostGIS.
+`20260826233758_create_accounts.sql` e
+`20260827001526_create_auth_sessions.sql`; `atlas/seed/dev` permanece sem dados.
+Uma base nova aceita `migrate` sem exigir seed, habilita a extensão, cria os 14
+tipos, `accounts` e `auth_sessions`; `spatial_ref_sys` é um objeto interno
+gerenciado pelo próprio PostGIS.
 
 O guia normativo está em [CONVENTIONS.md](CONVENTIONS.md), o checklist de cada
 mudança estrutural está em
@@ -31,7 +34,9 @@ significados e regras de evolução dos enums estão em
 [ADR-003](../decisions/ADR-003-native-postgresql-enums.md).
 O dicionário completo de `accounts` está em [ACCOUNTS.md](ACCOUNTS.md), e a
 reutilização de identificadores ativos foi registrada no
-[ADR-004](../decisions/ADR-004-active-account-identifier-reuse.md).
+[ADR-004](../decisions/ADR-004-active-account-identifier-reuse.md). O dicionário,
+ciclo de vida e limites de segurança de `auth_sessions` estão em
+[AUTH_SESSIONS.md](AUTH_SESSIONS.md).
 
 ## Conexão da aplicação
 
@@ -76,7 +81,7 @@ eventos. Os únicos metadados de falha são `event` e `errorType` sintético.
    pnpm migrate:local
    ```
 
-4. Valide contas, constraints/concorrência, enums, Drizzle, UTC,
+4. Valide contas, sessões, constraints/concorrência, enums, Drizzle, UTC,
    indisponibilidade e retomada:
 
    ```bash
@@ -191,8 +196,10 @@ PostGIS está habilitado e consultas espaciais usam SRID 4326. O fixture em
 e soft delete sem criar entidade fictícia no schema de produção. O catálogo
 fundamental possui 14 tipos e `accounts` consome `account_type` e
 `account_status` sem defaults de negócio. Seus três identificadores são únicos
-entre contas ativas e reutilizáveis depois do soft delete. O próximo ticket
-liberado, `PROT-016`, pode referenciar `accounts` ao criar `auth_sessions`.
+entre contas ativas e reutilizáveis depois do soft delete. `auth_sessions`
+referencia a conta com exclusão restrita, deriva atividade de revogação e
+expiração, localiza a credencial pelo hash sem expô-lo na projeção e oferece
+índice para o ciclo por conta. O próximo ticket liberado é o `PROT-017`.
 
 ---
 

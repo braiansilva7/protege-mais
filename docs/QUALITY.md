@@ -79,15 +79,18 @@ pnpm build
 ```
 
 `lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `test` executa as
-suítes de configuração, classes comuns, normalização de conta, enums, models,
+suítes de configuração, classes comuns, normalização de conta, sanitização de
+metadata de sessão, enums, models,
 handler Fastify, i18n, PostgreSQL e Redis com conexões injetáveis, logging,
 redaction, correlação, filas, processors, casos de uso, readiness, endpoints
 operacionais, OpenAPI e shutdown. `test:database`, executado após
 `docker compose up -d --wait db atlas-db` e `pnpm migrate:local`, comprova
-persistência e projeção de contas, constraints, unicidade parcial, concorrência,
-reutilização após soft delete, paridade TypeScript/PostgreSQL dos enums, rejeição
-de labels inválidos, Drizzle, UTC, PostGIS, SRID 4326, distância geodésica,
-indisponibilidade, recuperação e fechamento contra PostgreSQL real. Os dois comandos
+persistência e projeção de contas, busca ativa de sessão por hash sem exposição,
+expiração, constraints, unicidade, revogação concorrente, planos dos índices,
+integridade referencial, reutilização de conta após soft delete, paridade
+TypeScript/PostgreSQL dos enums, rejeição de labels inválidos, Drizzle, UTC,
+PostGIS, SRID 4326, distância geodésica, indisponibilidade, recuperação e
+fechamento contra PostgreSQL real. Os dois comandos
 `test:redis`, executados após `docker compose up -d --wait redis`, comprovam o
 cliente genérico e o pipeline real do Worker. A integração do Worker cobre
 retry/backoff reduzido, idempotência após reinício, falha terminal e shutdown

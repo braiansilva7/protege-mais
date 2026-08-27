@@ -137,11 +137,11 @@ serialização pública.
 
 ### Criar tabela auth_sessions
 
-| Campo        | Valor    |
-| ------------ | -------- |
-| Status       | Pendente |
-| Prioridade   | P0       |
-| Dependências | PROT-015 |
+| Campo        | Valor     |
+| ------------ | --------- |
+| Status       | Concluído |
+| Prioridade   | P0        |
+| Dependências | PROT-015  |
 
 **Objetivo:** suportar refresh token rotacionável e gestão de dispositivos.
 

@@ -3,6 +3,86 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-26 — PROT-016 — Criar tabela auth_sessions
+
+Status: Concluído
+
+### Resultado
+
+`auth_sessions` passa a persistir o hash opaco do refresh token e os metadados
+mínimos de dispositivo vinculados a `accounts`. O ciclo de vida é derivado de
+expiração e revogação; token e IP em claro não fazem parte do schema, e as
+projeções de consulta excluem hashes e ownership interno.
+
+Checks nomeados protegem identificador, metadata sanitizada, timestamps e
+versão. A busca por hash é única, o índice composto cobre o ciclo por conta e a
+revogação condicionada por atividade/versão garante apenas uma vencedora sob
+concorrência. A FK restritiva preserva sessões quando a conta sofre soft delete
+e impede hard delete silencioso do histórico.
+
+### Arquivos e dados
+
+- criado `packages/common/auth-sessions` com sanitização e limites de nome do
+  dispositivo e User-Agent por code point, acompanhado por dois testes;
+- criado `packages/models/auth-sessions.ts` com 13 colunas, UUID v7 gerado na
+  aplicação, `TIMESTAMPTZ(3)`, optimistic locking, sete checks, FK
+  `ON UPDATE NO ACTION`/`ON DELETE RESTRICT`, dois índices, predicado de atividade
+  e projeção/serialização segura;
+- gerada por diff real a migration estrutural
+  `20260827001526_create_auth_sessions.sql`, sem seed, dado, default de UUID,
+  status materializado, soft delete ou operação destrutiva; o checksum Atlas foi
+  atualizado;
+- adicionados cinco testes de model/migration e três integrações PostgreSQL
+  reais para atividade/expiração, projeção, constraints, integridade
+  referencial, planos de índice e revogação concorrente;
+- criado `docs/database/AUTH_SESSIONS.md` com dicionário, ciclo de vida,
+  consultas, retenção e fronteiras de segurança; README, arquitetura,
+  privacidade, qualidade, banco, roadmap, índices e tickets foram sincronizados;
+- nenhuma versão de dependência ou lockfile foi alterada; não foram criados
+  rota, repositório, seed, dado, algoritmo de hash, emissão, rotação ou reuso de
+  token.
+
+### Validação
+
+- migration completa em base temporária criada de `template0`: quatro
+  migrations e 23 instruções aplicadas; segunda execução sem pendências; 14
+  tipos, 55 labels, `accounts` e `auth_sessions`, esta com 13 colunas, sete
+  checks, dois índices secundários e zero registros; a base foi removida ao
+  final;
+- `atlas migrate validate`, `status` e `diff` no ambiente `prod`: checksum
+  válido, versão `20260827001526`, quatro arquivos executados, zero pendências e
+  zero drift;
+- `pnpm model:reference:validate` e `pnpm model:reference:diff`: fixture de
+  convenções válido e sem drift;
+- `pnpm --filter @protege-mais/plugins test:database`: 11 testes reais
+  aprovados, incluindo os três cenários de sessão e os baselines de contas,
+  enums, Drizzle/UTC, PostGIS/SRID/distância e retomada/shutdown;
+- `pnpm test`: 88 testes aprovados em sete workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados;
+  `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso
+  não bloqueante já conhecido do bundle Web maior que 500 kB;
+- `docker compose config --quiet`: configuração válida.
+
+### Decisões e pendências
+
+- atividade não possui status armazenado: exige `revoked_at IS NULL` e
+  `expires_at > :now`; elegibilidade da conta continua uma verificação separada;
+- o hash corrente é globalmente único; um índice temporal parcial não foi usado
+  porque a passagem do tempo alteraria atividade sem mutar a linha;
+- sessões não recebem soft delete; revogação é o encerramento operacional, e
+  retenção/expurgo dependem de política jurídica e operacional futura;
+- nenhum ADR novo: o ticket materializa o contrato aprovado usando as
+  convenções vigentes; algoritmo de hash, rotação, família/histórico para reuso,
+  logout e gestão HTTP permanecem nos tickets de autenticação;
+- `PROT-017` é o próximo ticket liberado para execução;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-26 — PROT-015 — Criar tabela accounts
 
 Status: Concluído

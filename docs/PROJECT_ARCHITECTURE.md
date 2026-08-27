@@ -2,15 +2,17 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-015`. A arquitetura
+Este documento registra somente o que existe após o `PROT-016`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
 O monorepo possui quatro apps executáveis e dez packages compartilhados. A
-primeira entidade persistente é `accounts`, separada de perfis e protegida por
-constraints de identidade, unicidade ativa e projeção sem hash. Ainda não
-existem autenticação, autorização, rotas/repositórios de negócio, seeds ou dados
-de domínio. Existem 14 tipos enum fundamentais, com `account_type` e
+persistência possui `accounts`, separada de perfis e protegida por constraints
+de identidade, e `auth_sessions`, com credencial em hash, metadata minimizada e
+ciclo de expiração/revogação. Projeções seguras excluem hashes e chaves internas.
+Ainda não existem fluxo de autenticação, autorização, rotas/repositórios de
+negócio, seeds ou dados de domínio. Existem 14 tipos enum fundamentais, com
+`account_type` e
 `account_status` consumidos pela tabela. PostGIS está habilitado pela primeira
 migration estrutural e validado com SRID 4326. As convenções de persistência
 estão congeladas e comprovadas por um fixture Drizzle/Atlas isolado do schema
@@ -52,18 +54,18 @@ protege-mais/
 │       ├── App.tsx
 │       └── index.ts
 ├── packages/
-│   ├── common/               # Enums, erros, UUID e normalização de e-mail
+│   ├── common/               # Enums, erros, UUID e sanitização compartilhada
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
-│   ├── models/               # Accounts, enums, helpers e fixture Drizzle
+│   ├── models/               # Accounts, auth_sessions, enums e fixture Drizzle
 │   ├── plugins/              # Banco, logging, Redis, filas e plugins Fastify
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
 │   ├── services/             # Capacidades reutilizáveis futuras
 │   └── useCases/             # Contrato/registry de jobs e orquestração futura
 ├── atlas/
-│   ├── prod/                 # Migrations de PostGIS, enums e accounts
+│   ├── prod/                 # Migrations de PostGIS, enums, contas e sessões
 │   └── seed/dev/             # Checksum Atlas, sem seed
 ├── drizzle.reference.config.ts # Export do fixture, fora de produção
 ├── eslint.config.mjs       # Lint compartilhado e tipado
@@ -290,6 +292,14 @@ três índices parciais resolvem unicidade entre contas ativas. `packages/common
 expõe a normalização canônica de e-mail. O dicionário está em
 `docs/database/ACCOUNTS.md`.
 
+O mesmo entrypoint exporta `authSessions`, seus tipos, nomes de constraints e
+índices, predicado de atividade e uma projeção que exclui hash de refresh
+token, hash de IP e ID da conta. A tabela usa FK com exclusão restrita, hash
+globalmente único, timestamps de expiração/uso/revogação, versionamento otimista
+e checks de ciclo de vida. `packages/common` sanitiza nome de dispositivo e
+User-Agent. O contrato completo está em
+`docs/database/AUTH_SESSIONS.md`.
+
 O mesmo entrypoint exporta 14 `pgEnum` que reutilizam as tuples literais e os
 types de `packages/common/enums`. Nenhum enum possui default ou regra de
 transição.
@@ -308,8 +318,9 @@ migrations estruturais em `atlas/prod`; `dev` mantém apenas seeds fictícios em
 `atlas/seed/dev`; `reference`, sem URL de deploy, mantém a prova executável em
 `packages/models/reference/atlas`. O diretório estrutural possui a migration
 idempotente que diagnostica suporte e executa
-`CREATE EXTENSION IF NOT EXISTS postgis`, a migration dos 14 enums e
-`20260826233758_create_accounts.sql`; o seed continua vazio. O apply não
+`CREATE EXTENSION IF NOT EXISTS postgis`, a migration dos 14 enums,
+`20260826233758_create_accounts.sql` e
+`20260827001526_create_auth_sessions.sql`; o seed continua vazio. O apply não
 recalcula hashes, uma base limpa aplica a estrutura sem seed e a repetição
 permanece sem pendências ou drift. PostgreSQL principal e dev database do Atlas
 usam `postgis/postgis:16-3.5-alpine`, iniciam em UTC, têm healthcheck, shutdown
@@ -328,8 +339,8 @@ fluxo completo está em
 | `pnpm dev:worker`                                   | Inicia somente os consumers do Worker                |
 | `pnpm lint`                                         | Valida os quatro apps e os dez packages              |
 | `pnpm typecheck`                                    | Valida os quatro apps e os dez packages              |
-| `pnpm test`                                         | Testa config, contas, enums, filas, logs e OpenAPI   |
-| `pnpm --filter @protege-mais/plugins test:database` | Integra contas, enums, PostGIS, UTC e retomada       |
+| `pnpm test`                                         | Testa config, contas, sessões, filas e OpenAPI       |
+| `pnpm --filter @protege-mais/plugins test:database` | Integra contas, sessões, PostGIS, UTC e retomada     |
 | `pnpm --filter @protege-mais/plugins test:redis`    | Integra Redis real, TTL e reconexão                  |
 | `pnpm --filter @protege-mais/worker test:redis`     | Integra filas, retry, idempotência, falha e shutdown |
 | `pnpm format:check`                                 | Confere a formatação do repositório                  |
@@ -352,7 +363,9 @@ não adicionou tabelas de domínio. O `PROT-013` adicionou somente tabelas de
 referência em um diretório e ambiente Atlas sem deploy; o schema `prod` continua
 sem elas. O `PROT-014` adicionou 14 tipos enum e nenhuma tabela ou dado. O
 `PROT-015` adicionou somente `accounts`, sem seed, dado, rota ou fluxo de
-autenticação. A validação cria e remove somente uma base temporária com nome
+autenticação. O `PROT-016` adicionou somente `auth_sessions` e helpers seguros,
+sem seed, dado, rota, emissão ou rotação de token. A validação cria e remove
+somente uma base temporária com nome
 reservado; os volumes locais não são apagados. O volume Redis local contém
 somente metadados técnicos das filas e qualquer job fictício de teste é removido
 ao concluir a integração.

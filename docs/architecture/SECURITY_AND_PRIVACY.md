@@ -38,6 +38,12 @@ A allowlist aplicada, a defesa recursiva e as consultas seguras estão em
 - MFA e recuperação não podem revelar se uma conta existe.
 - Sessões permitem revogação individual e global.
 
+`auth_sessions` materializa somente a fundação persistente: token e IP em claro
+nunca são gravados, hashes ficam fora da projeção de saída e atividade exige
+ausência de revogação e prazo futuro. Algoritmo, rotação e resposta a reuso
+continuam nos tickets de autenticação. O contrato completo está em
+[`../database/AUTH_SESSIONS.md`](../database/AUTH_SESSIONS.md).
+
 ## Autorização contextual
 
 Permissões seguem `<recurso>.<ação>`. Papel não substitui autorização. Toda

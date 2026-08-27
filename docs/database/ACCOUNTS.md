@@ -102,6 +102,10 @@ Hash, e-mail, telefone e subject externo não entram em logs. O algoritmo de
 hash, criação e troca de senha, verificação de e-mail/telefone, MFA, hard delete,
 retenção e anonimização permanecem fora do `PROT-015`.
 
+`auth_sessions` referencia `accounts` com `ON DELETE RESTRICT`: o soft delete
+preserva a conta e o histórico, enquanto hard delete é impedido se houver sessão.
+O ciclo de vida está em [AUTH_SESSIONS.md](AUTH_SESSIONS.md).
+
 ---
 
 Documentação Protege Mais — Dicionário de dados de contas
