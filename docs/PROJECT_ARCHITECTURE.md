@@ -2,7 +2,7 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-017`. A arquitetura
+Este documento registra somente o que existe após o `PROT-018`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
@@ -12,7 +12,9 @@ de identidade, `auth_sessions`, com credencial em hash, metadata minimizada e
 ciclo de expiração/revogação, e quatro tabelas que formam a base relacional do
 RBAC contextual. Projeções seguras excluem hashes e chaves internas. Ainda não
 existem fluxo de autenticação, autorização funcional, rotas/repositórios de
-negócio, catálogo, seeds ou dados de domínio. Existem 14 tipos enum
+negócio ou dados operacionais. Um catálogo TypeScript contém as 19 permissões
+iniciais e o seed opcional de desenvolvimento insere somente esses códigos, sem
+papéis ou atribuições. Existem 14 tipos enum
 fundamentais, com `account_type` e `account_status` consumidos pela tabela.
 PostGIS está habilitado pela primeira
 migration estrutural e validado com SRID 4326. As convenções de persistência
@@ -55,7 +57,7 @@ protege-mais/
 │       ├── App.tsx
 │       └── index.ts
 ├── packages/
-│   ├── common/               # Enums, erros, UUID e sanitização compartilhada
+│   ├── common/               # Enums, permissões, erros, UUID e sanitização
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
@@ -67,7 +69,7 @@ protege-mais/
 │   └── useCases/             # Contrato/registry de jobs e orquestração futura
 ├── atlas/
 │   ├── prod/                 # Migrations de PostGIS, enums, contas, sessões e RBAC
-│   └── seed/dev/             # Checksum Atlas, sem seed
+│   └── seed/dev/             # Catálogo aditivo de permissões para desenvolvimento
 ├── drizzle.reference.config.ts # Export do fixture, fora de produção
 ├── eslint.config.mjs       # Lint compartilhado e tipado
 ├── tsconfig.base.json      # Regras TypeScript comuns
@@ -239,9 +241,9 @@ erros está em `docs/api/README.md` e a convenção de idiomas e chaves em
 `docs/api/INTERNATIONALIZATION.md`.
 
 Não há JWT, middleware de autenticação, usuário autenticado ou decisão de
-permissão no baseline. As tabelas de RBAC ainda não possuem catálogo nem são
-consultadas pelo runtime. Esses componentes serão implementados em seus tickets
-próprios.
+permissão no baseline. O catálogo técnico não é consultado pelo runtime e não
+há papéis ou atribuições iniciais. Esses componentes serão implementados em
+seus tickets próprios.
 
 ## Logging e correlação
 
@@ -313,6 +315,11 @@ unidade são reservados sem FK até as tabelas dos tickets `PROT-019` e
 `PROT-020` existirem. O diagrama, o dicionário e as fronteiras de autorização
 estão em `docs/permissions/README.md`; o `ADR-005` registra a decisão.
 
+`packages/common/permissions` exporta `permissionCatalog`, `permissionCodes`,
+os tipos literais de recurso/código e um type guard. O catálogo possui 19
+códigos agrupados em `account`, `organization`, `victim` e `case`; ele é a
+fonte TypeScript comparada automaticamente ao seed e ainda não concede acesso.
+
 O mesmo entrypoint exporta 14 `pgEnum` que reutilizam as tuples literais e os
 types de `packages/common/enums`. Nenhum enum possui default ou regra de
 transição.
@@ -334,7 +341,10 @@ idempotente que diagnostica suporte e executa
 `CREATE EXTENSION IF NOT EXISTS postgis`, a migration dos 14 enums,
 `20260826233758_create_accounts.sql`,
 `20260827001526_create_auth_sessions.sql` e
-`20260827004636_create_authorization_structure.sql`; o seed continua vazio. O apply não
+`20260827004636_create_authorization_structure.sql`. O diretório de
+desenvolvimento contém
+`20260827012543_initial_permission_catalog.sql`, que insere as 19 permissões com
+`ON CONFLICT (code) DO NOTHING`, sem papel ou atribuição. O apply não
 recalcula hashes, uma base limpa aplica a estrutura sem seed e a repetição
 permanece sem pendências ou drift. PostgreSQL principal e dev database do Atlas
 usam `postgis/postgis:16-3.5-alpine`, iniciam em UTC, têm healthcheck, shutdown
@@ -353,14 +363,15 @@ fluxo completo está em
 | `pnpm dev:worker`                                   | Inicia somente os consumers do Worker                |
 | `pnpm lint`                                         | Valida os quatro apps e os dez packages              |
 | `pnpm typecheck`                                    | Valida os quatro apps e os dez packages              |
-| `pnpm test`                                         | Testa config, contas, sessões, RBAC, filas e OpenAPI |
-| `pnpm --filter @protege-mais/plugins test:database` | Integra contas, sessões, RBAC, PostGIS e retomada    |
+| `pnpm test`                                         | Testa config, catálogo, RBAC, filas e OpenAPI        |
+| `pnpm --filter @protege-mais/plugins test:database` | Integra banco, RBAC, seed, PostGIS e retomada        |
 | `pnpm --filter @protege-mais/plugins test:redis`    | Integra Redis real, TTL e reconexão                  |
 | `pnpm --filter @protege-mais/worker test:redis`     | Integra filas, retry, idempotência, falha e shutdown |
 | `pnpm format:check`                                 | Confere a formatação do repositório                  |
 | `pnpm -r --if-present format:check`                 | Confere a formatação por workspace                   |
 | `pnpm build`                                        | Gera os quatro builds a partir da raiz               |
 | `pnpm migrate:local`                                | Aplica migrations estruturais Atlas localmente       |
+| `pnpm seed:local`                                   | Aplica estrutura e seed aditivo de desenvolvimento   |
 | `ENV=prod pnpm atlas:validate:docker`               | Valida o diretório estrutural e seu checksum         |
 | `pnpm model:reference:export`                       | Exibe o DDL do fixture Drizzle                       |
 | `pnpm model:reference:validate`                     | Valida a migration isolada de convenções             |
@@ -380,7 +391,9 @@ sem elas. O `PROT-014` adicionou 14 tipos enum e nenhuma tabela ou dado. O
 autenticação. O `PROT-016` adicionou somente `auth_sessions` e helpers seguros,
 sem seed, dado, rota, emissão ou rotação de token. O `PROT-017` adicionou
 somente as quatro tabelas de RBAC e helpers declarativos, sem catálogo, seed,
-dado, rota, repository ou middleware de autorização. A validação cria e remove
+rotas, repository ou middleware de autorização. O `PROT-018` adicionou somente
+o catálogo TypeScript e o seed de 19 permissões de desenvolvimento, sem papel,
+atribuição, dado pessoal ou mudança estrutural de produção. A validação cria e remove
 somente uma base temporária com nome
 reservado; os volumes locais não são apagados. O volume Redis local contém
 somente metadados técnicos das filas e qualquer job fictício de teste é removido

@@ -192,11 +192,11 @@ consulta.
 
 ### Criar seed inicial de permissões
 
-| Campo        | Valor    |
-| ------------ | -------- |
-| Status       | Pendente |
-| Prioridade   | P0       |
-| Dependências | PROT-017 |
+| Campo        | Valor     |
+| ------------ | --------- |
+| Status       | Concluído |
+| Prioridade   | P0        |
+| Dependências | PROT-017  |
 
 **Objetivo:** popular desenvolvimento com catálogo versionado de permissões.
 

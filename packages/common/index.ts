@@ -51,3 +51,10 @@ export {
   type ProtectiveOrderTermType,
   type RiskLevel,
 } from './enums/index.js';
+export {
+  isPermissionCode,
+  permissionCatalog,
+  permissionCodes,
+  type PermissionCode,
+  type PermissionResource,
+} from './permissions/index.js';

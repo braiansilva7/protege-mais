@@ -88,5 +88,6 @@ consumidora, `accounts`, e congelou a unicidade e reutilização de identificado
 ativos. O `PROT-016` criou `auth_sessions` com hash de refresh token, metadata
 mínima e revogação concorrente sem ativar os fluxos de autenticação. O
 `PROT-017` criou a estrutura de RBAC contextual, ainda vazia e sem uso
-funcional. O próximo trabalho de implementação deve começar por `PROT-018`, que
-criará o seed inicial versionado de permissões.
+funcional. O `PROT-018` adicionou o catálogo TypeScript e o seed inicial
+versionado de 19 permissões apenas para desenvolvimento. O próximo trabalho de
+implementação deve começar por `PROT-019`, que criará `organizations`.

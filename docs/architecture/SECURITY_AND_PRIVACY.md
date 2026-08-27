@@ -59,11 +59,13 @@ decisão considera, conforme o recurso:
 notificação/revisão posterior. Nunca equivale a acesso irrestrito permanente.
 
 `roles`, `permissions`, `role_permissions` e `account_roles` materializam
-somente a fundação relacional. O catálogo ainda está vazio e não existe
-middleware de autorização. Atribuições podem ter escopo global, de organização
-ou de unidade; unidade sem organização é inválida e um papel inativo nunca deve
-conceder acesso. As FKs contextuais e a validação de vínculos serão adicionadas
-com as entidades correspondentes antes de qualquer uso funcional.
+somente a fundação relacional. O catálogo TypeScript e o seed opcional de
+desenvolvimento contêm 19 códigos técnicos, sem PII, papéis ou atribuições; a
+migration de produção permanece sem dados e ainda não existe middleware de
+autorização. Atribuições podem ter escopo global, de organização ou de unidade;
+unidade sem organização é inválida e um papel inativo nunca deve conceder
+acesso. As FKs contextuais e a validação de vínculos serão adicionadas com as
+entidades correspondentes antes de qualquer uso funcional.
 
 Papéis de sistema são estruturais: permanecem ativos e as mutações suportadas
 pela aplicação devem rejeitá-los. O contrato completo, inclusive herança de

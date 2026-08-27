@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test accounts/accounts.test.ts auth-sessions/auth-sessions.test.ts errors/errors.test.ts enums/enums.test.ts",
+    "test": "tsx --test accounts/accounts.test.ts auth-sessions/auth-sessions.test.ts errors/errors.test.ts enums/enums.test.ts permissions/permissions.test.ts",
     "format": "prettier --write . --ignore-path ../../.prettierignore",
     "format:check": "prettier --check . --ignore-path ../../.prettierignore"
   },

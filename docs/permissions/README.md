@@ -2,16 +2,80 @@
 
 ## Estado atual
 
-O `PROT-017` materializa somente a fundação relacional de RBAC. As tabelas
-`roles`, `permissions`, `role_permissions` e `account_roles` existem, mas seus
-catálogos permanecem vazios. O `PROT-018` será responsável pelo seed inicial e
-os tickets `PROT-030` a `PROT-032` implementarão a autorização funcional e a
-validação dos vínculos contextuais.
+O `PROT-017` materializou a fundação relacional de RBAC. O `PROT-018` acrescenta
+um catálogo TypeScript de 19 permissões e um seed aditivo exclusivo de
+desenvolvimento. Nenhum papel ou atribuição é criado. As migrations de produção
+continuam estruturais e deixam os catálogos vazios; os tickets `PROT-030` a
+`PROT-032` implementarão a autorização funcional e a validação dos vínculos
+contextuais.
 
 Nenhuma rota, repository ou middleware deve consultar essas tabelas antes de a
 cadeia completa de autorização estar implementada. Em particular, código de
 papel não substitui verificação de permissão e verificações fixas como
 `role === 'ADMIN'` continuam proibidas.
+
+## Catálogo inicial
+
+O código da permissão é o contrato estável entre documentação, backend e banco.
+Ele não é texto de interface e nunca deve ser traduzido.
+
+| Recurso        | Ações comuns                                                                           | Ações específicas             |
+| -------------- | -------------------------------------------------------------------------------------- | ----------------------------- |
+| `account`      | `account.list`, `account.view`, `account.create`, `account.update`                     | `account.disable`             |
+| `organization` | `organization.list`, `organization.view`, `organization.create`, `organization.update` | —                             |
+| `victim`       | `victim.list`, `victim.view`, `victim.create`, `victim.update`                         | —                             |
+| `case`         | `case.list`, `case.view`, `case.create`, `case.update`                                 | `case.close`, `case.transfer` |
+
+As ações comuns representam, respectivamente, enumerar uma coleção autorizada,
+consultar um registro, criar um registro e alterar um registro. `disable`
+representa desativação de conta, `close` encerramento de caso e `transfer`
+transferência de caso. Os tickets consumidores ainda devem definir escopo,
+pré-condições, efeitos e auditoria de cada operação; possuir o código no
+catálogo não disponibiliza a ação.
+
+`packages/common/permissions` é a fonte tipada, imutável e pública. Ele exporta
+`permissionCatalog`, a tuple plana `permissionCodes`, os tipos
+`PermissionResource`/`PermissionCode` e o type guard `isPermissionCode`.
+
+## Seed de desenvolvimento
+
+`atlas/seed/dev/20260827012543_initial_permission_catalog.sql` insere somente as
+19 permissões, com UUIDs v7 fictícios e explícitos. O conflito é arbitrado pela
+constraint única de `code` com `ON CONFLICT (code) DO NOTHING`:
+
+- reaplicar o seed não duplica nem altera linhas;
+- uma permissão local com o mesmo código é preservada;
+- permissões adicionais, papéis, concessões e atribuições locais não são
+  removidos nem modificados;
+- `code`, e não o UUID do seed, é o identificador funcional estável;
+- colisão do UUID fixo com outro código é erro de integridade e não é ocultada.
+
+Para aplicar estrutura e catálogo localmente:
+
+```bash
+pnpm seed:local
+```
+
+O comando aplica primeiro `atlas/prod` e depois `atlas/seed/dev`. Uma segunda
+execução deve informar que não há arquivos pendentes. `pnpm migrate:local`
+continua aplicando somente a estrutura e deve funcionar em uma base vazia sem o
+seed.
+
+## Processo de expansão
+
+1. Um ticket consumidor aprova o recurso, a ação, a semântica e o escopo.
+2. O código é adicionado ao grupo correto de `permissionCatalog` e, por
+   consequência, a `permissionCodes`.
+3. Uma nova migration aditiva é criada em `atlas/seed/dev` com UUID v7 fixo e
+   `ON CONFLICT (code) DO NOTHING`.
+4. Testes comparam exatamente catálogo e migrations, aplicam o seed novamente e
+   verificam preservação de dados locais.
+5. Documentação e matriz de autorização são atualizadas no mesmo ticket.
+
+Seeds já compartilhados não são reescritos. Renomear ou retirar permissão exige
+plano explícito de depreciação e migração de concessões; o seed nunca apaga
+`role_permissions` ou `account_roles`. Catálogo de produção, papéis iniciais e
+suas matrizes exigem definição própria e não são inferidos deste seed.
 
 ## Diagrama relacional
 
@@ -139,7 +203,7 @@ excepcional permanecem fora deste ticket.
 
 ## Tickets responsáveis
 
-- `PROT-018`: seed inicial e catálogo TypeScript;
+- `PROT-018`: seed inicial e catálogo TypeScript, concluídos;
 - `PROT-019` e `PROT-020`: entidades contextuais e respectivas FKs;
 - `PROT-021`: vínculos da conta;
 - `PROT-030`: middleware de permissão;

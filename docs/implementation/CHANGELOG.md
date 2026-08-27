@@ -3,6 +3,90 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-26 — PROT-018 — Criar seed inicial de permissões
+
+Status: Concluído
+
+### Resultado
+
+O catálogo inicial passa a expor 19 permissões tipadas para `account`,
+`organization`, `victim` e `case`. Cada recurso recebe `list`, `view`, `create`
+e `update`; `account` também recebe `disable`, enquanto `case` recebe `close` e
+`transfer`.
+
+Um seed Atlas exclusivo de desenvolvimento insere esses mesmos códigos de forma
+aditiva e idempotente. Reaplicá-lo não duplica registros nem altera permissões,
+papéis, concessões ou atribuições locais. A estrutura de produção permanece
+independente e vazia.
+
+### Arquivos e dados
+
+- criado `packages/common/permissions/index.ts` com `permissionCatalog`, a tuple
+  plana `permissionCodes`, tipos literais de recurso/código e o type guard
+  `isPermissionCode`; a entrada pública de `common` concentra os exports;
+- criado `packages/common/permissions/permissions.test.ts` com quatro testes de
+  conjunto exato, imutabilidade, formato, unicidade, type guard, paridade com o
+  SQL/checksum e ausência do catálogo nas migrations de produção;
+- criado o seed
+  `atlas/seed/dev/20260827012543_initial_permission_catalog.sql`, com 19 UUIDs v7
+  fictícios e explícitos e uma única instrução
+  `INSERT ... ON CONFLICT (code) DO NOTHING`; o checksum `dev` foi atualizado e
+  o `.gitkeep` deixou de ser necessário;
+- adicionada integração PostgreSQL real que executa o SQL duas vezes, compara
+  códigos e IDs e comprova a preservação de uma permissão local, sua concessão a
+  papel e uma atribuição contextual;
+- `docs/permissions/README.md` agora contém o catálogo, a semântica inicial, o
+  fluxo local e o processo aditivo de expansão; README, segurança, qualidade,
+  banco, arquitetura, roadmap e tickets foram sincronizados;
+- nenhuma versão de dependência ou lockfile foi alterada; nenhum papel,
+  atribuição, dado pessoal, rota, repository ou middleware foi criado.
+
+### Validação
+
+- produção isolada em base criada de `template0`: cinco migrations e 30
+  instruções aplicadas, seis tabelas e zero permissões/papéis/atribuições sem
+  executar seed;
+- seed aplicado depois da estrutura na mesma base: uma migration e uma instrução
+  criaram exatamente 19 permissões, com 19 IDs UUID v7 distintos e zero papéis
+  ou atribuições; a segunda aplicação não encontrou arquivos pendentes e a base
+  temporária foi removida;
+- `pnpm seed:local` executado duas vezes: a primeira aplicação inseriu o catálogo
+  e a segunda não executou migration; o banco local conserva as 19 permissões de
+  desenvolvimento;
+- `atlas migrate hash` no ambiente `dev` e `atlas migrate validate`, `status` e
+  `diff` no ambiente `prod`: checksums válidos, seis revisões combinadas, zero
+  pendências e zero drift estrutural;
+- `pnpm model:reference:validate` e `pnpm model:reference:diff`: fixture de
+  convenções válido e sem drift;
+- `pnpm --filter @protege-mais/plugins test:database`: 14 testes reais
+  aprovados, incluindo seed idempotente/paritário, preservação local e os
+  baselines de contas, sessões, RBAC, enums, Drizzle/UTC, PostGIS e retomada;
+- `pnpm test`: 97 testes aprovados em sete workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados;
+  `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso
+  não bloqueante já conhecido do bundle Web maior que 500 kB;
+- `docker compose config --quiet`: configuração válida.
+
+### Decisões e pendências
+
+- `code` é o identificador funcional estável; o UUID fixo identifica a linha
+  fictícia, mas uma linha preexistente com o mesmo código é preservada;
+- nenhum papel foi semeado porque o ticket não define um papel inicial; matrizes
+  e atribuições não são inferidas do conjunto de permissões;
+- expansão cria uma nova migration aditiva e atualiza o catálogo no mesmo
+  ticket; seeds compartilhados não são reescritos e nunca removem concessões;
+- nenhum ADR novo: a implementação materializa a separação `prod`/`seed/dev` e
+  o catálogo global já aprovados pela arquitetura e pelo `ADR-005`;
+- o `PROT-019` é o próximo ticket liberado; autorização funcional permanece nos
+  tickets `PROT-030` a `PROT-032`;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-26 — PROT-017 — Criar estrutura de roles e permissions
 
 Status: Concluído

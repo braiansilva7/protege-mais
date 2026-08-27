@@ -80,7 +80,8 @@ pnpm build
 
 `lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `test` executa as
 suítes de configuração, classes comuns, normalização de conta, sanitização de
-metadata de sessão, enums, models, RBAC contextual, handler Fastify, i18n,
+metadata de sessão, enums, catálogo tipado de permissões, models, RBAC
+contextual, handler Fastify, i18n,
 PostgreSQL e Redis com conexões injetáveis, logging,
 redaction, correlação, filas, processors, casos de uso, readiness, endpoints
 operacionais, OpenAPI e shutdown. `test:database`, executado após
@@ -90,7 +91,8 @@ expiração, constraints, unicidade, revogação concorrente, planos dos índice
 integridade referencial, atribuições de papel em múltiplas organizações,
 herança global/organizacional por contexto, proteção de papel de sistema,
 remoção referenciada, plano da consulta de permissões, reutilização de conta
-após soft delete, paridade TypeScript/PostgreSQL dos enums, rejeição de labels
+após soft delete, idempotência/paridade do seed de permissões e preservação de
+atribuições locais, paridade TypeScript/PostgreSQL dos enums, rejeição de labels
 inválidos, Drizzle, UTC,
 PostGIS, SRID 4326, distância geodésica, indisponibilidade, recuperação e
 fechamento contra PostgreSQL real. Os dois comandos

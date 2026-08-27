@@ -12,19 +12,23 @@ ativos. O `PROT-016` acrescentou `auth_sessions`, com hash opaco do refresh
 token, metadados minimizados, expiração e revogação concorrente. O `PROT-017`
 criou a fundação de RBAC contextual em `roles`, `permissions`,
 `role_permissions` e `account_roles`. A Manager API possui pool gerenciado,
-probe obrigatório e shutdown idempotente. O schema possui seis tabelas e 14
-tipos enum nativos, sem seed ou dado de domínio.
+probe obrigatório e shutdown idempotente. O `PROT-018` acrescentou o catálogo
+TypeScript e um seed opcional com 19 permissões exclusivamente para
+desenvolvimento. O schema de produção possui seis tabelas e 14 tipos enum
+nativos e continua sem dados.
 
 `packages/models/index.ts` é a única entrada do schema Drizzle de produção e
 exporta helpers, `pgEnum`, `accounts`, `authSessions`, as quatro tabelas de RBAC,
-seus tipos e as projeções que excluem hashes.
+seus tipos e as projeções que excluem hashes. `packages/common/index.ts` exporta
+o catálogo literal das permissões.
 `atlas/prod` mantém as migrations `20260826000000_enable_postgis.sql`,
 `20260826231424_fundamental_enums.sql`,
 `20260826233758_create_accounts.sql`,
 `20260827001526_create_auth_sessions.sql` e
-`20260827004636_create_authorization_structure.sql`; `atlas/seed/dev` permanece sem dados.
-Uma base nova aceita `migrate` sem exigir seed, habilita a extensão, cria os 14
-tipos e as seis tabelas; `spatial_ref_sys` é um objeto interno
+`20260827004636_create_authorization_structure.sql`. `atlas/seed/dev` contém
+`20260827012543_initial_permission_catalog.sql`. Uma base nova aceita `migrate`
+sem exigir seed, habilita a extensão, cria os 14 tipos e as seis tabelas vazias;
+`seed:local` adiciona 19 permissões. `spatial_ref_sys` é um objeto interno
 gerenciado pelo próprio PostGIS.
 
 O guia normativo está em [CONVENTIONS.md](CONVENTIONS.md), o checklist de cada
@@ -87,7 +91,14 @@ eventos. Os únicos metadados de falha são `event` e `errorType` sintético.
    pnpm migrate:local
    ```
 
-4. Valide contas, sessões, RBAC contextual, constraints/concorrência, enums,
+4. Quando precisar do catálogo fictício de desenvolvimento, aplique estrutura e
+   seed:
+
+   ```bash
+   pnpm seed:local
+   ```
+
+5. Valide contas, sessões, RBAC contextual, seed, constraints/concorrência, enums,
    Drizzle, UTC, indisponibilidade e retomada:
 
    ```bash
@@ -183,6 +194,13 @@ Ao adicionar um model futuro:
 `apply` verifica a integridade versionada antes do deploy. Um seed não corrige
 schema e nunca é pré-requisito de migration.
 
+O seed de permissões é aditivo: usa UUIDs v7 fixos e
+`ON CONFLICT (code) DO NOTHING`. Reaplicá-lo não altera o catálogo existente e
+não remove permissões adicionais, papéis, concessões ou atribuições locais. A
+estrutura `prod` e o seed `dev` possuem checksums separados; o seed é sempre
+aplicado depois da estrutura com execução não linear prevista pelo comando do
+projeto.
+
 ## Padrões congelados nesta fundação
 
 - PostgreSQL e todas as sessões operam em UTC;
@@ -209,7 +227,8 @@ expiração, localiza a credencial pelo hash sem expô-lo na projeção e oferec
 relacionados pela tabela associativa `role_permissions`; `account_roles` mantém
 o contexto na atribuição, rejeita unidade órfã e
 duplicidade inclusive com nulos. Os identificadores contextuais receberão FKs
-quando suas tabelas existirem. O próximo ticket liberado é o `PROT-018`.
+quando suas tabelas existirem. O catálogo TypeScript e o seed de desenvolvimento possuem 19 códigos idênticos
+e nenhum papel inicial. O próximo ticket liberado é o `PROT-019`.
 
 ---
 
