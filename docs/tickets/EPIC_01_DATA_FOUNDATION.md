@@ -166,7 +166,7 @@ histórico exigido.
 
 | Campo        | Valor              |
 | ------------ | ------------------ |
-| Status       | Pendente           |
+| Status       | Concluído          |
 | Prioridade   | P0                 |
 | Dependências | PROT-013, PROT-015 |
 

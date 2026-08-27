@@ -43,6 +43,7 @@ testes, decisões e pendências.
 | Convenções de models e persistência      | `docs/database/CONVENTIONS.md`                       |
 | Dicionário da tabela de contas           | `docs/database/ACCOUNTS.md`                          |
 | Dicionário e ciclo de vida das sessões   | `docs/database/AUTH_SESSIONS.md`                     |
+| RBAC, dicionário e escopos contextuais   | `docs/permissions/README.md`                         |
 | Catálogo e evolução de enums             | `docs/database/ENUM_CATALOG.md`                      |
 | Revisão obrigatória de migrations        | `docs/database/MIGRATION_CHECKLIST.md`               |
 | Redis, namespaces e operação local       | `docs/REDIS.md`                                      |

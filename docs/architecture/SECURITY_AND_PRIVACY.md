@@ -58,6 +58,18 @@ decisão considera, conforme o recurso:
 `break glass` exige justificativa, tempo limitado, auditoria reforçada e
 notificação/revisão posterior. Nunca equivale a acesso irrestrito permanente.
 
+`roles`, `permissions`, `role_permissions` e `account_roles` materializam
+somente a fundação relacional. O catálogo ainda está vazio e não existe
+middleware de autorização. Atribuições podem ter escopo global, de organização
+ou de unidade; unidade sem organização é inválida e um papel inativo nunca deve
+conceder acesso. As FKs contextuais e a validação de vínculos serão adicionadas
+com as entidades correspondentes antes de qualquer uso funcional.
+
+Papéis de sistema são estruturais: permanecem ativos e as mutações suportadas
+pela aplicação devem rejeitá-los. O contrato completo, inclusive herança de
+escopo e fronteiras dos tickets futuros, está em
+[`../permissions/README.md`](../permissions/README.md).
+
 ## Emergência e filas
 
 - O endpoint confirma apenas o que foi duravelmente aceito pelo sistema.

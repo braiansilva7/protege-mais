@@ -1,5 +1,6 @@
-h1:XhcZJKOj4R59OffhA9rUIsnnHg89RorUpxO+4I6nXxg=
+h1:Wxkie1JSdiLt/2o+DJITpSkeUcYeh8rETqvs8J0AlNQ=
 20260826000000_enable_postgis.sql h1:pKgEoJC/UqZAWyimQSqeY5KCiTSPu6v480CjgkXCaWo=
 20260826231424_fundamental_enums.sql h1:0sSnZ98RyaeiL5hkttzv4l8zTqlkgpGMsb9i1RLS6YA=
 20260826233758_create_accounts.sql h1:ujzWpM3N5b1RXi7zy0UM2hY/qzAGh5VpRNM+k1F9exQ=
 20260827001526_create_auth_sessions.sql h1:C92wZjnXThaQTB5c1kdjB27VHYoWRuhBlBg3p/9gpcg=
+20260827004636_create_authorization_structure.sql h1:Q1sedkG9jOJb6vlchPx8JdtCP9x32ybLeYqhoUY7C50=

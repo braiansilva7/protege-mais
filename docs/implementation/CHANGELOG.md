@@ -3,6 +3,88 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-26 — PROT-017 — Criar estrutura de roles e permissions
+
+Status: Concluído
+
+### Resultado
+
+O schema passa a representar RBAC contextual com catálogos globais de papéis e
+permissões, relação N:N entre ambos e atribuição de papel à conta nos escopos
+global, organizacional ou de unidade. O contexto pertence à atribuição, por isso
+a mesma conta pode exercer o mesmo papel em organizações diferentes.
+
+Checks nomeados validam códigos, estado de papel de sistema, versão e coerência
+do escopo. A unicidade contextual usa `NULLS NOT DISTINCT` e rejeita também a
+duplicidade global; chaves estrangeiras restritivas preservam relações
+referenciadas. A consulta de permissões combina atribuições globais, da
+organização e da unidade, ignora papéis inativos e possui caminho indexado.
+
+### Arquivos e dados
+
+- criado `packages/models/authorization.ts` com `roles`, `permissions`,
+  `rolePermissions` e `accountRoles`, tipos públicos, nomes estáveis de
+  constraints/índices e identificação explícita de papel mutável;
+- `roles` possui sete colunas, optimistic locking, código único e proteção do
+  estado de sistema; `permissions` possui três colunas e código único no formato
+  exato `<recurso>.<ação>`;
+- `role_permissions` usa PK composta e duas FKs restritivas; `account_roles`
+  possui seis colunas, FKs restritivas para conta/papel, unicidade contextual,
+  check que impede unidade órfã e dois índices secundários;
+- gerada por diff real a migration estrutural
+  `20260827004636_create_authorization_structure.sql`, com sete instruções, sem
+  catálogo, seed, dado, default UUID, soft delete ou operação destrutiva; o
+  checksum Atlas foi atualizado;
+- adicionados cinco testes de model/migration e duas integrações PostgreSQL
+  reais para herança contextual, múltiplas organizações, papel inativo/sistema,
+  constraints, FKs, remoção referenciada e plano do índice;
+- reescrito `docs/permissions/README.md` com diagrama, dicionário, escopos,
+  herança, índices e limites dos tickets futuros; criado o `ADR-005` para a
+  fundação de RBAC contextual;
+- nenhuma versão de dependência ou lockfile foi alterada; não foram criados
+  catálogo, seed, dado, rota, repository, middleware ou decisão funcional de
+  autorização.
+
+### Validação
+
+- migration completa em base temporária criada de `template0`: cinco
+  migrations e 30 instruções aplicadas; segunda execução sem pendências; 14
+  tipos, 55 labels e seis tabelas, todas com zero registros; a base foi removida
+  ao final;
+- `atlas migrate validate`, `status` e `diff` no ambiente `prod`: checksum
+  válido, versão `20260827004636`, cinco arquivos executados, zero pendências e
+  zero drift;
+- `pnpm model:reference:validate` e `pnpm model:reference:diff`: fixture de
+  convenções válido e sem drift;
+- `pnpm --filter @protege-mais/plugins test:database`: 13 testes reais
+  aprovados, incluindo os dois cenários de RBAC e os baselines de contas,
+  sessões, enums, Drizzle/UTC, PostGIS/SRID/distância e retomada/shutdown;
+- `pnpm test`: 93 testes aprovados em sete workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados;
+  `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado;
+- `pnpm format:check` e `pnpm -r --if-present format:check`: repositório e 14
+  workspaces formatados;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso
+  não bloqueante já conhecido do bundle Web maior que 500 kB;
+- `docker compose config --quiet`: configuração válida.
+
+### Decisões e pendências
+
+- os catálogos de papel e permissão são globais; o escopo fica exclusivamente
+  na atribuição da conta;
+- `organization_id` e `organization_unit_id` são UUIDs reservados sem FK porque
+  as tabelas de destino pertencem a `PROT-019` e `PROT-020`; esses tickets devem
+  adicionar as referências por migration forward antes do uso em runtime;
+- papéis de sistema permanecem ativos; mutações suportadas devem filtrar
+  `is_system = false` e a versão esperada, e operações administrativas fora da
+  aplicação ficam no fluxo controlado de migration/manutenção;
+- o `PROT-018` é o próximo ticket liberado e criará o catálogo/seed versionado;
+  vínculos e autorização funcional permanecem nos tickets próprios;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-26 — PROT-016 — Criar tabela auth_sessions
 
 Status: Concluído

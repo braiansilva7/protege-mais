@@ -1,9 +1,9 @@
 /**
  * Fonte central do schema Drizzle do Protege Mais.
  *
- * Accounts e auth_sessions formam a fundação de identidade persistente. A
- * extensão PostGIS é gerenciada pela migration Atlas; colunas comuns e enums
- * fundamentais materializam os contratos aprovados para os próximos models.
+ * Accounts, auth_sessions e o RBAC contextual formam a fundação de identidade
+ * persistente. A extensão PostGIS é gerenciada pela migration Atlas; colunas
+ * comuns e enums fundamentais materializam os contratos aprovados.
  */
 export {
   accountActiveIdentifierIndexNames,
@@ -25,6 +25,23 @@ export {
   type NewAuthSession,
   type PublicAuthSession,
 } from './auth-sessions.js';
+export {
+  accountRoles,
+  authorizationConstraintNames,
+  authorizationIndexNames,
+  isRoleMutable,
+  permissions,
+  rolePermissions,
+  roles,
+  type AccountRole,
+  type NewAccountRole,
+  type NewPermission,
+  type NewRole,
+  type NewRolePermission,
+  type Permission,
+  type Role,
+  type RolePermission,
+} from './authorization.js';
 export {
   createdAtColumn,
   deletedAtColumn,

@@ -86,6 +86,7 @@ fixture isolado do schema de produção. O `PROT-014` criou e validou os enums
 fundamentais no banco e no TypeScript. O `PROT-015` criou a primeira tabela
 consumidora, `accounts`, e congelou a unicidade e reutilização de identificadores
 ativos. O `PROT-016` criou `auth_sessions` com hash de refresh token, metadata
-mínima e revogação concorrente sem ativar os fluxos de autenticação. O próximo
-trabalho de implementação deve começar por `PROT-017`, que criará a estrutura de
-roles e permissions.
+mínima e revogação concorrente sem ativar os fluxos de autenticação. O
+`PROT-017` criou a estrutura de RBAC contextual, ainda vazia e sem uso
+funcional. O próximo trabalho de implementação deve começar por `PROT-018`, que
+criará o seed inicial versionado de permissões.

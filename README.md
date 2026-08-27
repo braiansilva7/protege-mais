@@ -6,7 +6,7 @@ O legado foi removido pelo `PROT-000`, a estrutura do monorepo foi consolidada
 pelo `PROT-001`, a qualidade comum foi entregue pelo `PROT-002` e as variáveis
 de ambiente foram centralizadas pelo `PROT-003`. O `PROT-004` acrescentou o
 padrão global de erros da API. Neste baseline ainda não existem dados,
-autenticação, permissões ou rotas de negócio. API, Worker, Web e Mobile
+autenticação, autorização funcional ou rotas de negócio. API, Worker, Web e Mobile
 permanecem como shells mínimos para evolução incremental.
 
 O `PROT-005` consolidou a internacionalização do backend em `pt-BR`, `en` e
@@ -39,6 +39,9 @@ soft delete e projeção que exclui hashes e chaves internas.
 O `PROT-016` criou `auth_sessions` com hash de refresh token, metadata de
 dispositivo sanitizada, expiração/revogação, integridade referencial e revogação
 atômica sem persistir token ou IP em claro.
+O `PROT-017` criou a fundação de RBAC contextual com papéis, permissões e
+atribuições globais, organizacionais ou de unidade, sem antecipar catálogo,
+vínculos ou middleware de autorização.
 
 ## Pré-requisitos
 
@@ -102,7 +105,7 @@ pnpm build
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
 cobrem configuração, erros, i18n, PostgreSQL, Redis, registry de readiness,
 endpoints operacionais, OpenAPI, logging, redaction, correlação, filas e
-shutdown, além das convenções, enums, contas e sessões em Drizzle/Atlas; o build
+shutdown, além das convenções, enums, contas, sessões e RBAC em Drizzle/Atlas; o build
 cobre Manager API, Worker, Web e Mobile. Depois de subir as dependências locais,
 as integrações reais são executadas com
 `pnpm --filter @protege-mais/plugins test:database`,
@@ -131,14 +134,17 @@ permitidos/proibidos e consultas operacionais estão em
 [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
 PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
-de domínio possui `accounts`, `auth_sessions` e 14 tipos enum fundamentais, sem
-seed ou dado. As migrations estruturais recriam esse estado em uma base limpa.
+de domínio possui `accounts`, `auth_sessions`, `roles`, `permissions`,
+`role_permissions`, `account_roles` e 14 tipos enum fundamentais, sem seed ou
+dado. As migrations estruturais recriam esse estado em uma base limpa.
 As convenções, os dicionários, o catálogo e o checklist estão em
 [`docs/database/CONVENTIONS.md`](docs/database/CONVENTIONS.md),
 [`docs/database/ACCOUNTS.md`](docs/database/ACCOUNTS.md),
 [`docs/database/AUTH_SESSIONS.md`](docs/database/AUTH_SESSIONS.md),
 [`docs/database/ENUM_CATALOG.md`](docs/database/ENUM_CATALOG.md) e
 [`docs/database/MIGRATION_CHECKLIST.md`](docs/database/MIGRATION_CHECKLIST.md).
+O diagrama RBAC, o dicionário das quatro tabelas e a semântica dos escopos estão
+em [`docs/permissions/README.md`](docs/permissions/README.md).
 
 ## Documentação e tickets
 
@@ -150,8 +156,8 @@ As convenções, os dicionários, o catálogo e o checklist estão em
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-017`:
+O próximo ticket liberado é `PROT-018`:
 
 ```text
-Implemente o ticket PROT-017 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-018 seguindo toda a documentação do projeto.
 ```

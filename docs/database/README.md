@@ -9,19 +9,22 @@ idempotente. O `PROT-013` congelou as convenções de models e migrations. O
 entre TypeScript e Drizzle. O `PROT-015` criou `accounts`, primeira tabela de
 domínio, com identidades locais/externas e unicidade parcial de identificadores
 ativos. O `PROT-016` acrescentou `auth_sessions`, com hash opaco do refresh
-token, metadados minimizados, expiração e revogação concorrente. A Manager API
-possui pool gerenciado, probe obrigatório e shutdown idempotente. O schema possui
-duas tabelas e 14 tipos enum nativos, sem seed ou dado de domínio.
+token, metadados minimizados, expiração e revogação concorrente. O `PROT-017`
+criou a fundação de RBAC contextual em `roles`, `permissions`,
+`role_permissions` e `account_roles`. A Manager API possui pool gerenciado,
+probe obrigatório e shutdown idempotente. O schema possui seis tabelas e 14
+tipos enum nativos, sem seed ou dado de domínio.
 
 `packages/models/index.ts` é a única entrada do schema Drizzle de produção e
-exporta helpers, `pgEnum`, `accounts`, `authSessions`, seus tipos e as projeções
-que excluem hashes.
+exporta helpers, `pgEnum`, `accounts`, `authSessions`, as quatro tabelas de RBAC,
+seus tipos e as projeções que excluem hashes.
 `atlas/prod` mantém as migrations `20260826000000_enable_postgis.sql`,
-`20260826231424_fundamental_enums.sql` e
-`20260826233758_create_accounts.sql` e
-`20260827001526_create_auth_sessions.sql`; `atlas/seed/dev` permanece sem dados.
+`20260826231424_fundamental_enums.sql`,
+`20260826233758_create_accounts.sql`,
+`20260827001526_create_auth_sessions.sql` e
+`20260827004636_create_authorization_structure.sql`; `atlas/seed/dev` permanece sem dados.
 Uma base nova aceita `migrate` sem exigir seed, habilita a extensão, cria os 14
-tipos, `accounts` e `auth_sessions`; `spatial_ref_sys` é um objeto interno
+tipos e as seis tabelas; `spatial_ref_sys` é um objeto interno
 gerenciado pelo próprio PostGIS.
 
 O guia normativo está em [CONVENTIONS.md](CONVENTIONS.md), o checklist de cada
@@ -36,7 +39,10 @@ O dicionário completo de `accounts` está em [ACCOUNTS.md](ACCOUNTS.md), e a
 reutilização de identificadores ativos foi registrada no
 [ADR-004](../decisions/ADR-004-active-account-identifier-reuse.md). O dicionário,
 ciclo de vida e limites de segurança de `auth_sessions` estão em
-[AUTH_SESSIONS.md](AUTH_SESSIONS.md).
+[AUTH_SESSIONS.md](AUTH_SESSIONS.md). O diagrama, o dicionário e os escopos do
+RBAC estão em [permissions/README.md](../permissions/README.md), com a decisão
+registrada no
+[ADR-005](../decisions/ADR-005-contextual-rbac-foundation.md).
 
 ## Conexão da aplicação
 
@@ -81,8 +87,8 @@ eventos. Os únicos metadados de falha são `event` e `errorType` sintético.
    pnpm migrate:local
    ```
 
-4. Valide contas, sessões, constraints/concorrência, enums, Drizzle, UTC,
-   indisponibilidade e retomada:
+4. Valide contas, sessões, RBAC contextual, constraints/concorrência, enums,
+   Drizzle, UTC, indisponibilidade e retomada:
 
    ```bash
    pnpm --filter @protege-mais/plugins test:database
@@ -199,7 +205,11 @@ fundamental possui 14 tipos e `accounts` consome `account_type` e
 entre contas ativas e reutilizáveis depois do soft delete. `auth_sessions`
 referencia a conta com exclusão restrita, deriva atividade de revogação e
 expiração, localiza a credencial pelo hash sem expô-lo na projeção e oferece
-índice para o ciclo por conta. O próximo ticket liberado é o `PROT-017`.
+índice para o ciclo por conta. `roles` e `permissions` são catálogos globais
+relacionados pela tabela associativa `role_permissions`; `account_roles` mantém
+o contexto na atribuição, rejeita unidade órfã e
+duplicidade inclusive com nulos. Os identificadores contextuais receberão FKs
+quando suas tabelas existirem. O próximo ticket liberado é o `PROT-018`.
 
 ---
 
