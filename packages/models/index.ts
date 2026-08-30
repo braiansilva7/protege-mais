@@ -1,9 +1,10 @@
 /**
  * Fonte central do schema Drizzle do Protege Mais.
  *
- * Accounts, auth_sessions e o RBAC contextual formam a fundação de identidade
- * persistente. A extensão PostGIS é gerenciada pela migration Atlas; colunas
- * comuns e enums fundamentais materializam os contratos aprovados.
+ * Accounts, auth_sessions, memberships e o RBAC contextual formam a fundação
+ * de identidade persistente. A extensão PostGIS é gerenciada pela migration
+ * Atlas; colunas comuns e enums fundamentais materializam os contratos
+ * aprovados.
  */
 export {
   accountActiveIdentifierIndexNames,
@@ -76,6 +77,17 @@ export {
   type Organization,
   type PublicOrganization,
 } from './organizations.js';
+export {
+  isOrganizationMemberActive,
+  organizationMemberConstraintNames,
+  organizationMemberIndexNames,
+  organizationMemberPublicSelection,
+  organizationMembers,
+  serializePublicOrganizationMember,
+  type NewOrganizationMember,
+  type OrganizationMember,
+  type PublicOrganizationMember,
+} from './organization-members.js';
 export {
   isOrganizationUnitOperational,
   organizationUnitConstraintNames,

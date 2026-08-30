@@ -7,7 +7,9 @@ um catálogo TypeScript de 19 permissões e um seed aditivo exclusivo de
 desenvolvimento. O `PROT-019` materializou `organizations` e protegeu o escopo
 organizacional com FK restritiva. O `PROT-020` materializou
 `organization_units` e protege o escopo de unidade por uma FK composta com a
-organização. Nenhum papel ou atribuição é criado. As
+organização. O `PROT-021` materializou `organization_members`, com vínculos
+organizacionais ou de unidade independentes de papel. Nenhum papel ou
+atribuição é criado. As
 migrations de produção continuam estruturais e deixam os catálogos vazios; os
 tickets `PROT-030` a `PROT-032` implementarão a autorização funcional e a
 validação dos vínculos contextuais.
@@ -85,9 +87,12 @@ suas matrizes exigem definição própria e não são inferidos deste seed.
 ```mermaid
 erDiagram
     ACCOUNTS ||--o{ ACCOUNT_ROLES : receives
+    ACCOUNTS ||--o{ ORGANIZATION_MEMBERS : participates
     ORGANIZATIONS ||--o{ ACCOUNT_ROLES : scopes
     ORGANIZATIONS ||--o{ ORGANIZATION_UNITS : owns
+    ORGANIZATIONS ||--o{ ORGANIZATION_MEMBERS : includes
     ORGANIZATION_UNITS ||--o{ ACCOUNT_ROLES : scopes
+    ORGANIZATION_UNITS o|--o{ ORGANIZATION_MEMBERS : limits
     ROLES ||--o{ ACCOUNT_ROLES : assigned_as
     ROLES ||--o{ ROLE_PERMISSIONS : grants
     PERMISSIONS ||--o{ ROLE_PERMISSIONS : included_in
@@ -128,6 +133,16 @@ erDiagram
         boolean is_active
         timestamptz deleted_at
     }
+    ORGANIZATION_MEMBERS {
+        uuid id PK
+        uuid account_id FK
+        uuid organization_id FK
+        uuid organization_unit_id FK
+        varchar registration_number
+        varchar job_title
+        boolean is_active
+        integer version
+    }
     ACCOUNT_ROLES {
         uuid id PK
         uuid account_id FK
@@ -139,7 +154,8 @@ erDiagram
 ```
 
 As relações com organização e unidade foram adicionadas em migrations forward
-pelos `PROT-019` e `PROT-020`, sem reescrever o histórico compartilhado.
+pelos `PROT-019` e `PROT-020`; memberships foram adicionados pelo `PROT-021`,
+sem reescrever o histórico compartilhado.
 
 ## Dicionário e invariantes
 
@@ -180,6 +196,21 @@ pelos `PROT-019` e `PROT-020`, sem reescrever o histórico compartilhado.
 - a unicidade usa `NULLS NOT DISTINCT` sobre conta, papel, organização e
   unidade. Assim, duas atribuições globais idênticas também são duplicidade.
 
+### `organization_members`
+
+- cada linha vincula uma conta a uma organização e, opcionalmente, a uma
+  unidade da mesma organização;
+- membership não possui `role_id`; pertencimento e papel são invariantes
+  independentes;
+- `UNIQUE NULLS NOT DISTINCT` rejeita duplicidade em contexto organizacional
+  ou de unidade, inclusive quando a unidade é nula;
+- `is_active` controla a vigência local; inatividade preserva a linha e não
+  libera o mesmo contexto para uma segunda linha;
+- matrícula e cargo são opcionais, normalizados e protegidos contra log; a
+  matrícula fica fora da projeção padrão;
+- FKs restritivas impedem conta/organização inexistente, unidade alheia e hard
+  delete dos pais referenciados.
+
 ## Semântica de escopo
 
 | Contexto     | `organization_id` | `organization_unit_id` | Válido |
@@ -200,8 +231,9 @@ Quando `organization_unit_id` existe, a FK composta referencia exatamente
 outra organização falha. Com unidade `NULL`, `MATCH SIMPLE` preserva o contexto
 organizacional. Isso garante integridade, mas não concede acesso: organização
 ou unidade inativa/excluída não cria contexto operacional. O runtime só poderá
-autorizar acesso após validar atividade, vínculo ativo da conta, papel e
-permissão.
+autorizar acesso após validar atividade da conta e dos pais, membership ativo
+no contexto, papel e permissão. Um membership não cria `account_roles`, e uma
+atribuição de papel não comprova membership.
 
 ## Proteção de papéis de sistema
 
@@ -220,6 +252,10 @@ fronteira mantém o schema declarativo Drizzle/Atlas como fonte verificável.
 - `account_roles_role_id_idx` atende referências e remoções de papel;
 - `account_roles_organization_unit_id_idx` atende referências e remoções de
   unidade;
+- `organization_members_account_context_active_idx` atende a resolução dos
+  vínculos vigentes por conta e contexto;
+- `organization_members_organization_unit_idx` atende o caminho inverso e as
+  remoções restritivas de organização/unidade;
 - `role_permissions_permission_id_idx` atende o caminho inverso do catálogo;
 - chaves primárias e unicidades criam os índices dos joins por papel, permissão
   e atribuição contextual.
@@ -234,7 +270,7 @@ excepcional permanecem fora deste ticket.
 - `PROT-018`: seed inicial e catálogo TypeScript, concluídos;
 - `PROT-019`: organização e respectiva FK contextual, concluídas;
 - `PROT-020`: unidade e respectiva FK contextual, concluídas;
-- `PROT-021`: vínculos da conta;
+- `PROT-021`: vínculos da conta, concluídos;
 - `PROT-030`: middleware de permissão;
 - `PROT-031` e `PROT-032`: escopos organizacional e de unidade;
 - `PROT-034`: acesso excepcional break glass.

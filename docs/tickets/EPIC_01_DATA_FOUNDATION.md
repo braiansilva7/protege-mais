@@ -270,7 +270,7 @@ inativa não é operacional.
 
 | Campo        | Valor                        |
 | ------------ | ---------------------------- |
-| Status       | Pendente                     |
+| Status       | Concluído                    |
 | Prioridade   | P0                           |
 | Dependências | PROT-015, PROT-019, PROT-020 |
 

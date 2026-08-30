@@ -45,6 +45,7 @@ testes, decisões e pendências.
 | Dicionário e ciclo de vida das sessões     | `docs/database/AUTH_SESSIONS.md`                     |
 | Dicionário e ciclo de vida de organizações | `docs/database/ORGANIZATIONS.md`                     |
 | Dicionário de unidades e localização       | `docs/database/ORGANIZATION_UNITS.md`                |
+| Dicionário de vínculos organizacionais     | `docs/database/ORGANIZATION_MEMBERS.md`              |
 | RBAC, dicionário e escopos contextuais     | `docs/permissions/README.md`                         |
 | Catálogo e evolução de enums               | `docs/database/ENUM_CATALOG.md`                      |
 | Revisão obrigatória de migrations          | `docs/database/MIGRATION_CHECKLIST.md`               |

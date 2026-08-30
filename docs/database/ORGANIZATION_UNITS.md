@@ -138,6 +138,8 @@ anonimização e hard delete exigem regras próprias.
 - `organization_units_position_gix` atende busca espacial por proximidade;
 - `account_roles_organization_unit_id_idx` atende o caminho inverso e remoções
   restritivas da unidade.
+- `organization_members_organization_unit_idx` atende vínculos por
+  organização/unidade e remoções restritivas.
 
 `account_roles` referencia `(organization_id, organization_unit_id)` em
 `organization_units (organization_id, id)`. Assim, unidade inexistente e par
@@ -145,6 +147,11 @@ organização/unidade divergente falham no banco. A FK é `MATCH SIMPLE`: quando
 unidade é `NULL`, o contexto organizacional continua válido; o check existente
 impede unidade sem organização. Isso ainda não concede acesso nem valida
 membership, papel ativo ou finalidade.
+
+`organization_members` reutiliza a mesma referência composta para impedir um
+vínculo com unidade de outra organização. Unidade nula representa membership
+organizacional; unidade preenchida limita a linha àquele contexto. O contrato
+completo está em [ORGANIZATION_MEMBERS.md](ORGANIZATION_MEMBERS.md).
 
 ---
 

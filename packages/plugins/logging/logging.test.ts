@@ -109,6 +109,11 @@ void test('redige denylist e padrões sensíveis em qualquer profundidade', () =
         latitude: -23.550_52,
       },
     },
+    organizationMember: {
+      membershipId: 'membership-private-prot-021',
+      registrationNumber: 'MAT-PRIVATE-008',
+      jobTitle: 'Cargo operacional privado',
+    },
     note: 'CPF 12345678900; CNPJ 12ABC34501DE35; local -23.55052, -46.633308',
     route: '/victims/:victimId',
   };
@@ -127,13 +132,13 @@ void test('redige denylist e padrões sensíveis em qualquer profundidade', () =
   assert.equal(sanitized.authorization, redactedLogValue);
   assert.doesNotMatch(
     serialized,
-    /token-secreto|123\.456\.789|12345678900|12\.ABC\.345|12ABC34501DE35|Rua Protegida|narrativa privada|-23\.55052|-46\.633308/
+    /token-secreto|123\.456\.789|12345678900|12\.ABC\.345|12ABC34501DE35|Rua Protegida|narrativa privada|-23\.55052|-46\.633308|membership-private-prot-021|MAT-PRIVATE-008|Cargo operacional privado/
   );
   assert.match(serialized, /\[REDACTED\]/);
   assert.match(serialized, /\/victims\/:victimId/);
   assert.doesNotMatch(
     logged,
-    /token-secreto|123\.456\.789|12345678900|12\.ABC\.345|12ABC34501DE35|Rua Protegida|narrativa privada|-23\.55052|-46\.633308|mensagem-interna/
+    /token-secreto|123\.456\.789|12345678900|12\.ABC\.345|12ABC34501DE35|Rua Protegida|narrativa privada|-23\.55052|-46\.633308|membership-private-prot-021|MAT-PRIVATE-008|Cargo operacional privado|mensagem-interna/
   );
   assert.match(logged, /"type":"Error"/);
 });

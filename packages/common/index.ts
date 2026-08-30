@@ -59,6 +59,14 @@ export {
   type PermissionResource,
 } from './permissions/index.js';
 export {
+  isValidOrganizationMemberJobTitle,
+  isValidOrganizationMemberRegistrationNumber,
+  normalizeOrganizationMemberJobTitle,
+  normalizeOrganizationMemberRegistrationNumber,
+  organizationMemberJobTitleMaximumLength,
+  organizationMemberRegistrationNumberMaximumLength,
+} from './organization-members/index.js';
+export {
   brazilianStateCodes,
   brazilianStateMunicipalityPrefixes,
   isBrazilianStateCode,

@@ -106,6 +106,11 @@ retenção e anonimização permanecem fora do `PROT-015`.
 preserva a conta e o histórico, enquanto hard delete é impedido se houver sessão.
 O ciclo de vida está em [AUTH_SESSIONS.md](AUTH_SESSIONS.md).
 
+`organization_members` também referencia a conta com exclusão restrita. O
+vínculo registra pertencimento a uma organização/unidade sem transformar a
+conta em perfil profissional nem conceder papel. Seu contrato está em
+[ORGANIZATION_MEMBERS.md](ORGANIZATION_MEMBERS.md).
+
 ---
 
 Documentação Protege Mais — Dicionário de dados de contas

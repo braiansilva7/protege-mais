@@ -2,7 +2,7 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-020`. A arquitetura
+Este documento registra somente o que existe após o `PROT-021`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
@@ -11,20 +11,20 @@ persistência possui `accounts`, separada de perfis e protegida por constraints
 de identidade, `auth_sessions`, com credencial em hash, metadata minimizada e
 ciclo de expiração/revogação, `organizations`, com identidade institucional,
 localidade e ciclo de ativação/soft delete, `organization_units`, com endereço,
-posição geográfica e ownership contextual, e quatro tabelas que formam a base
-relacional do RBAC contextual. Projeções seguras excluem hashes, CNPJ, contato,
-endereço, localização e chaves internas. Ainda não existem fluxo de
-autenticação, autorização funcional,
-rotas/repositórios de negócio ou dados operacionais. Um catálogo TypeScript
-contém as 19 permissões
-iniciais e o seed opcional de desenvolvimento insere somente esses códigos, sem
+posição geográfica e ownership contextual, `organization_members`, com
+pertencimento organizacional/de unidade e vigência, e quatro tabelas que formam
+a base relacional do RBAC contextual. Projeções seguras excluem hashes, CNPJ,
+contato, endereço, localização, matrícula e chaves internas. Ainda não existem
+fluxos de autenticação, autorização funcional, rotas/repositórios de negócio ou
+dados operacionais. Um catálogo TypeScript contém as 19 permissões iniciais e o
+seed opcional de desenvolvimento insere somente esses códigos, sem
 papéis ou atribuições. Existem 14 tipos enum fundamentais, com `account_type`,
 `account_status` e `organization_type` já consumidos por tabelas.
 PostGIS está habilitado pela primeira migration estrutural, validado com SRID
 4326 e consumido por pontos de unidade indexados com GiST. As convenções de
 persistência estão congeladas e comprovadas por um fixture Drizzle/Atlas isolado
-do schema de produção. Redis já é uma dependência compartilhada com namespace por
-ambiente, reconexão, timeouts e encerramento gracioso. As cinco filas base
+do schema de produção. Redis já é uma dependência compartilhada com namespace
+por ambiente, reconexão, timeouts e encerramento gracioso. As cinco filas base
 usam BullMQ, envelope v1, publicação idempotente, retry/backoff e falha
 controlada. A API possui pool PostgreSQL/Drizzle gerenciado, probes obrigatórios
 para PostgreSQL e Redis, contrato global de erros,
@@ -65,14 +65,14 @@ protege-mais/
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
-│   ├── models/               # Accounts, sessões, organizações/unidades, RBAC e enums
+│   ├── models/               # Identidade, organizações, vínculos, RBAC e enums
 │   ├── plugins/              # Banco, logging, Redis, filas e plugins Fastify
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
 │   ├── services/             # Capacidades reutilizáveis futuras
 │   └── useCases/             # Contrato/registry de jobs e orquestração futura
 ├── atlas/
-│   ├── prod/                 # PostGIS, enums, identidade, unidades e RBAC
+│   ├── prod/                 # PostGIS, enums, identidade, organizações, vínculos e RBAC
 │   └── seed/dev/             # Catálogo aditivo de permissões para desenvolvimento
 ├── drizzle.reference.config.ts # Export do fixture, fora de produção
 ├── eslint.config.mjs       # Lint compartilhado e tipado
@@ -339,6 +339,16 @@ normalizadores estão em `packages/common/organization-units`, o dicionário em
 `docs/database/ORGANIZATION_UNITS.md` e o `ADR-007` registra identidade,
 endereço, posição e adaptação do export Atlas.
 
+O entrypoint exporta `organizationMembers`, seus tipos, nomes estáveis de
+constraints/índices, predicado local de vigência e projeção sem matrícula.
+Conta e organização são obrigatórias; unidade é opcional e a FK composta rejeita
+contexto divergente. `UNIQUE NULLS NOT DISTINCT` impede duplicidade inclusive
+com unidade nula, enquanto o índice parcial atende memberships ativos por
+conta. Matrícula/cargo opcionais são normalizados em
+`packages/common/organization-members`. O dicionário está em
+`docs/database/ORGANIZATION_MEMBERS.md` e o `ADR-008` registra cardinalidade,
+ciclo de vida e separação de papel.
+
 `packages/common/permissions` exporta `permissionCatalog`, `permissionCodes`,
 os tipos literais de recurso/código e um type guard. O catálogo possui 19
 códigos agrupados em `account`, `organization`, `victim` e `case`; ele é a
@@ -367,7 +377,8 @@ idempotente que diagnostica suporte e executa
 `20260827001526_create_auth_sessions.sql` e
 `20260827004636_create_authorization_structure.sql` e
 `20260830134040_create_organizations.sql` e
-`20260830142030_create_organization_units.sql`. O diretório de
+`20260830142030_create_organization_units.sql` e
+`20260830144651_create_organization_members.sql`. O diretório de
 desenvolvimento contém
 `20260827012543_initial_permission_catalog.sql`, que insere as 19 permissões com
 `ON CONFLICT (code) DO NOTHING`, sem papel ou atribuição. O apply não
@@ -395,8 +406,8 @@ para alterar `DB_DATABASE_URL`.
 | `pnpm dev:worker`                                   | Inicia somente os consumers do Worker                |
 | `pnpm lint`                                         | Valida os quatro apps e os dez packages              |
 | `pnpm typecheck`                                    | Valida os quatro apps e os dez packages              |
-| `pnpm test`                                         | Testa config, unidades, RBAC, filas e OpenAPI        |
-| `pnpm --filter @protege-mais/plugins test:database` | Integra banco, unidades, RBAC, seed e PostGIS        |
+| `pnpm test`                                         | Testa config, memberships, RBAC, filas e OpenAPI     |
+| `pnpm --filter @protege-mais/plugins test:database` | Integra banco, memberships, RBAC, seed e PostGIS     |
 | `pnpm --filter @protege-mais/plugins test:redis`    | Integra Redis real, TTL e reconexão                  |
 | `pnpm --filter @protege-mais/worker test:redis`     | Integra filas, retry, idempotência, falha e shutdown |
 | `pnpm format:check`                                 | Confere a formatação do repositório                  |
@@ -431,8 +442,11 @@ adicionou somente a identidade persistente de organizações e a FK
 organizacional já prevista no RBAC, sem dado, seed, rota, repository ou
 autorização funcional. O `PROT-020` adicionou somente unidades organizacionais,
 normalizadores, posição geográfica e a FK contextual já prevista no RBAC, sem
-dado, seed, rota, repository, membership ou autorização funcional. A validação
-cria e remove somente uma base temporária com nome reservado; os volumes locais
+dado, seed, rota, repository, membership ou autorização funcional. O
+`PROT-021` adicionou somente memberships organizacionais/de unidade,
+normalizadores e integridade relacional, sem dado, seed, rota, repository,
+papel, atribuição ou autorização funcional. A validação cria e remove somente
+uma base temporária com nome reservado; os volumes locais
 não são apagados. O volume Redis local contém
 somente metadados técnicos das filas e qualquer job fictício de teste é removido
 ao concluir a integração.

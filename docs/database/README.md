@@ -18,23 +18,27 @@ desenvolvimento. O `PROT-019` acrescentou `organizations`, identidade
 institucional, localidade, ciclo de ativação/soft delete e a FK organizacional
 do RBAC. O `PROT-020` acrescentou `organization_units`, endereço estruturado,
 posição `geography(Point,4326)`, consulta espacial e a FK composta de unidade do
-RBAC. O schema de produção possui oito tabelas e 14 tipos enum nativos e continua
+RBAC. O `PROT-021` acrescentou `organization_members`, seus contextos
+organizacional/de unidade, vigência e integridade sem duplicar papéis. O schema
+de produção possui nove tabelas e 14 tipos enum nativos e continua
 sem dados.
 
 `packages/models/index.ts` é a única entrada do schema Drizzle de produção e
 exporta helpers, `pgEnum`, `accounts`, `authSessions`, `organizations`,
-`organizationUnits`, as quatro tabelas de RBAC, seus tipos e as projeções
-seguras. `packages/common/index.ts` exporta o catálogo literal das permissões e
-os normalizadores institucionais e de unidade.
+`organizationUnits`, `organizationMembers`, as quatro tabelas de RBAC, seus
+tipos e as projeções seguras. `packages/common/index.ts` exporta o catálogo
+literal das permissões e os normalizadores institucionais, de unidade e de
+membership.
 `atlas/prod` mantém as migrations `20260826000000_enable_postgis.sql`,
 `20260826231424_fundamental_enums.sql`,
 `20260826233758_create_accounts.sql`,
 `20260827001526_create_auth_sessions.sql` e
 `20260827004636_create_authorization_structure.sql` e
 `20260830134040_create_organizations.sql` e
-`20260830142030_create_organization_units.sql`. `atlas/seed/dev` contém
+`20260830142030_create_organization_units.sql` e
+`20260830144651_create_organization_members.sql`. `atlas/seed/dev` contém
 `20260827012543_initial_permission_catalog.sql`. Uma base nova aceita `migrate`
-sem exigir seed, habilita a extensão, cria os 14 tipos e as oito tabelas vazias;
+sem exigir seed, habilita a extensão, cria os 14 tipos e as nove tabelas vazias;
 `seed:local` adiciona 19 permissões. `spatial_ref_sys` é um objeto interno
 gerenciado pelo próprio PostGIS.
 
@@ -61,6 +65,10 @@ registradas no
 O dicionário de `organization_units`, endereço e consultas espaciais está em
 [ORGANIZATION_UNITS.md](ORGANIZATION_UNITS.md), com as decisões registradas no
 [ADR-007](../decisions/ADR-007-organization-unit-address-and-position.md).
+O dicionário de `organization_members`, contextos e vigência está em
+[ORGANIZATION_MEMBERS.md](ORGANIZATION_MEMBERS.md), com as decisões registradas
+no
+[ADR-008](../decisions/ADR-008-organization-membership-context-and-lifecycle.md).
 
 ## Conexão da aplicação
 
@@ -112,8 +120,9 @@ eventos. Os únicos metadados de falha são `event` e `errorType` sintético.
    pnpm seed:local
    ```
 
-5. Valide contas, sessões, RBAC contextual, seed, constraints/concorrência, enums,
-   Drizzle, UTC, indisponibilidade e retomada:
+5. Valide contas, sessões, organizações, unidades, memberships, RBAC contextual,
+   seed, constraints/concorrência, enums, Drizzle, UTC, indisponibilidade e
+   retomada:
 
    ```bash
    pnpm --filter @protege-mais/plugins test:database
@@ -251,8 +260,12 @@ valida CNPJ numérico ou alfanumérico, UF e município IBGE, reserva o CNPJ
 globalmente após soft delete e indexa somente organizações ativas para pesquisa.
 `organization_units` valida identidade contextual, contato, endereço e
 coordenadas, deriva uma posição geográfica SRID 4326 e oferece índice GiST. O
+`organization_members` vincula contas a organizações ou unidades coerentes,
+rejeita duplicidade inclusive com unidade nula e indexa somente vínculos ativos
+para resolução por conta. Matrícula e cargo opcionais permanecem fora dos logs,
+e papel continua em `account_roles`. O
 catálogo TypeScript e o seed de desenvolvimento possuem 19 códigos idênticos e
-nenhum papel inicial. O próximo ticket liberado é o `PROT-021`.
+nenhum papel inicial. O próximo ticket liberado é o `PROT-022`.
 
 ---
 

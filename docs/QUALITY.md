@@ -80,8 +80,9 @@ pnpm build
 ```
 
 `lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `test` executa as
-suítes de configuração, classes comuns, normalização de conta e organização,
-sanitização de metadata de sessão, validação de CNPJ e localidade, enums,
+suítes de configuração, classes comuns, normalização de conta, organização e
+membership, sanitização de metadata de sessão, validação de CNPJ e localidade,
+enums,
 catálogo tipado de permissões, models, RBAC contextual, handler Fastify, i18n,
 PostgreSQL e Redis com conexões injetáveis, logging,
 redaction, correlação, filas, processors, casos de uso, readiness, endpoints
@@ -94,6 +95,10 @@ normalização, localidade, soft delete, trava otimista e busca ativa indexada;
 unidades comprovam relação 1:N, endereço e contatos canônicos, reserva
 contextual de código, coordenadas inválidas, posição gerada, operacionalidade
 do pai, consulta `ST_DWithin` e plano GiST,
+memberships comprovam contexto organizacional/de unidade, conta em múltiplas
+organizações, matrícula/cargo opcionais e normalizados, vigência, unicidade com
+unidade nula, FK composta, remoção restritiva, optimistic locking e plano do
+índice ativo,
 integridade referencial, atribuições de papel em múltiplas organizações,
 herança global/organizacional por contexto, proteção de papel de sistema,
 remoção referenciada, plano da consulta de permissões, reutilização de conta

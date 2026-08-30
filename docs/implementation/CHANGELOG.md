@@ -3,6 +3,95 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-30 — PROT-021 — Criar organization_members
+
+Status: Concluído
+
+### Resultado
+
+O schema passa a vincular uma conta a uma organização e, opcionalmente, a
+uma unidade dessa mesma organização. A mesma conta pode participar de múltiplas
+organizações e manter, em uma organização, tanto o vínculo geral quanto
+vínculos específicos por unidade.
+
+Cada contexto exato é único mesmo quando a unidade é nula. Matrícula e cargo
+são metadados opcionais normalizados; o estado ativo é consultável por índice
+parcial, mas não concede permissão isoladamente. Papéis continuam exclusivamente
+em `account_roles`.
+
+### Arquivos e dados
+
+- criado `packages/common/organization-members` com quatro testes e
+  normalizações idempotentes de matrícula e cargo, preservando caixa e acentos e
+  rejeitando valores vazios, não canônicos, extensos ou com caracteres de
+  controle;
+- criado `packages/models/organization-members.ts` com dez colunas, UUID v7 da
+  aplicação, três FKs restritivas, três checks, unicidade contextual com
+  `NULLS NOT DISTINCT`, dois índices e optimistic locking; a projeção segura
+  omite matrícula;
+- a FK composta `(organization_id, organization_unit_id)` garante que a unidade
+  informada pertença à organização; as FKs simples preservam conta e organização
+  referenciadas;
+- criada a migration estrutural
+  `atlas/prod/20260830144651_create_organization_members.sql`, sem seed, dado de
+  domínio, UUID gerado pelo banco, papel ou operação destrutiva;
+- adicionados cinco testes do model e três integrações PostgreSQL de membership;
+  o logger passou a proteger IDs do vínculo, matrícula e cargo;
+- criado `docs/database/ORGANIZATION_MEMBERS.md` e aceito o `ADR-008`; README,
+  arquitetura atual, segurança, observabilidade, banco, permissões, qualidade,
+  roadmap, índice documental e tickets foram sincronizados;
+- nenhum endpoint, repository, caso de uso, seed, papel, atribuição ou regra de
+  autorização funcional foi criado.
+
+### Validação
+
+- produção isolada em base descartável criada de `template0`: oito migrations
+  e 43 instruções aplicadas até `20260830144651`; a segunda aplicação não
+  encontrou arquivo pendente e a base foi removida ao final;
+- `atlas migrate validate`, `status` e `diff` no ambiente `prod`: checksum
+  válido, oito arquivos executados, zero pendências e zero drift estrutural;
+- FKs inexistentes, unidade de outra organização, contexto duplicado e campos
+  inválidos foram rejeitados em PostgreSQL real; múltiplas organizações,
+  vínculo geral e por unidade coexistiram sem criar papel;
+- inativação, consulta somente de ativos, reativação, contexto reservado,
+  optimistic locking, remoções restritivas e uso do índice parcial foram
+  comprovados;
+- `pnpm --filter @protege-mais/plugins test:database`: 23 testes reais
+  aprovados, incluindo contas, sessões, organizações, unidades, memberships,
+  RBAC, seed, enums, Drizzle/UTC, PostGIS e retomada;
+- `pnpm test`: 126 testes aprovados em sete workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm model:export` produziu tabela, FKs e índices esperados;
+  `model:reference:validate` e `model:reference:diff` confirmaram o fixture de
+  convenções sem drift;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados;
+  `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado em
+  Redis temporário isolado;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso
+  não bloqueante já conhecido do bundle Web maior que 500 kB;
+- `pnpm format:check`, `pnpm -r --if-present format:check`, `git diff --check` e
+  `docker compose config --quiet`: formatação, whitespace e Compose válidos.
+
+### Decisões e pendências
+
+- o contexto durável é `(account_id, organization_id, organization_unit_id)`;
+  a inativação preserva e reserva a linha, sem soft delete ou recriação;
+- matrícula e cargo são opcionais para acomodar voluntários, colaboradores e
+  contas de serviço; matrícula não recebeu unicidade sem regra de escopo
+  aprovada;
+- FKs garantem existência e coerência, não atividade ou autorização; o vínculo
+  ativo será apenas uma entrada da decisão funcional dos tickets `PROT-030` a
+  `PROT-032`;
+- papel e membership permanecem conceitos independentes; nenhum papel é
+  inferido, duplicado ou concedido pelo vínculo;
+- a estratégia de produção é forward-only; eventual correção usa nova migration
+  e nunca remove automaticamente vínculo ou histórico;
+- `PROT-022` é o próximo ticket liberado e iniciará o fluxo funcional de
+  autenticação;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-30 — PROT-020 — Criar organization_units
 
 Status: Concluído

@@ -18,7 +18,7 @@ localização e evidências. Este documento é normativo para todos os tickets.
 ## Dados proibidos em logs
 
 - senha, hash reutilizável, access token ou refresh token;
-- CPF, endereço e dados médicos;
+- CPF, endereço, matrícula, cargo e dados médicos;
 - relatos da vítima e conteúdo de ocorrência;
 - coordenadas ou locais protegidos;
 - arquivo, evidência ou URL assinada;
@@ -66,8 +66,11 @@ autorização. Atribuições podem ter escopo global, de organização ou de uni
 unidade sem organização é inválida e um papel inativo nunca deve conceder
 acesso. A atribuição organizacional possui FK restritiva para `organizations`;
 a atribuição de unidade usa FK composta e não aceita combinar uma organização
-com unidade alheia. A validação dos vínculos ainda será adicionada antes de
-qualquer uso funcional.
+com unidade alheia. `organization_members` materializa os vínculos
+organizacionais ou de unidade sem armazenar papel: a FK composta rejeita
+unidade alheia, a unicidade trata unidade nula como igual e `is_active` controla
+a vigência local. Um vínculo inativo nunca concede contexto, e um vínculo ativo
+sozinho também não autoriza operação.
 
 Papéis de sistema são estruturais: permanecem ativos e as mutações suportadas
 pela aplicação devem rejeitá-los. O contrato completo, inclusive herança de
@@ -89,6 +92,11 @@ logger redige endereço, e-mail, telefone, longitude, latitude e `position`.
 Uma unidade só é operacional quando ela e sua organização estão ativas e não
 excluídas. O contrato completo está em
 [`../database/ORGANIZATION_UNITS.md`](../database/ORGANIZATION_UNITS.md).
+
+Matrícula e cargo de membership são dados institucionais ligados à conta.
+Ambos ficam fora de logs comuns, e a matrícula também fica fora da projeção
+padrão. O contrato completo está em
+[`../database/ORGANIZATION_MEMBERS.md`](../database/ORGANIZATION_MEMBERS.md).
 
 ## Emergência e filas
 

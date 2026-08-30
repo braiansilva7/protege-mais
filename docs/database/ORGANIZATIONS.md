@@ -125,6 +125,12 @@ logs nem deve aparecer em listas ou erros por conveniência. A projeção padrã
 `deleted_at`. Isso é uma barreira contra exposição acidental, não um endpoint ou
 uma decisão de acesso.
 
+`organization_members.organization_id` referencia a organização diretamente;
+quando existe unidade, uma segunda FK composta comprova que ela pertence ao
+mesmo contexto. Membership ativo não torna organização inativa operacional nem
+substitui papel/permissão. O contrato está em
+[ORGANIZATION_MEMBERS.md](ORGANIZATION_MEMBERS.md).
+
 ---
 
 Documentação Protege Mais — Dicionário e ciclo de vida de organizações

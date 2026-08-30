@@ -61,6 +61,8 @@ Status: alcançado em 2026-08-26 com a conclusão do `PROT-010`.
 Requer `PROT-011` a `PROT-021`. O banco pode ser criado do zero por migrations,
 consultado e destruído/recriado sem procedimentos manuais ocultos.
 
+Status: alcançado em 2026-08-30 com a conclusão do `PROT-021`.
+
 ### Marco C — Acesso institucional seguro
 
 Requer `PROT-022` a `PROT-034`. Autenticação, autorização contextual,
@@ -92,5 +94,8 @@ funcional. O `PROT-018` adicionou o catálogo TypeScript e o seed inicial
 versionado de 19 permissões apenas para desenvolvimento. O `PROT-019` criou
 `organizations`, sua identidade institucional e a FK organizacional do RBAC.
 O `PROT-020` criou `organization_units`, sua posição geográfica, identidade
-contextual e a FK composta do RBAC. O próximo trabalho de implementação deve
-começar por `PROT-021`, que criará os vínculos organizacionais das contas.
+contextual e a FK composta do RBAC. O `PROT-021` criou
+`organization_members`, com memberships organizacionais/de unidade coerentes e
+independentes de papel, concluindo a fundação de dados. O próximo trabalho de
+implementação deve começar por `PROT-022`, que iniciará a autenticação por
+e-mail e senha.

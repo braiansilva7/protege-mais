@@ -75,9 +75,9 @@ Campos comuns permitidos:
 - nome técnico de sinal, fila, processor ou integração, sem payload;
 - contadores, tentativas e tempos operacionais que não reconstruam conteúdo.
 
-Identificador de conta, usuário, organização, unidade ou recurso não pertence
-à allowlist base. Uma inclusão futura exige finalidade operacional, revisão
-da política e teste de não vazamento.
+Identificador de conta, usuário, organização, unidade, membership ou recurso
+não pertence à allowlist base. Uma inclusão futura exige finalidade operacional,
+revisão da política e teste de não vazamento.
 
 ## Denylist
 
@@ -85,7 +85,7 @@ Nunca registrar, mesmo em `LOCAL` ou `debug`:
 
 - body, params, query, headers, cookies ou URL bruta;
 - senha, hash, credencial, token, chave, segredo ou URL assinada;
-- CPF, CNPJ, telefone, e-mail, endereço ou dado médico;
+- CPF, CNPJ, telefone, e-mail, endereço, matrícula, cargo ou dado médico;
 - relato, narrativa, risco, medida ou conteúdo de ocorrência;
 - latitude, longitude, coordenadas, `position`, localização ou local protegido;
 - arquivo, evidência, buffer, payload ou objeto de configuração;

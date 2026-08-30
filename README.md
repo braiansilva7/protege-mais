@@ -52,6 +52,10 @@ organizacional do RBAC, sem antecipar cadastro HTTP ou autorização funcional.
 O `PROT-020` criou `organization_units` com identidade contextual, contatos,
 endereço estruturado, posição `geography(Point,4326)`, busca GiST e FK composta
 do RBAC, sem antecipar cadastro, membership ou autorização funcional.
+O `PROT-021` criou `organization_members` com contextos organizacionais ou de
+unidade coerentes, vigência explícita, matrícula/cargo opcionais e unicidade que
+também trata unidade nula como igual, sem duplicar papéis nem antecipar
+autorização funcional.
 
 ## Pré-requisitos
 
@@ -116,13 +120,14 @@ Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
 cobrem configuração, erros, i18n, PostgreSQL, Redis, registry de readiness,
 endpoints operacionais, OpenAPI, logging, redaction, correlação, filas e
 shutdown, além das convenções, enums, contas, sessões, RBAC e catálogo de
-permissões, organizações e unidades espaciais em Drizzle/Atlas; o build
-cobre Manager API, Worker, Web e Mobile. Depois de subir as dependências locais,
-as integrações reais são executadas com
+permissões, organizações, unidades espaciais e memberships em Drizzle/Atlas; o
+build cobre Manager API, Worker, Web e Mobile. Depois de subir as dependências
+locais, as integrações reais são executadas com
 `pnpm --filter @protege-mais/plugins test:database`,
 `pnpm --filter @protege-mais/plugins test:redis` e
-`pnpm --filter @protege-mais/worker test:redis`. Use `pnpm format` para aplicar a formatação e
-`pnpm -r --if-present format:check` para conferir cada workspace explicitamente.
+`pnpm --filter @protege-mais/worker test:redis`. Use `pnpm format` para aplicar a
+formatação e `pnpm -r --if-present format:check` para conferir cada workspace
+explicitamente.
 As regras de TypeScript, ESLint, Prettier e uso excepcional de `any` estão em
 [`docs/QUALITY.md`](docs/QUALITY.md).
 
@@ -146,16 +151,17 @@ permitidos/proibidos e consultas operacionais estão em
 
 PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
 de domínio possui `accounts`, `auth_sessions`, `organizations`,
-`organization_units`, `roles`, `permissions`, `role_permissions`,
-`account_roles` e 14 tipos enum
-fundamentais. As migrations estruturais recriam esse estado vazio em uma base
-limpa; o seed opcional de desenvolvimento adiciona somente 19 permissões.
+`organization_units`, `organization_members`, `roles`, `permissions`,
+`role_permissions`, `account_roles` e 14 tipos enum fundamentais. As migrations
+estruturais recriam esse estado vazio em uma base limpa; o seed opcional de
+desenvolvimento adiciona somente 19 permissões.
 As convenções, os dicionários, o catálogo e o checklist estão em
 [`docs/database/CONVENTIONS.md`](docs/database/CONVENTIONS.md),
 [`docs/database/ACCOUNTS.md`](docs/database/ACCOUNTS.md),
 [`docs/database/AUTH_SESSIONS.md`](docs/database/AUTH_SESSIONS.md),
 [`docs/database/ORGANIZATIONS.md`](docs/database/ORGANIZATIONS.md),
 [`docs/database/ORGANIZATION_UNITS.md`](docs/database/ORGANIZATION_UNITS.md),
+[`docs/database/ORGANIZATION_MEMBERS.md`](docs/database/ORGANIZATION_MEMBERS.md),
 [`docs/database/ENUM_CATALOG.md`](docs/database/ENUM_CATALOG.md) e
 [`docs/database/MIGRATION_CHECKLIST.md`](docs/database/MIGRATION_CHECKLIST.md).
 O diagrama RBAC, o dicionário das quatro tabelas e a semântica dos escopos estão
@@ -171,8 +177,8 @@ em [`docs/permissions/README.md`](docs/permissions/README.md).
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-021`:
+O próximo ticket liberado é `PROT-022`:
 
 ```text
-Implemente o ticket PROT-021 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-022 seguindo toda a documentação do projeto.
 ```
