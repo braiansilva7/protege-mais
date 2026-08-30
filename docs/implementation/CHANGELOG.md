@@ -3,6 +3,103 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-30 — PROT-019 — Criar tabela organizations
+
+Status: Concluído
+
+### Resultado
+
+O schema passa a representar organizações com identidade institucional,
+localidade IBGE, ativação explícita, configuração de integração, optimistic
+locking e soft delete. Nome e razão social possuem chaves normalizadas para
+pesquisa; CNPJs numéricos e alfanuméricos são armazenados sem máscara e têm
+formato e dígitos verificadores validados no TypeScript e no PostgreSQL.
+
+O CNPJ é único globalmente e continua reservado após soft delete. Uma
+organização só é operacional quando `is_active AND deleted_at IS NULL`; a flag
+de integração não sobrepõe esse predicado. `account_roles.organization_id`
+agora possui FK restritiva, sem ativar autorização funcional.
+
+### Arquivos e dados
+
+- criado `packages/common/organizations` com normalização idempotente de nomes,
+  CNPJ, UF e município, os 27 códigos estaduais e validação do CNPJ por módulo
+  11 com `ASCII - 48`; o exemplo fictício oficial de cálculo da Receita Federal
+  integra os fixtures;
+- criado `packages/models/organizations.ts` com 15 colunas, UUID v7 gerado pela
+  aplicação, oito checks nomeados, unicidade global de CNPJ e três índices
+  parciais para buscas ativas por nome, razão social e município;
+- a projeção pública omite CNPJ, razão social, chaves normalizadas e marca de
+  exclusão; o logger também redige chaves e padrões de CNPJ numérico ou
+  alfanumérico em qualquer ambiente;
+- `account_roles` recebeu a FK nomeada para `organizations`, com `ON UPDATE NO
+ACTION` e `ON DELETE RESTRICT`; o identificador de unidade continua reservado
+  para o `PROT-020`;
+- criada a migration estrutural
+  `atlas/prod/20260830134040_create_organizations.sql` e atualizado o checksum
+  de produção, sem seed, dado de domínio, UUID gerado pelo banco ou operação
+  destrutiva;
+- adicionados quatro testes de normalização, cinco testes do model e três
+  testes PostgreSQL de organizações; as integrações existentes de RBAC agora
+  comprovam a FK, a rejeição de contexto inexistente e a remoção referenciada;
+- criado `docs/database/ORGANIZATIONS.md` e aceito o `ADR-006`; README,
+  arquitetura atual, segurança, observabilidade, banco, enums, permissões,
+  qualidade, roadmap, índice documental e tickets foram sincronizados;
+- nenhuma versão de dependência ou lockfile foi alterada; nenhum endpoint,
+  repository, seed, papel, atribuição, membership ou integração externa foi
+  criado.
+
+### Validação
+
+- produção isolada em base descartável: seis migrations e 35 instruções
+  aplicadas, sete tabelas de domínio e zero dados antes das integrações; uma
+  segunda aplicação não encontrou arquivo pendente e a base foi removida ao
+  final;
+- `atlas migrate validate`, `status` e `diff` no ambiente `prod`: checksum
+  válido, versão `20260830134040`, seis arquivos executados, zero pendências e
+  zero drift estrutural;
+- CNPJ numérico/alfanumérico válido persistiu; formato, dígitos, sentinela
+  todo-zero, tipo, status, UF, município e normalização inválidos foram
+  rejeitados pelo banco;
+- soft delete manteve a reserva global do CNPJ, update com versão obsoleta
+  afetou zero linhas e planos reais usaram os índices parciais de nome e
+  município;
+- a FK organizacional rejeitou UUID inexistente e hard delete referenciado; a
+  consulta RBAC continuou combinando contextos globais e organizacionais;
+- `pnpm --filter @protege-mais/plugins test:database`: 17 testes reais
+  aprovados, incluindo contas, sessões, organizações, RBAC, seed, enums,
+  Drizzle/UTC, PostGIS e retomada;
+- `pnpm test`: 106 testes aprovados em sete workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm model:reference:validate` e `pnpm model:reference:diff`: fixture de
+  convenções válido e sem drift;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados;
+  `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado em
+  Redis temporário isolado;
+- `pnpm format:check`, `pnpm -r --if-present format:check`, `git diff --check` e
+  `docker compose config --quiet`: formatação, whitespace e Compose válidos;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso
+  não bloqueante já conhecido do bundle Web maior que 500 kB.
+
+### Decisões e pendências
+
+- os formatos numérico anterior e alfanumérico atual coexistem; a validação
+  segue a documentação técnica da Receita Federal e não consulta situação
+  cadastral externa;
+- CNPJ não recebe a classificação de dado pessoal da vítima, mas permanece fora
+  da projeção pública e da allowlist de logs para evitar exposição indevida;
+- a identidade não é reutilizável: retorno da mesma instituição restaura a
+  linha original com controle de versão;
+- FK garante existência, não atividade, membership ou permissão; essas decisões
+  continuam nos tickets `PROT-021`, `PROT-030` e `PROT-031`;
+- a estratégia de produção é forward-only: eventual correção usa nova migration
+  aditiva; não há rollback destrutivo automático de organização ou referência;
+- `PROT-020` é o próximo ticket liberado e criará `organization_units` e sua FK
+  contextual;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-26 — PROT-018 — Criar seed inicial de permissões
 
 Status: Concluído

@@ -17,6 +17,7 @@ import {
   updatedAtColumn,
   uuidV7PrimaryKey,
 } from './columns.js';
+import { organizations } from './organizations.js';
 
 export const authorizationConstraintNames = Object.freeze({
   roleCodeUnique: 'roles_code_key',
@@ -30,6 +31,7 @@ export const authorizationConstraintNames = Object.freeze({
   rolePermissionsPermissionForeignKey: 'role_permissions_permission_id_fkey',
   accountRolesAccountForeignKey: 'account_roles_account_id_fkey',
   accountRolesRoleForeignKey: 'account_roles_role_id_fkey',
+  accountRolesOrganizationForeignKey: 'account_roles_organization_id_fkey',
   accountRolesContextUnique: 'account_roles_account_role_context_key',
   accountRolesScopeCheck: 'account_roles_scope_check',
 });
@@ -138,6 +140,13 @@ export const accountRoles = pgTable(
       name: authorizationConstraintNames.accountRolesRoleForeignKey,
       columns: [table.roleId],
       foreignColumns: [roles.id],
+    })
+      .onUpdate('no action')
+      .onDelete('restrict'),
+    foreignKey({
+      name: authorizationConstraintNames.accountRolesOrganizationForeignKey,
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
     })
       .onUpdate('no action')
       .onDelete('restrict'),

@@ -4,10 +4,11 @@
 
 O `PROT-017` materializou a fundação relacional de RBAC. O `PROT-018` acrescenta
 um catálogo TypeScript de 19 permissões e um seed aditivo exclusivo de
-desenvolvimento. Nenhum papel ou atribuição é criado. As migrations de produção
-continuam estruturais e deixam os catálogos vazios; os tickets `PROT-030` a
-`PROT-032` implementarão a autorização funcional e a validação dos vínculos
-contextuais.
+desenvolvimento. O `PROT-019` materializa `organizations` e protege o escopo
+organizacional com FK restritiva. Nenhum papel ou atribuição é criado. As
+migrations de produção continuam estruturais e deixam os catálogos vazios; os
+tickets `PROT-030` a `PROT-032` implementarão a autorização funcional e a
+validação dos vínculos contextuais.
 
 Nenhuma rota, repository ou middleware deve consultar essas tabelas antes de a
 cadeia completa de autorização estar implementada. Em particular, código de
@@ -82,6 +83,7 @@ suas matrizes exigem definição própria e não são inferidos deste seed.
 ```mermaid
 erDiagram
     ACCOUNTS ||--o{ ACCOUNT_ROLES : receives
+    ORGANIZATIONS ||--o{ ACCOUNT_ROLES : scopes
     ROLES ||--o{ ACCOUNT_ROLES : assigned_as
     ROLES ||--o{ ROLE_PERMISSIONS : grants
     PERMISSIONS ||--o{ ROLE_PERMISSIONS : included_in
@@ -105,18 +107,26 @@ erDiagram
         uuid permission_id PK,FK
         timestamptz created_at
     }
+    ORGANIZATIONS {
+        uuid id PK
+        varchar name
+        organization_type type
+        varchar cnpj UK
+        boolean is_active
+        timestamptz deleted_at
+    }
     ACCOUNT_ROLES {
         uuid id PK
         uuid account_id FK
         uuid role_id FK
-        uuid organization_id
+        uuid organization_id FK
         uuid organization_unit_id
         timestamptz created_at
     }
 ```
 
-As relações com organização e unidade ainda não aparecem no diagrama porque
-essas tabelas serão criadas pelos tickets `PROT-019` e `PROT-020`.
+A relação com organização existe desde o `PROT-019`. A relação com unidade será
+adicionada pelo `PROT-020`, sem reescrever migrations já compartilhadas.
 
 ## Dicionário e invariantes
 
@@ -151,7 +161,7 @@ essas tabelas serão criadas pelos tickets `PROT-019` e `PROT-020`.
 ### `account_roles`
 
 - cada linha atribui um papel a uma conta em exatamente um contexto;
-- referências a conta e papel usam `ON DELETE RESTRICT`;
+- referências a conta, papel e organização usam `ON DELETE RESTRICT`;
 - atribuições são imutáveis e não recebem soft delete; a retirada do acesso
   remove a associação explicitamente;
 - a unicidade usa `NULLS NOT DISTINCT` sobre conta, papel, organização e
@@ -171,11 +181,13 @@ organização solicitada e da própria unidade. Ao avaliar somente uma
 organização, considera atribuições globais e dessa organização. A consulta deve
 sempre filtrar papéis inativos e retornar permissões distintas.
 
-Até `organizations` e `organization_units` existirem, os dois identificadores
-contextuais são UUIDs reservados sem chave estrangeira. O `PROT-019` e o
-`PROT-020` devem adicionar as referências em migrations futuras, sem reescrever
-a migration deste ticket. O runtime só poderá autorizar acesso após validar a
-existência, a relação unidade-organização e o vínculo ativo da conta.
+`organization_id` referencia uma organização existente com exclusão restrita.
+Isso garante integridade, mas não concede acesso: organização inativa ou
+excluída logicamente não cria contexto operacional. `organization_unit_id`
+permanece um UUID reservado sem chave estrangeira; o `PROT-020` adicionará a
+referência em migration futura. O runtime só poderá autorizar acesso após
+validar existência, ativação, relação unidade-organização e vínculo ativo da
+conta.
 
 ## Proteção de papéis de sistema
 
@@ -204,7 +216,8 @@ excepcional permanecem fora deste ticket.
 ## Tickets responsáveis
 
 - `PROT-018`: seed inicial e catálogo TypeScript, concluídos;
-- `PROT-019` e `PROT-020`: entidades contextuais e respectivas FKs;
+- `PROT-019`: organização e respectiva FK contextual, concluídas;
+- `PROT-020`: unidade e respectiva FK contextual;
 - `PROT-021`: vínculos da conta;
 - `PROT-030`: middleware de permissão;
 - `PROT-031` e `PROT-032`: escopos organizacional e de unidade;

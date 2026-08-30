@@ -114,6 +114,7 @@ void test('RBAC nomeia unicidade, checks e chaves estrangeiras restritivas', () 
       authorizationConstraintNames.rolePermissionsRoleForeignKey,
       authorizationConstraintNames.rolePermissionsPermissionForeignKey,
       authorizationConstraintNames.accountRolesAccountForeignKey,
+      authorizationConstraintNames.accountRolesOrganizationForeignKey,
       authorizationConstraintNames.accountRolesRoleForeignKey,
     ].sort()
   );
@@ -129,6 +130,7 @@ void test('RBAC nomeia unicidade, checks e chaves estrangeiras restritivas', () 
     [
       authorizationConstraintNames.accountRolesAccountForeignKey,
       authorizationConstraintNames.accountRolesRoleForeignKey,
+      authorizationConstraintNames.accountRolesOrganizationForeignKey,
     ]
   );
 });

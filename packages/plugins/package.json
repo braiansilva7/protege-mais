@@ -7,7 +7,7 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test database/database.test.ts error-handler/error-handler.test.ts i18next/i18next.test.ts logging/logging.test.ts queues/queues.test.ts readiness/readiness.test.ts redis/redis.test.ts",
-    "test:database": "APP_ENVIRONMENT=LOCAL tsx --test database/accounts.integration.test.ts database/auth-sessions.integration.test.ts database/authorization.integration.test.ts database/permission-seed.integration.test.ts database/database.integration.test.ts",
+    "test:database": "APP_ENVIRONMENT=LOCAL tsx --test database/accounts.integration.test.ts database/auth-sessions.integration.test.ts database/authorization.integration.test.ts database/organizations.integration.test.ts database/permission-seed.integration.test.ts database/database.integration.test.ts",
     "test:redis": "APP_ENVIRONMENT=LOCAL REDIS_URL=redis://127.0.0.1:6379/0 tsx --test redis/redis.integration.test.ts",
     "format": "prettier --write . --ignore-path ../../.prettierignore",
     "format:check": "prettier --check . --ignore-path ../../.prettierignore"

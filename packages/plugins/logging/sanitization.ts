@@ -14,6 +14,7 @@ const sensitiveKeyFragments = [
   'body',
   'cookie',
   'coordinate',
+  'cnpj',
   'cpf',
   'credential',
   'email',
@@ -67,6 +68,7 @@ const pinoRedactionKeys = [
   'body',
   'cookie',
   'coordinates',
+  'cnpj',
   'cpf',
   'credentials',
   'email',
@@ -127,6 +129,10 @@ function sanitizeString(value: string) {
       redactedLogValue
     )
     .replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, redactedLogValue)
+    .replace(
+      /\b[0-9A-Z]{2}\.?[0-9A-Z]{3}\.?[0-9A-Z]{3}\/?[0-9A-Z]{4}-?[0-9]{2}\b/giu,
+      redactedLogValue
+    )
     .replace(
       /(^|[^\d])-?\d{1,3}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}(?=$|[^\d])/g,
       `$1${redactedLogValue}`

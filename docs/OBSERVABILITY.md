@@ -85,18 +85,18 @@ Nunca registrar, mesmo em `LOCAL` ou `debug`:
 
 - body, params, query, headers, cookies ou URL bruta;
 - senha, hash, credencial, token, chave, segredo ou URL assinada;
-- CPF, telefone, e-mail, endereço ou dado médico;
+- CPF, CNPJ, telefone, e-mail, endereço ou dado médico;
 - relato, narrativa, risco, medida ou conteúdo de ocorrência;
 - latitude, longitude, coordenadas, localização ou local protegido;
 - arquivo, evidência, buffer, payload ou objeto de configuração;
 - mensagem, stack ou causa de erro de biblioteca/integração.
 
 O logger aplica uma denylist recursiva e também mascara padrões reconhecíveis
-de Bearer token, JWT, CPF e pares de coordenadas em strings permitidas. Objetos
-cíclicos, getters que falham, `BigInt` e valores não serializáveis recebem um
-marcador seguro. Redaction é defesa adicional: não autoriza enviar um objeto
-amplo ao logger. Quem cria um evento deve construir explicitamente apenas os
-campos da allowlist.
+de Bearer token, JWT, CPF, CNPJ numérico/alfanumérico e pares de coordenadas em
+strings permitidas. Objetos cíclicos, getters que falham, `BigInt` e valores não
+serializáveis recebem um marcador seguro. Redaction é defesa adicional: não
+autoriza enviar um objeto amplo ao logger. Quem cria um evento deve construir
+explicitamente apenas os campos da allowlist.
 
 ## Consulta operacional
 

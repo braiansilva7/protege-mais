@@ -14,20 +14,23 @@ criou a fundação de RBAC contextual em `roles`, `permissions`,
 `role_permissions` e `account_roles`. A Manager API possui pool gerenciado,
 probe obrigatório e shutdown idempotente. O `PROT-018` acrescentou o catálogo
 TypeScript e um seed opcional com 19 permissões exclusivamente para
-desenvolvimento. O schema de produção possui seis tabelas e 14 tipos enum
-nativos e continua sem dados.
+desenvolvimento. O `PROT-019` acrescentou `organizations`, identidade
+institucional, localidade, ciclo de ativação/soft delete e a FK organizacional
+do RBAC. O schema de produção possui sete tabelas e 14 tipos enum nativos e
+continua sem dados.
 
 `packages/models/index.ts` é a única entrada do schema Drizzle de produção e
-exporta helpers, `pgEnum`, `accounts`, `authSessions`, as quatro tabelas de RBAC,
-seus tipos e as projeções que excluem hashes. `packages/common/index.ts` exporta
-o catálogo literal das permissões.
+exporta helpers, `pgEnum`, `accounts`, `authSessions`, `organizations`, as quatro
+tabelas de RBAC, seus tipos e as projeções seguras. `packages/common/index.ts`
+exporta o catálogo literal das permissões e os normalizadores institucionais.
 `atlas/prod` mantém as migrations `20260826000000_enable_postgis.sql`,
 `20260826231424_fundamental_enums.sql`,
 `20260826233758_create_accounts.sql`,
 `20260827001526_create_auth_sessions.sql` e
-`20260827004636_create_authorization_structure.sql`. `atlas/seed/dev` contém
+`20260827004636_create_authorization_structure.sql` e
+`20260830134040_create_organizations.sql`. `atlas/seed/dev` contém
 `20260827012543_initial_permission_catalog.sql`. Uma base nova aceita `migrate`
-sem exigir seed, habilita a extensão, cria os 14 tipos e as seis tabelas vazias;
+sem exigir seed, habilita a extensão, cria os 14 tipos e as sete tabelas vazias;
 `seed:local` adiciona 19 permissões. `spatial_ref_sys` é um objeto interno
 gerenciado pelo próprio PostGIS.
 
@@ -47,6 +50,10 @@ ciclo de vida e limites de segurança de `auth_sessions` estão em
 RBAC estão em [permissions/README.md](../permissions/README.md), com a decisão
 registrada no
 [ADR-005](../decisions/ADR-005-contextual-rbac-foundation.md).
+O dicionário e o ciclo de vida de `organizations` estão em
+[ORGANIZATIONS.md](ORGANIZATIONS.md), com as decisões de identidade e unicidade
+registradas no
+[ADR-006](../decisions/ADR-006-organization-identity-and-lifecycle.md).
 
 ## Conexão da aplicação
 
@@ -225,10 +232,13 @@ referencia a conta com exclusão restrita, deriva atividade de revogação e
 expiração, localiza a credencial pelo hash sem expô-lo na projeção e oferece
 índice para o ciclo por conta. `roles` e `permissions` são catálogos globais
 relacionados pela tabela associativa `role_permissions`; `account_roles` mantém
-o contexto na atribuição, rejeita unidade órfã e
-duplicidade inclusive com nulos. Os identificadores contextuais receberão FKs
-quando suas tabelas existirem. O catálogo TypeScript e o seed de desenvolvimento possuem 19 códigos idênticos
-e nenhum papel inicial. O próximo ticket liberado é o `PROT-019`.
+o contexto na atribuição, rejeita unidade órfã e duplicidade inclusive com
+nulos. O identificador organizacional possui FK restritiva; o identificador de
+unidade receberá sua FK no `PROT-020`. `organizations` valida CNPJ numérico ou
+alfanumérico, UF e município IBGE, reserva o CNPJ globalmente após soft delete e
+indexa somente organizações ativas para pesquisa. O catálogo TypeScript e o
+seed de desenvolvimento possuem 19 códigos idênticos e nenhum papel inicial. O
+próximo ticket liberado é o `PROT-020`.
 
 ---
 

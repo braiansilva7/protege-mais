@@ -1,12 +1,18 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createUuidV7, normalizeAccountEmail } from '@protege-mais/common';
+import {
+  createUuidV7,
+  isValidOrganizationCnpj,
+  normalizeAccountEmail,
+  normalizeOrganizationSearchText,
+} from '@protege-mais/common';
 import { databaseEnvironment } from '@protege-mais/config';
 import {
   accountRoles,
   accounts,
   authorizationConstraintNames,
   authorizationIndexNames,
+  organizations,
   permissions,
   rolePermissions,
   roles,
@@ -19,6 +25,15 @@ const logger: DatabaseLogger = {
   info: () => undefined,
   warn: () => undefined,
 };
+
+function createTestCnpj(body: string): string {
+  for (let checkDigits = 0; checkDigits < 100; checkDigits += 1) {
+    const cnpj = `${body}${checkDigits.toString().padStart(2, '0')}`;
+    if (isValidOrganizationCnpj(cnpj)) return cnpj;
+  }
+
+  throw new Error('Não foi possível gerar um CNPJ fictício válido.');
+}
 
 interface DatabaseErrorExpectation {
   readonly code: string;
@@ -112,6 +127,42 @@ void test('consulta RBAC retorna permissões globais e do contexto solicitado', 
       status: 'active',
       mfaEnabled: false,
     });
+    await connection.database.insert(organizations).values([
+      {
+        id: organizationAId,
+        name: `Organização A ${suffix}`,
+        nameNormalized: normalizeOrganizationSearchText(
+          `Organização A ${suffix}`
+        ),
+        legalName: `Organização A ${suffix} de Teste`,
+        legalNameNormalized: normalizeOrganizationSearchText(
+          `Organização A ${suffix} de Teste`
+        ),
+        type: 'public_agency',
+        cnpj: createTestCnpj(suffix.slice(0, 12).toUpperCase()),
+        stateCode: 'SP',
+        municipalityCode: '3550308',
+        isActive: true,
+        integrationEnabled: false,
+      },
+      {
+        id: organizationBId,
+        name: `Organização B ${suffix}`,
+        nameNormalized: normalizeOrganizationSearchText(
+          `Organização B ${suffix}`
+        ),
+        legalName: `Organização B ${suffix} de Teste`,
+        legalNameNormalized: normalizeOrganizationSearchText(
+          `Organização B ${suffix} de Teste`
+        ),
+        type: 'nonprofit',
+        cnpj: createTestCnpj(`A${suffix.slice(1, 12).toUpperCase()}`),
+        stateCode: 'RJ',
+        municipalityCode: '3304557',
+        isActive: true,
+        integrationEnabled: false,
+      },
+    ]);
     await connection.database.insert(roles).values([
       {
         id: roleIds[0],
@@ -243,6 +294,9 @@ void test('consulta RBAC retorna permissões globais e do contexto solicitado', 
       .where(inArray(permissions.id, permissionIds));
     await connection.database.delete(roles).where(inArray(roles.id, roleIds));
     await connection.database
+      .delete(organizations)
+      .where(inArray(organizations.id, [organizationAId, organizationBId]));
+    await connection.database
       .delete(accounts)
       .where(eq(accounts.id, accountId));
     await connection.close();
@@ -304,6 +358,34 @@ void test('constraints rejeitam duplicidade, escopo incoerente e remoção refer
         VALUES ($1, $2), ($3, $2)
       `,
       [roleId, permissionId, systemRoleId]
+    );
+    const organizationNameA = `Organização A ${suffix}`;
+    const organizationNameB = `Organização B ${suffix}`;
+    await client.query(
+      `
+        INSERT INTO organizations (
+          id, name, name_normalized, legal_name, legal_name_normalized,
+          type, cnpj, state_code, municipality_code, is_active,
+          integration_enabled
+        )
+        VALUES
+          ($1, $2, $3, $4, $5, 'public_agency', $6, 'SP', '3550308', true, false),
+          ($7, $8, $9, $10, $11, 'nonprofit', $12, 'RJ', '3304557', true, false)
+      `,
+      [
+        organizationAId,
+        organizationNameA,
+        normalizeOrganizationSearchText(organizationNameA),
+        `${organizationNameA} de Teste`,
+        normalizeOrganizationSearchText(`${organizationNameA} de Teste`),
+        createTestCnpj(suffix.slice(0, 12).toUpperCase()),
+        organizationBId,
+        organizationNameB,
+        normalizeOrganizationSearchText(organizationNameB),
+        `${organizationNameB} de Teste`,
+        normalizeOrganizationSearchText(`${organizationNameB} de Teste`),
+        createTestCnpj(`B${suffix.slice(1, 12).toUpperCase()}`),
+      ]
     );
     await client.query(
       `
@@ -371,6 +453,21 @@ void test('constraints rejeitam duplicidade, escopo incoerente e remoção refer
       {
         code: '23505',
         constraint: authorizationConstraintNames.rolePermissionsPrimaryKey,
+      }
+    );
+    await rejectsAtSavepoint(
+      client,
+      `
+        INSERT INTO account_roles (
+          id, account_id, role_id, organization_id
+        )
+        VALUES ($1, $2, $3, $4)
+      `,
+      [createUuidV7(), accountId, roleId, createUuidV7()],
+      {
+        code: '23503',
+        constraint:
+          authorizationConstraintNames.accountRolesOrganizationForeignKey,
       }
     );
     await rejectsAtSavepoint(
@@ -489,6 +586,16 @@ void test('constraints rejeitam duplicidade, escopo incoerente e remoção refer
       {
         code: '23503',
         constraint: authorizationConstraintNames.accountRolesAccountForeignKey,
+      }
+    );
+    await rejectsAtSavepoint(
+      client,
+      'DELETE FROM organizations WHERE id = $1',
+      [organizationAId],
+      {
+        code: '23503',
+        constraint:
+          authorizationConstraintNames.accountRolesOrganizationForeignKey,
       }
     );
   } finally {

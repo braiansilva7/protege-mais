@@ -96,11 +96,14 @@ void test('redige denylist e padrões sensíveis em qualquer profundidade', () =
       cpf: '123.456.789-00',
       address: 'Rua Protegida, 42',
     },
+    organization: {
+      cnpj: '12.ABC.345/01DE-35',
+    },
     occurrence: {
       relato: 'narrativa privada prot-008',
       coordinates: [-23.55052, -46.633308],
     },
-    note: 'CPF 12345678900; local -23.55052, -46.633308',
+    note: 'CPF 12345678900; CNPJ 12ABC34501DE35; local -23.55052, -46.633308',
     route: '/victims/:victimId',
   };
 
@@ -118,13 +121,13 @@ void test('redige denylist e padrões sensíveis em qualquer profundidade', () =
   assert.equal(sanitized.authorization, redactedLogValue);
   assert.doesNotMatch(
     serialized,
-    /token-secreto|123\.456\.789|12345678900|Rua Protegida|narrativa privada|-23\.55052|-46\.633308/
+    /token-secreto|123\.456\.789|12345678900|12\.ABC\.345|12ABC34501DE35|Rua Protegida|narrativa privada|-23\.55052|-46\.633308/
   );
   assert.match(serialized, /\[REDACTED\]/);
   assert.match(serialized, /\/victims\/:victimId/);
   assert.doesNotMatch(
     logged,
-    /token-secreto|123\.456\.789|12345678900|Rua Protegida|narrativa privada|-23\.55052|-46\.633308|mensagem-interna/
+    /token-secreto|123\.456\.789|12345678900|12\.ABC\.345|12ABC34501DE35|Rua Protegida|narrativa privada|-23\.55052|-46\.633308|mensagem-interna/
   );
   assert.match(logged, /"type":"Error"/);
 });

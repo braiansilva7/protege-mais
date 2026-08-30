@@ -2,22 +2,23 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-018`. A arquitetura
+Este documento registra somente o que existe após o `PROT-019`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
 O monorepo possui quatro apps executáveis e dez packages compartilhados. A
 persistência possui `accounts`, separada de perfis e protegida por constraints
 de identidade, `auth_sessions`, com credencial em hash, metadata minimizada e
-ciclo de expiração/revogação, e quatro tabelas que formam a base relacional do
-RBAC contextual. Projeções seguras excluem hashes e chaves internas. Ainda não
-existem fluxo de autenticação, autorização funcional, rotas/repositórios de
-negócio ou dados operacionais. Um catálogo TypeScript contém as 19 permissões
+ciclo de expiração/revogação, `organizations`, com identidade institucional,
+localidade e ciclo de ativação/soft delete, e quatro tabelas que formam a base
+relacional do RBAC contextual. Projeções seguras excluem hashes, CNPJ e chaves
+internas. Ainda não existem fluxo de autenticação, autorização funcional,
+rotas/repositórios de negócio ou dados operacionais. Um catálogo TypeScript
+contém as 19 permissões
 iniciais e o seed opcional de desenvolvimento insere somente esses códigos, sem
-papéis ou atribuições. Existem 14 tipos enum
-fundamentais, com `account_type` e `account_status` consumidos pela tabela.
-PostGIS está habilitado pela primeira
-migration estrutural e validado com SRID 4326. As convenções de persistência
+papéis ou atribuições. Existem 14 tipos enum fundamentais, com `account_type`,
+`account_status` e `organization_type` já consumidos por tabelas.
+PostGIS está habilitado pela primeira migration estrutural e validado com SRID 4326. As convenções de persistência
 estão congeladas e comprovadas por um fixture Drizzle/Atlas isolado do schema
 de produção. Redis já é uma dependência compartilhada com namespace por
 ambiente, reconexão, timeouts e encerramento gracioso. As cinco filas base
@@ -57,18 +58,18 @@ protege-mais/
 │       ├── App.tsx
 │       └── index.ts
 ├── packages/
-│   ├── common/               # Enums, permissões, erros, UUID e sanitização
+│   ├── common/               # Enums, permissões, normalização, UUID e sanitização
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
-│   ├── models/               # Accounts, sessões, RBAC, enums e fixture Drizzle
+│   ├── models/               # Accounts, sessões, organizações, RBAC e enums
 │   ├── plugins/              # Banco, logging, Redis, filas e plugins Fastify
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
 │   ├── services/             # Capacidades reutilizáveis futuras
 │   └── useCases/             # Contrato/registry de jobs e orquestração futura
 ├── atlas/
-│   ├── prod/                 # Migrations de PostGIS, enums, contas, sessões e RBAC
+│   ├── prod/                 # PostGIS, enums, identidade, organizações e RBAC
 │   └── seed/dev/             # Catálogo aditivo de permissões para desenvolvimento
 ├── drizzle.reference.config.ts # Export do fixture, fora de produção
 ├── eslint.config.mjs       # Lint compartilhado e tipado
@@ -310,10 +311,21 @@ tipos e nomes estáveis de constraints/índices. Os catálogos são globais;
 `account_roles` guarda atribuições globais, organizacionais ou de unidade e usa
 `UNIQUE NULLS NOT DISTINCT` para rejeitar duplicidades em qualquer contexto.
 Unidade sem organização é inválida, FKs existentes são restritivas e a busca
-por conta/contexto possui índice composto. Os identificadores de organização e
-unidade são reservados sem FK até as tabelas dos tickets `PROT-019` e
-`PROT-020` existirem. O diagrama, o dicionário e as fronteiras de autorização
-estão em `docs/permissions/README.md`; o `ADR-005` registra a decisão.
+por conta/contexto possui índice composto. `organization_id` referencia
+`organizations` com exclusão restrita; `organization_unit_id` permanece
+reservado até o `PROT-020`. O diagrama, o dicionário e as fronteiras de
+autorização estão em `docs/permissions/README.md`; o `ADR-005` registra a
+fundação de RBAC.
+
+O entrypoint exporta ainda `organizations`, seus tipos, nomes estáveis de
+constraints/índices, predicado operacional e projeção pública sem CNPJ. Nomes
+originais e normalizados, CNPJ numérico ou alfanumérico com dígitos
+verificadores, UF e município IBGE são validados no banco. O CNPJ permanece
+globalmente reservado após soft delete; três índices parciais atendem pesquisas
+somente entre organizações ativas. Os normalizadores canônicos estão em
+`packages/common/organizations`, o dicionário está em
+`docs/database/ORGANIZATIONS.md` e o `ADR-006` registra as decisões de
+identidade e ciclo de vida.
 
 `packages/common/permissions` exporta `permissionCatalog`, `permissionCodes`,
 os tipos literais de recurso/código e um type guard. O catálogo possui 19
@@ -341,7 +353,8 @@ idempotente que diagnostica suporte e executa
 `CREATE EXTENSION IF NOT EXISTS postgis`, a migration dos 14 enums,
 `20260826233758_create_accounts.sql`,
 `20260827001526_create_auth_sessions.sql` e
-`20260827004636_create_authorization_structure.sql`. O diretório de
+`20260827004636_create_authorization_structure.sql` e
+`20260830134040_create_organizations.sql`. O diretório de
 desenvolvimento contém
 `20260827012543_initial_permission_catalog.sql`, que insere as 19 permissões com
 `ON CONFLICT (code) DO NOTHING`, sem papel ou atribuição. O apply não
@@ -363,8 +376,8 @@ fluxo completo está em
 | `pnpm dev:worker`                                   | Inicia somente os consumers do Worker                |
 | `pnpm lint`                                         | Valida os quatro apps e os dez packages              |
 | `pnpm typecheck`                                    | Valida os quatro apps e os dez packages              |
-| `pnpm test`                                         | Testa config, catálogo, RBAC, filas e OpenAPI        |
-| `pnpm --filter @protege-mais/plugins test:database` | Integra banco, RBAC, seed, PostGIS e retomada        |
+| `pnpm test`                                         | Testa config, organizações, RBAC, filas e OpenAPI    |
+| `pnpm --filter @protege-mais/plugins test:database` | Integra banco, organizações, RBAC, seed e PostGIS    |
 | `pnpm --filter @protege-mais/plugins test:redis`    | Integra Redis real, TTL e reconexão                  |
 | `pnpm --filter @protege-mais/worker test:redis`     | Integra filas, retry, idempotência, falha e shutdown |
 | `pnpm format:check`                                 | Confere a formatação do repositório                  |
@@ -393,9 +406,11 @@ sem seed, dado, rota, emissão ou rotação de token. O `PROT-017` adicionou
 somente as quatro tabelas de RBAC e helpers declarativos, sem catálogo, seed,
 rotas, repository ou middleware de autorização. O `PROT-018` adicionou somente
 o catálogo TypeScript e o seed de 19 permissões de desenvolvimento, sem papel,
-atribuição, dado pessoal ou mudança estrutural de produção. A validação cria e remove
-somente uma base temporária com nome
-reservado; os volumes locais não são apagados. O volume Redis local contém
+atribuição, dado pessoal ou mudança estrutural de produção. O `PROT-019`
+adicionou somente a identidade persistente de organizações e a FK
+organizacional já prevista no RBAC, sem dado, seed, rota, repository ou
+autorização funcional. A validação cria e remove somente uma base temporária
+com nome reservado; os volumes locais não são apagados. O volume Redis local contém
 somente metadados técnicos das filas e qualquer job fictício de teste é removido
 ao concluir a integração.
 

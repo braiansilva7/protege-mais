@@ -64,13 +64,23 @@ desenvolvimento contêm 19 códigos técnicos, sem PII, papéis ou atribuições
 migration de produção permanece sem dados e ainda não existe middleware de
 autorização. Atribuições podem ter escopo global, de organização ou de unidade;
 unidade sem organização é inválida e um papel inativo nunca deve conceder
-acesso. As FKs contextuais e a validação de vínculos serão adicionadas com as
+acesso. A atribuição organizacional já possui FK restritiva para `organizations`;
+a FK de unidade e a validação dos vínculos ainda serão adicionadas com as
 entidades correspondentes antes de qualquer uso funcional.
 
 Papéis de sistema são estruturais: permanecem ativos e as mutações suportadas
 pela aplicação devem rejeitá-los. O contrato completo, inclusive herança de
 escopo e fronteiras dos tickets futuros, está em
 [`../permissions/README.md`](../permissions/README.md).
+
+O CNPJ identifica a pessoa jurídica e não recebe a classificação de dado
+pessoal da vítima, mas continua fora de logs e projeções públicas por padrão.
+`organizations` mantém o valor canônico apenas para integridade institucional;
+consultas comuns usam nomes normalizados e localidade. Uma organização só é
+operacional quando está ativa e não foi excluída logicamente. A habilitação de
+integração é uma configuração separada e nunca reativa uma organização. O
+contrato completo está em
+[`../database/ORGANIZATIONS.md`](../database/ORGANIZATIONS.md).
 
 ## Emergência e filas
 

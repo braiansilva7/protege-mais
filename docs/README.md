@@ -31,32 +31,33 @@ testes, decisões e pendências.
 
 ## Fontes de verdade
 
-| Assunto                                  | Documento                                            |
-| ---------------------------------------- | ---------------------------------------------------- |
-| Sequência, fases e marcos                | `docs/product/ROADMAP.md`                            |
-| Arquitetura futura aprovada              | `docs/architecture/TARGET_ARCHITECTURE.md`           |
-| Segurança, privacidade e dados sensíveis | `docs/architecture/SECURITY_AND_PRIVACY.md`          |
-| Estado atual do código                   | `docs/PROJECT_ARCHITECTURE.md`                       |
-| Runtime e convenções de qualidade        | `docs/QUALITY.md`                                    |
-| Configuração e matriz de variáveis       | `docs/CONFIGURATION.md`                              |
-| PostgreSQL, Drizzle e fluxo Atlas        | `docs/database/README.md`                            |
-| Convenções de models e persistência      | `docs/database/CONVENTIONS.md`                       |
-| Dicionário da tabela de contas           | `docs/database/ACCOUNTS.md`                          |
-| Dicionário e ciclo de vida das sessões   | `docs/database/AUTH_SESSIONS.md`                     |
-| RBAC, dicionário e escopos contextuais   | `docs/permissions/README.md`                         |
-| Catálogo e evolução de enums             | `docs/database/ENUM_CATALOG.md`                      |
-| Revisão obrigatória de migrations        | `docs/database/MIGRATION_CHECKLIST.md`               |
-| Redis, namespaces e operação local       | `docs/REDIS.md`                                      |
-| Filas, jobs e operação do Worker         | `docs/WORKER_QUEUES.md`                              |
-| Logging seguro e correlação              | `docs/OBSERVABILITY.md`                              |
-| Rotas base, probes e erros HTTP          | `docs/api/README.md`                                 |
-| Contratos HTTP, OpenAPI e Swagger        | `docs/api/OPENAPI.md`                                |
-| Idiomas e chaves do backend              | `docs/api/INTERNATIONALIZATION.md`                   |
-| Tickets e seus estados                   | `docs/tickets/README.md` e arquivos de épico         |
-| Mudanças efetivamente implementadas      | `docs/implementation/CHANGELOG.md`                   |
-| Auditoria de dependências de 2026-08-23  | `docs/implementation/DEPENDENCY_AUDIT_2026-08-23.md` |
-| Decisões com impacto arquitetural        | `docs/decisions/README.md`                           |
-| Padrão para rotas verticais              | `docs/ROUTE_CREATION_GUIDE.md`                       |
+| Assunto                                    | Documento                                            |
+| ------------------------------------------ | ---------------------------------------------------- |
+| Sequência, fases e marcos                  | `docs/product/ROADMAP.md`                            |
+| Arquitetura futura aprovada                | `docs/architecture/TARGET_ARCHITECTURE.md`           |
+| Segurança, privacidade e dados sensíveis   | `docs/architecture/SECURITY_AND_PRIVACY.md`          |
+| Estado atual do código                     | `docs/PROJECT_ARCHITECTURE.md`                       |
+| Runtime e convenções de qualidade          | `docs/QUALITY.md`                                    |
+| Configuração e matriz de variáveis         | `docs/CONFIGURATION.md`                              |
+| PostgreSQL, Drizzle e fluxo Atlas          | `docs/database/README.md`                            |
+| Convenções de models e persistência        | `docs/database/CONVENTIONS.md`                       |
+| Dicionário da tabela de contas             | `docs/database/ACCOUNTS.md`                          |
+| Dicionário e ciclo de vida das sessões     | `docs/database/AUTH_SESSIONS.md`                     |
+| Dicionário e ciclo de vida de organizações | `docs/database/ORGANIZATIONS.md`                     |
+| RBAC, dicionário e escopos contextuais     | `docs/permissions/README.md`                         |
+| Catálogo e evolução de enums               | `docs/database/ENUM_CATALOG.md`                      |
+| Revisão obrigatória de migrations          | `docs/database/MIGRATION_CHECKLIST.md`               |
+| Redis, namespaces e operação local         | `docs/REDIS.md`                                      |
+| Filas, jobs e operação do Worker           | `docs/WORKER_QUEUES.md`                              |
+| Logging seguro e correlação                | `docs/OBSERVABILITY.md`                              |
+| Rotas base, probes e erros HTTP            | `docs/api/README.md`                                 |
+| Contratos HTTP, OpenAPI e Swagger          | `docs/api/OPENAPI.md`                                |
+| Idiomas e chaves do backend                | `docs/api/INTERNATIONALIZATION.md`                   |
+| Tickets e seus estados                     | `docs/tickets/README.md` e arquivos de épico         |
+| Mudanças efetivamente implementadas        | `docs/implementation/CHANGELOG.md`                   |
+| Auditoria de dependências de 2026-08-23    | `docs/implementation/DEPENDENCY_AUDIT_2026-08-23.md` |
+| Decisões com impacto arquitetural          | `docs/decisions/README.md`                           |
+| Padrão para rotas verticais                | `docs/ROUTE_CREATION_GUIDE.md`                       |
 
 ## Regra contra divergência documental
 

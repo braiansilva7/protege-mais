@@ -216,11 +216,11 @@ migration prod isoladamente.
 
 ### Criar tabela organizations
 
-| Campo        | Valor    |
-| ------------ | -------- |
-| Status       | Pendente |
-| Prioridade   | P0       |
-| Dependências | PROT-014 |
+| Campo        | Valor     |
+| ------------ | --------- |
+| Status       | Concluído |
+| Prioridade   | P0        |
+| Dependências | PROT-014  |
 
 **Objetivo:** representar instituições participantes.
 

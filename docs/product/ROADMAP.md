@@ -89,5 +89,7 @@ ativos. O `PROT-016` criou `auth_sessions` com hash de refresh token, metadata
 mínima e revogação concorrente sem ativar os fluxos de autenticação. O
 `PROT-017` criou a estrutura de RBAC contextual, ainda vazia e sem uso
 funcional. O `PROT-018` adicionou o catálogo TypeScript e o seed inicial
-versionado de 19 permissões apenas para desenvolvimento. O próximo trabalho de
-implementação deve começar por `PROT-019`, que criará `organizations`.
+versionado de 19 permissões apenas para desenvolvimento. O `PROT-019` criou
+`organizations`, sua identidade institucional e a FK organizacional do RBAC.
+O próximo trabalho de implementação deve começar por `PROT-020`, que criará
+`organization_units`.

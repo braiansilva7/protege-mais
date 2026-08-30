@@ -46,6 +46,9 @@ vínculos ou middleware de autorização.
 O `PROT-018` criou o catálogo TypeScript das 19 permissões iniciais e um seed
 aditivo, idempotente e exclusivo de desenvolvimento, sem definir papéis ou
 atribuições.
+O `PROT-019` criou `organizations` com nomes pesquisáveis, CNPJ numérico ou
+alfanumérico validado, localidade IBGE, ciclo de ativação/soft delete e a FK
+organizacional do RBAC, sem antecipar cadastro HTTP ou autorização funcional.
 
 ## Pré-requisitos
 
@@ -139,14 +142,15 @@ permitidos/proibidos e consultas operacionais estão em
 [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
 PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
-de domínio possui `accounts`, `auth_sessions`, `roles`, `permissions`,
-`role_permissions`, `account_roles` e 14 tipos enum fundamentais. As migrations
-estruturais recriam esse estado vazio em uma base limpa; o seed opcional de
-desenvolvimento adiciona somente 19 permissões.
+de domínio possui `accounts`, `auth_sessions`, `organizations`, `roles`,
+`permissions`, `role_permissions`, `account_roles` e 14 tipos enum
+fundamentais. As migrations estruturais recriam esse estado vazio em uma base
+limpa; o seed opcional de desenvolvimento adiciona somente 19 permissões.
 As convenções, os dicionários, o catálogo e o checklist estão em
 [`docs/database/CONVENTIONS.md`](docs/database/CONVENTIONS.md),
 [`docs/database/ACCOUNTS.md`](docs/database/ACCOUNTS.md),
 [`docs/database/AUTH_SESSIONS.md`](docs/database/AUTH_SESSIONS.md),
+[`docs/database/ORGANIZATIONS.md`](docs/database/ORGANIZATIONS.md),
 [`docs/database/ENUM_CATALOG.md`](docs/database/ENUM_CATALOG.md) e
 [`docs/database/MIGRATION_CHECKLIST.md`](docs/database/MIGRATION_CHECKLIST.md).
 O diagrama RBAC, o dicionário das quatro tabelas e a semântica dos escopos estão
@@ -162,8 +166,8 @@ em [`docs/permissions/README.md`](docs/permissions/README.md).
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-019`:
+O próximo ticket liberado é `PROT-020`:
 
 ```text
-Implemente o ticket PROT-019 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-020 seguindo toda a documentação do projeto.
 ```

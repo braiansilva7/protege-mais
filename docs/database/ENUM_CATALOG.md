@@ -4,8 +4,9 @@
 
 Este catálogo define os valores internos iniciais usados pelos models de
 identidade, organização, proteção, emergência, evidência e notificação. Ele
-mantém PostgreSQL e TypeScript equivalentes; `accounts` é a primeira tabela
-consumidora, enquanto as demais entidades permanecem futuras.
+mantém PostgreSQL e TypeScript equivalentes; `accounts` consome os tipos de
+conta e `organizations` consome `organization_type`, enquanto as demais
+entidades permanecem futuras.
 
 As tuples em `packages/common/enums/index.ts` são a fonte dos valores e dos
 literal union types TypeScript. Os `pgEnum` em `packages/models/enums.ts`
@@ -53,6 +54,8 @@ estrutural, mas ainda não existe fluxo que cadastre ou autentique contas.
 
 A classificação não concede integração, escopo ou permissão e não substitui
 validação cadastral ou jurídica.
+`organizations.type` é obrigatório e não possui default; o chamador futuro deve
+escolher deliberadamente um dos quatro valores.
 
 ## Proteção e risco
 

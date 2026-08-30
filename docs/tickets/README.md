@@ -31,7 +31,7 @@ Estados permitidos: `Pendente`, `Em andamento`, `Bloqueado` e `Concluído`.
 | [PROT-016](EPIC_01_DATA_FOUNDATION.md#prot-016)    | Criar tabela auth_sessions                 | P0         | PROT-015                     | Concluído |
 | [PROT-017](EPIC_01_DATA_FOUNDATION.md#prot-017)    | Criar estrutura de roles e permissions     | P0         | PROT-013, PROT-015           | Concluído |
 | [PROT-018](EPIC_01_DATA_FOUNDATION.md#prot-018)    | Criar seed inicial de permissões           | P0         | PROT-017                     | Concluído |
-| [PROT-019](EPIC_01_DATA_FOUNDATION.md#prot-019)    | Criar tabela organizations                 | P0         | PROT-014                     | Pendente  |
+| [PROT-019](EPIC_01_DATA_FOUNDATION.md#prot-019)    | Criar tabela organizations                 | P0         | PROT-014                     | Concluído |
 | [PROT-020](EPIC_01_DATA_FOUNDATION.md#prot-020)    | Criar organization_units                   | P0         | PROT-012, PROT-019           | Pendente  |
 | [PROT-021](EPIC_01_DATA_FOUNDATION.md#prot-021)    | Criar organization_members                 | P0         | PROT-015, PROT-019, PROT-020 | Pendente  |
 | [PROT-022](EPIC_02_IDENTITY_ACCESS.md#prot-022)    | Autenticar por e-mail e senha              | P0         | PROT-005, PROT-015, PROT-016 | Pendente  |
