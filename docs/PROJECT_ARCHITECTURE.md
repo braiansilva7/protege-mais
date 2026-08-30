@@ -2,7 +2,7 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-021`. A arquitetura
+Este documento registra somente o que existe após o `PROT-022`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
@@ -14,9 +14,11 @@ localidade e ciclo de ativação/soft delete, `organization_units`, com endereç
 posição geográfica e ownership contextual, `organization_members`, com
 pertencimento organizacional/de unidade e vigência, e quatro tabelas que formam
 a base relacional do RBAC contextual. Projeções seguras excluem hashes, CNPJ,
-contato, endereço, localização, matrícula e chaves internas. Ainda não existem
-fluxos de autenticação, autorização funcional, rotas/repositórios de negócio ou
-dados operacionais. Um catálogo TypeScript contém as 19 permissões iniciais e o
+contato, endereço, localização, matrícula e chaves internas. O núcleo de
+autenticação local valida credenciais com Argon2id e resposta uniforme, mas
+ainda não existe rota de login, token, sessão funcional, autorização, outras
+rotas de negócio ou dados operacionais. Um catálogo TypeScript contém as 19
+permissões iniciais e o
 seed opcional de desenvolvimento insere somente esses códigos, sem
 papéis ou atribuições. Existem 14 tipos enum fundamentais, com `account_type`,
 `account_status` e `organization_type` já consumidos por tabelas.
@@ -61,16 +63,16 @@ protege-mais/
 │       ├── App.tsx
 │       └── index.ts
 ├── packages/
-│   ├── common/               # Enums, permissões, normalizações, UUID e sanitização
+│   ├── common/               # Enums, permissões, senha, normalizações e UUID
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
 │   ├── models/               # Identidade, organizações, vínculos, RBAC e enums
 │   ├── plugins/              # Banco, logging, Redis, filas e plugins Fastify
-│   ├── repositories/         # Persistência por domínio futura
+│   ├── repositories/         # Adaptadores de persistência por domínio
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
-│   ├── services/             # Capacidades reutilizáveis futuras
-│   └── useCases/             # Contrato/registry de jobs e orquestração futura
+│   ├── services/             # Hash, auditoria e capacidades reutilizáveis
+│   └── useCases/             # Credenciais, registry de jobs e orquestração
 ├── atlas/
 │   ├── prod/                 # PostGIS, enums, identidade, organizações, vínculos e RBAC
 │   └── seed/dev/             # Catálogo aditivo de permissões para desenvolvimento
@@ -109,8 +111,10 @@ Entre packages, `plugins` consome erros de `common`, modelos de `models` e o
 tipo HTTP compartilhado de `schema`; também encapsula BullMQ sem expô-lo ao
 Worker ou aos casos de uso. `schema` depende somente do TypeBox e não depende
 de `common`; assim, contratos de transporte não criam ciclo com regras de erro.
-`useCases` define a execução e a classificação de falhas de jobs sem importar o
-plugin de filas.
+Na autenticação, `interfaces` declara portas, `services` implementa hash/auditoria,
+`repositories` adapta Drizzle e `useCases` orquestra essas abstrações sem
+importar banco, Argon2 ou transporte. `useCases` também define a execução e a
+classificação de falhas de jobs sem importar o plugin de filas.
 
 Os aliases compartilhados usam os nomes dos workspaces, por exemplo:
 
@@ -244,10 +248,15 @@ catálogos passam por teste automático de paridade e textos vazios. O contrato 
 erros está em `docs/api/README.md` e a convenção de idiomas e chaves em
 `docs/api/INTERNATIONALIZATION.md`.
 
-Não há JWT, middleware de autenticação, usuário autenticado ou decisão de
-permissão no baseline. O catálogo técnico não é consultado pelo runtime e não
-há papéis ou atribuições iniciais. Esses componentes serão implementados em
-seus tickets próprios.
+Não há JWT, endpoint ou middleware de autenticação, usuário autenticado ou
+decisão de permissão no baseline. O núcleo `AuthenticateWithEmailAndPassword`
+existe fora da composição HTTP: normaliza e-mail, verifica Argon2id inclusive
+contra hash fictício quando a credencial não existe, exige conta ativa e
+confirma o último login por escrita condicional. Ele retorna somente ID e o
+indicador de MFA; o contrato completo está em `docs/authentication/README.md`.
+O catálogo técnico não é consultado pelo runtime e não há papéis ou atribuições
+iniciais. Endpoint, rate limit, token, sessão e autorização serão implementados
+em seus tickets próprios.
 
 ## Logging e correlação
 
@@ -308,6 +317,12 @@ globalmente único, timestamps de expiração/uso/revogação, versionamento oti
 e checks de ciclo de vida. `packages/common` sanitiza nome de dispositivo e
 User-Agent. O contrato completo está em
 `docs/database/AUTH_SESSIONS.md`.
+
+`packages/repositories/authentication` lê somente ID, hash, estado e indicador
+de MFA de uma conta não excluída. A confirmação de login compara o hash
+observado e o estado ativo antes de atualizar `last_login_at`, `updated_at` e
+`version`, impedindo sucesso após troca de credencial, bloqueio ou soft delete
+concorrente. Nenhuma migration foi necessária no `PROT-022`.
 
 Também exporta `roles`, `permissions`, `rolePermissions` e `accountRoles`, seus
 tipos e nomes estáveis de constraints/índices. Os catálogos são globais;
@@ -445,8 +460,11 @@ normalizadores, posição geográfica e a FK contextual já prevista no RBAC, se
 dado, seed, rota, repository, membership ou autorização funcional. O
 `PROT-021` adicionou somente memberships organizacionais/de unidade,
 normalizadores e integridade relacional, sem dado, seed, rota, repository,
-papel, atribuição ou autorização funcional. A validação cria e remove somente
-uma base temporária com nome reservado; os volumes locais
+papel, atribuição ou autorização funcional. O `PROT-022` adicionou somente
+contratos, política, Argon2id, auditoria mínima, repositório e caso de uso de
+credenciais, sem migration, dado, rota, rate limit, token, sessão emitida ou
+autorização. A validação cria e remove somente uma base temporária com nome
+reservado; os volumes locais
 não são apagados. O volume Redis local contém
 somente metadados técnicos das filas e qualquer job fictício de teste é removido
 ao concluir a integração.

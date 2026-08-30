@@ -31,12 +31,27 @@ A allowlist aplicada, a defesa recursiva e as consultas seguras estão em
 
 ## Autenticação e sessão
 
-- Senha utiliza algoritmo de hash adequado e parâmetros versionados.
+- Senha local usa Argon2id versionado, NFC e o valor completo, sem `trim`,
+  mudança de caixa ou truncamento.
+- Criação/troca futura exige de 15 a 128 pontos de código, aceita Unicode sem
+  composição obrigatória e aplica blocklist no fluxo que definir a senha.
+- Conta ausente, hash ausente/inválido, senha incorreta e estado inelegível usam
+  o mesmo erro e preservam trabalho caro comparável; o endpoint também exige
+  rate limit.
 - Access token tem validade curta e finalidade explícita.
 - Refresh token é armazenado como hash, rotacionado e revogável por sessão.
 - Reutilização de refresh token rotacionado deve causar resposta defensiva.
 - MFA e recuperação não podem revelar se uma conta existe.
 - Sessões permitem revogação individual e global.
+
+O núcleo de credenciais consulta somente contas não excluídas, verifica o hash
+mesmo antes de avaliar o estado e só confirma `last_login_at` se hash, estado
+ativo e soft delete não mudaram concorrentemente. Eventos
+`authentication.succeeded` e `authentication.failed` não recebem PII, ID da
+conta ou motivo. O contrato completo e suas limitações estão em
+[`../authentication/README.md`](../authentication/README.md), e a decisão
+criptográfica no
+[`ADR-009`](../decisions/ADR-009-local-password-authentication-and-argon2id.md).
 
 `auth_sessions` materializa somente a fundação persistente: token e IP em claro
 nunca são gravados, hashes ficam fora da projeção de saída e atividade exige

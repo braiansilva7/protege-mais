@@ -9,7 +9,7 @@ considerado controle de acesso. Todos os tickets estão inicialmente `Pendente`.
 
 | Campo        | Valor                        |
 | ------------ | ---------------------------- |
-| Status       | Pendente                     |
+| Status       | Concluído                    |
 | Prioridade   | P0                           |
 | Dependências | PROT-005, PROT-015, PROT-016 |
 

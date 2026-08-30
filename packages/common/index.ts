@@ -14,6 +14,15 @@ export {
 export { createUuidV7 } from './functions/uuid.js';
 export { normalizeAccountEmail } from './accounts/index.js';
 export {
+  authenticationEmailMaximumLength,
+  authenticationPasswordMaximumLength,
+  authenticationPasswordMinimumLength,
+  isAuthenticationEmailLookupCandidate,
+  isAuthenticationPasswordWithinMaximumLength,
+  isValidNewAuthenticationPassword,
+  normalizeAuthenticationPassword,
+} from './authentication/index.js';
+export {
   authSessionDeviceNameMaximumLength,
   authSessionUserAgentMaximumLength,
   sanitizeAuthSessionDeviceName,

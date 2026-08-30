@@ -3,6 +3,90 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-30 — PROT-022 — Autenticar por e-mail e senha
+
+Status: Concluído
+
+### Resultado
+
+O núcleo de autenticação local passa a validar e-mail e senha sem distinguir
+externamente conta ausente, senha incorreta, hash indisponível/inválido ou
+estado inelegível. Toda tentativa executa consulta e verificação Argon2id; conta
+ativa com credencial correta retorna somente o ID e o indicador de MFA.
+
+O último login é confirmado por escrita condicional ao UUID, hash observado,
+estado ativo e ausência de soft delete. Troca de senha, bloqueio, desativação ou
+exclusão concorrente invalida a tentativa; logins concorrentes não fazem o
+instante regredir. Eventos de sucesso/falha não aceitam PII nem motivo interno.
+
+### Arquivos e dados
+
+- criado `packages/common/authentication` com política sintática, NFC, limites
+  de 15 a 128 pontos de código e validação defensiva da chave de e-mail;
+- criado `packages/interfaces/authentication` com portas mínimas de repositório,
+  hash, auditoria e relógio, além dos contratos de entrada/saída;
+- criado `packages/services/authentication` com Argon2id versão 19, memória de
+  19.456 KiB, duas iterações, paralelismo um, salt aleatório de 16 bytes, saída
+  de 32 bytes, detecção de rehash e hash fictício público para falhas;
+- adicionado `argon2` `0.45.1` com versão exata no lockfile e script nativo em
+  allowlist explícita do pnpm; nenhuma dependência existente foi atualizada;
+- criado `packages/repositories/authentication` com projeção mínima e atualização
+  de `last_login_at`, `updated_at` e `version` protegida contra corrida;
+- criado `packages/useCases/authentication` com o erro uniforme
+  `INVALID_CREDENTIALS` e composição independente de HTTP, Redis ou Fastify;
+- adicionados 19 testes unitários/integrações específicos entre política,
+  serviço, caso de uso e PostgreSQL real; a suíte de banco agora executa
+  arquivos serialmente para isolar fixtures da base compartilhada;
+- criado `docs/authentication/README.md` e aceito o `ADR-009`; README,
+  arquitetura, segurança, configuração, banco, API, observabilidade, qualidade,
+  roadmap, índice documental e tickets foram sincronizados;
+- nenhuma migration, tabela, coluna, seed, dado, rota HTTP, rate limit, token,
+  sessão, papel, permissão ou variável de ambiente foi criada.
+
+### Validação
+
+- `pnpm test`: 142 testes aprovados em oito workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- produção isolada em base descartável criada de `template0`: oito migrations e
+  43 instruções aplicadas; a segunda aplicação encontrou zero pendências e a
+  base foi removida ao final;
+- `pnpm --filter @protege-mais/plugins test:database`: 26 testes reais aprovados,
+  incluindo hash válido, falhas não enumeráveis, custo comparável, mudança de
+  estado concorrente e todo o baseline anterior;
+- `atlas migrate validate`, `status` e `diff` no ambiente `prod`: checksum
+  válido, oito arquivos executados, zero pendências e zero drift estrutural;
+  `model:export`, `model:reference:validate` e `model:reference:diff` também
+  concluíram sem divergência;
+- integração em Redis temporário isolado: dois testes reais do plugin e um
+  pipeline do Worker aprovados; o container foi removido ao final;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso
+  não bloqueante já conhecido do bundle Web maior que 500 kB;
+- `pnpm format:check`, `pnpm -r --if-present format:check`,
+  `git diff --check` e `docker compose config --quiet`: formatação, whitespace e
+  Compose válidos;
+- `pnpm audit --prod`: nenhum achado no `argon2`; permanecem 13 achados já
+  documentados no baseline (10 altos e três médios), cuja atualização exige
+  ticket próprio.
+
+### Decisões e pendências
+
+- o `ADR-009` aprova Argon2id e a política alinhada a OWASP, RFC 9106 e NIST;
+  benchmark dos custos na infraestrutura final continua obrigatório antes do
+  go-live;
+- senhas recebem somente NFC e são verificadas por inteiro. Criação/troca futura
+  também exigirá blocklist; o `PROT-022` não oferece fluxo para definir senha;
+- pepper foi adiado até existir gestão, rotação e recuperação de segredo;
+  `needsRehash` apenas sinaliza evolução futura e não reescreve a credencial;
+- equivalência de resposta e trabalho caro reduzem enumeração, mas não prometem
+  tempo constante através de rede/banco e não substituem rate limit;
+- `PROT-023` é o próximo ticket liberado e deve compor rota, schema/OpenAPI,
+  tradução, correlação, rate limit e access token reutilizando este caso de uso;
+- sessão/refresh token, MFA e trilha durável de auditoria permanecem em seus
+  tickets; autenticar credenciais não concede contexto, papel ou permissão;
+- os 13 advisories do baseline e o aviso de bundle Web permanecem fora deste
+  ticket.
+
 ## 2026-08-30 — PROT-021 — Criar organization_members
 
 Status: Concluído

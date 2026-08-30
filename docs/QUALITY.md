@@ -80,15 +80,18 @@ pnpm build
 ```
 
 `lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `test` executa as
-suítes de configuração, classes comuns, normalização de conta, organização e
-membership, sanitização de metadata de sessão, validação de CNPJ e localidade,
-enums,
+suítes de configuração, classes comuns, normalização de conta, autenticação
+Argon2id, política de senha, organização e membership, sanitização de metadata
+de sessão, validação de CNPJ e localidade, enums,
 catálogo tipado de permissões, models, RBAC contextual, handler Fastify, i18n,
 PostgreSQL e Redis com conexões injetáveis, logging,
 redaction, correlação, filas, processors, casos de uso, readiness, endpoints
-operacionais, OpenAPI e shutdown. `test:database`, executado após
-`docker compose up -d --wait db atlas-db` e `pnpm migrate:local`, comprova
-persistência e projeção de contas, busca ativa de sessão por hash sem exposição,
+operacionais, OpenAPI e shutdown. `test:database` executa os arquivos
+serialmente em uma base compartilhada para impedir colisão entre fixtures. Após
+`docker compose up -d --wait db atlas-db` e `pnpm migrate:local`, ele comprova
+persistência e projeção de contas, autenticação local válida/inválida com
+resposta uniforme, atualização concorrente do último login, busca ativa de
+sessão por hash sem exposição,
 expiração, constraints, unicidade, revogação concorrente, planos dos índices,
 persistência e projeção segura de organizações, CNPJ numérico/alfanumérico,
 normalização, localidade, soft delete, trava otimista e busca ativa indexada;

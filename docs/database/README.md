@@ -19,9 +19,10 @@ institucional, localidade, ciclo de ativação/soft delete e a FK organizacional
 do RBAC. O `PROT-020` acrescentou `organization_units`, endereço estruturado,
 posição `geography(Point,4326)`, consulta espacial e a FK composta de unidade do
 RBAC. O `PROT-021` acrescentou `organization_members`, seus contextos
-organizacional/de unidade, vigência e integridade sem duplicar papéis. O schema
-de produção possui nove tabelas e 14 tipos enum nativos e continua
-sem dados.
+organizacional/de unidade, vigência e integridade sem duplicar papéis. O
+`PROT-022` acrescentou o adaptador Drizzle de autenticação e a escrita
+condicional do último login, sem mudar schema ou migrations. O schema de
+produção possui nove tabelas e 14 tipos enum nativos e continua sem dados.
 
 `packages/models/index.ts` é a única entrada do schema Drizzle de produção e
 exporta helpers, `pgEnum`, `accounts`, `authSessions`, `organizations`,
@@ -265,7 +266,10 @@ rejeita duplicidade inclusive com unidade nula e indexa somente vínculos ativos
 para resolução por conta. Matrícula e cargo opcionais permanecem fora dos logs,
 e papel continua em `account_roles`. O
 catálogo TypeScript e o seed de desenvolvimento possuem 19 códigos idênticos e
-nenhum papel inicial. O próximo ticket liberado é o `PROT-022`.
+nenhum papel inicial. O repositório de autenticação projeta somente os quatro
+campos necessários, inclui estados inelegíveis no trabalho de hash e faz a
+confirmação concorrente do login por UUID, hash e estado. O próximo ticket
+liberado é o `PROT-023`.
 
 ---
 

@@ -1,4 +1,9 @@
 export {
+  AuthenticateWithEmailAndPassword,
+  InvalidCredentialsError,
+  invalidAuthenticationEmailLookupKey,
+} from './authentication/index.js';
+export {
   JobUseCaseRegistry,
   RetryableJobError,
   TerminalJobError,

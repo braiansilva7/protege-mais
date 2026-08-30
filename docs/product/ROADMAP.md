@@ -96,6 +96,8 @@ versionado de 19 permissões apenas para desenvolvimento. O `PROT-019` criou
 O `PROT-020` criou `organization_units`, sua posição geográfica, identidade
 contextual e a FK composta do RBAC. O `PROT-021` criou
 `organization_members`, com memberships organizacionais/de unidade coerentes e
-independentes de papel, concluindo a fundação de dados. O próximo trabalho de
-implementação deve começar por `PROT-022`, que iniciará a autenticação por
-e-mail e senha.
+independentes de papel, concluindo a fundação de dados. O `PROT-022` criou o
+número mínimo de contratos, serviço Argon2id, repositório e caso de uso para
+validar credenciais sem enumeração, ainda sem rota ou token. O próximo trabalho
+de implementação deve começar por `PROT-023`, que integrará o endpoint, rate
+limit e access token.

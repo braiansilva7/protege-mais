@@ -6,10 +6,10 @@
 vítima, profissional, membro de organização, papel ou permissão. Essas relações
 pertencem aos tickets consumidores.
 
-O `PROT-015` cria somente o model, a migration, a normalização compartilhada e
-uma projeção de saída que exclui segredos. Não existem rota de cadastro ou
-login, repositório, algoritmo de senha, integração com provider, fator MFA ou
-autorização neste estágio.
+O `PROT-015` criou o model, a migration, a normalização compartilhada e uma
+projeção de saída que exclui segredos. O `PROT-022` adicionou o repositório
+mínimo e o algoritmo para autenticação local. Ainda não existem rota de
+cadastro/login, integração com provider, fator MFA funcional ou autorização.
 
 ## Colunas
 
@@ -98,9 +98,16 @@ Ficam excluídos `passwordHash`, `emailNormalized`, `externalSubject` e
 cria um endpoint público: e-mail e telefone continuam dados pessoais e qualquer
 consumidor futuro precisa de autenticação, autorização e minimização adequadas.
 
-Hash, e-mail, telefone e subject externo não entram em logs. O algoritmo de
-hash, criação e troca de senha, verificação de e-mail/telefone, MFA, hard delete,
-retenção e anonimização permanecem fora do `PROT-015`.
+Hash, e-mail, telefone e subject externo não entram em logs. A autenticação
+local seleciona somente `id`, `password_hash`, `status` e `mfa_enabled`, inclui
+contas bloqueadas/desabilitadas na verificação cara e nunca retorna o hash. O
+último login só é atualizado se UUID, hash, estado ativo e ausência de soft
+delete ainda coincidirem; `GREATEST` impede regressão de instantes concorrentes.
+O fluxo e a política estão em
+[`../authentication/README.md`](../authentication/README.md).
+
+Criação e troca de senha, verificação de e-mail/telefone, MFA, hard delete,
+retenção e anonimização permanecem fora do `PROT-022`.
 
 `auth_sessions` referencia `accounts` com `ON DELETE RESTRICT`: o soft delete
 preserva a conta e o histórico, enquanto hard delete é impedido se houver sessão.

@@ -39,6 +39,7 @@ testes, decisões e pendências.
 | Estado atual do código                     | `docs/PROJECT_ARCHITECTURE.md`                       |
 | Runtime e convenções de qualidade          | `docs/QUALITY.md`                                    |
 | Configuração e matriz de variáveis         | `docs/CONFIGURATION.md`                              |
+| Autenticação local e política de senha     | `docs/authentication/README.md`                      |
 | PostgreSQL, Drizzle e fluxo Atlas          | `docs/database/README.md`                            |
 | Convenções de models e persistência        | `docs/database/CONVENTIONS.md`                       |
 | Dicionário da tabela de contas             | `docs/database/ACCOUNTS.md`                          |

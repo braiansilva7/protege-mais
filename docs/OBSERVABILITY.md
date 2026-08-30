@@ -65,6 +65,12 @@ comum. `failureType` usa `transient`, `terminal` ou `exhausted`. `jobId`, chave
 de idempotência, payload, mensagem, stack e causa permanecem proibidos. O
 catálogo e o runbook estão em [`WORKER_QUEUES.md`](WORKER_QUEUES.md).
 
+A autenticação local emite somente `authentication.succeeded` em `info` e
+`authentication.failed` em `warn`, com mensagem estática. Seu contrato não
+aceita argumentos: e-mail, senha, hash, ID da conta, estado e motivo da rejeição
+não podem ser adicionados ao evento. Quando composto no HTTP, `requestId` e
+`correlationId` podem vir do logger filho da requisição sem alterar essa regra.
+
 ## Allowlist
 
 Campos comuns permitidos:

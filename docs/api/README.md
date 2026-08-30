@@ -2,7 +2,9 @@
 
 ## Estado atual
 
-O baseline não possui rotas de autenticação, usuários, papéis ou negócio.
+O baseline não possui rotas de autenticação, usuários, papéis ou negócio. O
+caso de uso local do `PROT-022` existe apenas como núcleo interno e ainda não é
+registrado pela Manager API.
 
 | Rota          | Autenticação | Estado                 | Observação                                     |
 | ------------- | ------------ | ---------------------- | ---------------------------------------------- |
@@ -10,6 +12,21 @@ O baseline não possui rotas de autenticação, usuários, papéis ou negócio.
 | `GET /ready`  | Não          | Disponível             | Readiness dos probes obrigatórios              |
 | `/swagger/*`  | Não          | `LOCAL`, `DEV` e `HMG` | UI, JSON e YAML do contrato OpenAPI 3.1        |
 | `/api/v1/*`   | —            | Sem rotas              | Prefixo exclusivo das rotas futuras de domínio |
+
+## Fronteira do login futuro
+
+`AuthenticateWithEmailAndPassword` já normaliza e-mail, verifica Argon2id,
+aplica elegibilidade, confirma o último login de forma condicional e retorna o
+mesmo `InvalidCredentialsError` para toda credencial inválida. O `PROT-023`
+deve compor esse caso de uso sob `/api/v1`, declarar `security: []`, publicar
+schemas e respostas completas no OpenAPI e aplicar rate limit no contrato
+final.
+
+Conta ausente, senha incorreta, hash ausente/inválido e conta bloqueada ou
+desabilitada não podem receber código, mensagem, headers ou estrutura
+diferentes. O fluxo detalhado está em
+[`../authentication/README.md`](../authentication/README.md). Não há endpoint a
+documentar antes dessa composição.
 
 ## OpenAPI
 

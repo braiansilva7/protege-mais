@@ -6,9 +6,8 @@ O legado foi removido pelo `PROT-000`, a estrutura do monorepo foi consolidada
 pelo `PROT-001`, a qualidade comum foi entregue pelo `PROT-002` e as variáveis
 de ambiente foram centralizadas pelo `PROT-003`. O `PROT-004` acrescentou o
 padrão global de erros da API. Neste baseline ainda não existem dados
-operacionais, autenticação, autorização funcional ou rotas de negócio. API,
-Worker, Web e Mobile
-permanecem como shells mínimos para evolução incremental.
+operacionais, autorização funcional ou rotas de negócio. API, Worker, Web e
+Mobile permanecem como shells mínimos para evolução incremental.
 
 O `PROT-005` consolidou a internacionalização do backend em `pt-BR`, `en` e
 `es`, com negociação por `Accept-Language`, fallback e catálogos equivalentes.
@@ -56,6 +55,9 @@ O `PROT-021` criou `organization_members` com contextos organizacionais ou de
 unidade coerentes, vigência explícita, matrícula/cargo opcionais e unicidade que
 também trata unidade nula como igual, sem duplicar papéis nem antecipar
 autorização funcional.
+O `PROT-022` criou o núcleo de autenticação local com Argon2id, resposta não
+enumerável, atualização concorrente segura do último login e auditoria sem PII,
+sem expor ainda uma rota ou emitir tokens/sessões.
 
 ## Pré-requisitos
 
@@ -117,7 +119,8 @@ pnpm build
 ```
 
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
-cobrem configuração, erros, i18n, PostgreSQL, Redis, registry de readiness,
+cobrem configuração, erros, i18n, autenticação local, PostgreSQL, Redis,
+registry de readiness,
 endpoints operacionais, OpenAPI, logging, redaction, correlação, filas e
 shutdown, além das convenções, enums, contas, sessões, RBAC e catálogo de
 permissões, organizações, unidades espaciais e memberships em Drizzle/Atlas; o
@@ -149,6 +152,10 @@ convenção completa do OpenAPI está em
 permitidos/proibidos e consultas operacionais estão em
 [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
+O núcleo de autenticação ainda não é alcançável por HTTP. Seu fluxo, política
+de senha, contrato uniforme e fronteiras dos próximos tickets estão em
+[`docs/authentication/README.md`](docs/authentication/README.md).
+
 PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
 de domínio possui `accounts`, `auth_sessions`, `organizations`,
 `organization_units`, `organization_members`, `roles`, `permissions`,
@@ -177,8 +184,8 @@ em [`docs/permissions/README.md`](docs/permissions/README.md).
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-022`:
+O próximo ticket liberado é `PROT-023`:
 
 ```text
-Implemente o ticket PROT-022 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-023 seguindo toda a documentação do projeto.
 ```

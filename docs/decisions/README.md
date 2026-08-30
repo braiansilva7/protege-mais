@@ -49,3 +49,4 @@ ou registro de implementação.
 - [ADR-006 — Identidade institucional e ciclo de vida de organizações](ADR-006-organization-identity-and-lifecycle.md)
 - [ADR-007 — Identidade, endereço e posição de unidades organizacionais](ADR-007-organization-unit-address-and-position.md)
 - [ADR-008 — Contexto e ciclo de vida do vínculo organizacional](ADR-008-organization-membership-context-and-lifecycle.md)
+- [ADR-009 — Autenticação local e Argon2id](ADR-009-local-password-authentication-and-argon2id.md)

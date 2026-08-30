@@ -74,9 +74,13 @@ aceita somente `true` ou `false`. O contrato dos logs está em
 Em produção, marcadores conhecidos de exemplo, como `change-me`, `admin` e os
 valores `change-before-production` do `.env.example`, são rejeitados quando
 usados em campos secretos ou na credencial das URLs de banco e Redis.
-Parâmetros e algoritmos criptográficos continuam fora do escopo deste ticket e
-serão definidos pelos tickets de segurança. Timeouts, namespace e operação do
-Redis estão em [`REDIS.md`](REDIS.md). O pool PostgreSQL recebe somente a URL
+O hash de senha local não adiciona variável: algoritmo e parâmetros ficam
+versionados em código e no
+[`ADR-009`](decisions/ADR-009-local-password-authentication-and-argon2id.md).
+Pepper não foi adotado sem um ciclo aprovado de segredo e rotação. JWT,
+criptografia das capacidades futuras e seus segredos continuam definidos por
+seus tickets. Timeouts, namespace e operação do Redis estão em
+[`REDIS.md`](REDIS.md). O pool PostgreSQL recebe somente a URL
 já validada; limites, timeouts, sessões UTC e operação ficam em
 [`database/README.md`](database/README.md).
 
