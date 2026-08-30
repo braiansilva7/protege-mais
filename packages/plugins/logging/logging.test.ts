@@ -103,6 +103,12 @@ void test('redige denylist e padrões sensíveis em qualquer profundidade', () =
       relato: 'narrativa privada prot-008',
       coordinates: [-23.55052, -46.633308],
     },
+    organizationUnit: {
+      position: {
+        longitude: -46.633_308,
+        latitude: -23.550_52,
+      },
+    },
     note: 'CPF 12345678900; CNPJ 12ABC34501DE35; local -23.55052, -46.633308',
     route: '/victims/:victimId',
   };

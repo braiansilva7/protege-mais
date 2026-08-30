@@ -49,6 +49,9 @@ atribuições.
 O `PROT-019` criou `organizations` com nomes pesquisáveis, CNPJ numérico ou
 alfanumérico validado, localidade IBGE, ciclo de ativação/soft delete e a FK
 organizacional do RBAC, sem antecipar cadastro HTTP ou autorização funcional.
+O `PROT-020` criou `organization_units` com identidade contextual, contatos,
+endereço estruturado, posição `geography(Point,4326)`, busca GiST e FK composta
+do RBAC, sem antecipar cadastro, membership ou autorização funcional.
 
 ## Pré-requisitos
 
@@ -113,7 +116,7 @@ Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
 cobrem configuração, erros, i18n, PostgreSQL, Redis, registry de readiness,
 endpoints operacionais, OpenAPI, logging, redaction, correlação, filas e
 shutdown, além das convenções, enums, contas, sessões, RBAC e catálogo de
-permissões em Drizzle/Atlas; o build
+permissões, organizações e unidades espaciais em Drizzle/Atlas; o build
 cobre Manager API, Worker, Web e Mobile. Depois de subir as dependências locais,
 as integrações reais são executadas com
 `pnpm --filter @protege-mais/plugins test:database`,
@@ -142,8 +145,9 @@ permitidos/proibidos e consultas operacionais estão em
 [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
 PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
-de domínio possui `accounts`, `auth_sessions`, `organizations`, `roles`,
-`permissions`, `role_permissions`, `account_roles` e 14 tipos enum
+de domínio possui `accounts`, `auth_sessions`, `organizations`,
+`organization_units`, `roles`, `permissions`, `role_permissions`,
+`account_roles` e 14 tipos enum
 fundamentais. As migrations estruturais recriam esse estado vazio em uma base
 limpa; o seed opcional de desenvolvimento adiciona somente 19 permissões.
 As convenções, os dicionários, o catálogo e o checklist estão em
@@ -151,6 +155,7 @@ As convenções, os dicionários, o catálogo e o checklist estão em
 [`docs/database/ACCOUNTS.md`](docs/database/ACCOUNTS.md),
 [`docs/database/AUTH_SESSIONS.md`](docs/database/AUTH_SESSIONS.md),
 [`docs/database/ORGANIZATIONS.md`](docs/database/ORGANIZATIONS.md),
+[`docs/database/ORGANIZATION_UNITS.md`](docs/database/ORGANIZATION_UNITS.md),
 [`docs/database/ENUM_CATALOG.md`](docs/database/ENUM_CATALOG.md) e
 [`docs/database/MIGRATION_CHECKLIST.md`](docs/database/MIGRATION_CHECKLIST.md).
 O diagrama RBAC, o dicionário das quatro tabelas e a semântica dos escopos estão
@@ -166,8 +171,8 @@ em [`docs/permissions/README.md`](docs/permissions/README.md).
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-020`:
+O próximo ticket liberado é `PROT-021`:
 
 ```text
-Implemente o ticket PROT-020 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-021 seguindo toda a documentação do projeto.
 ```

@@ -12,6 +12,7 @@ import {
   accounts,
   authorizationConstraintNames,
   authorizationIndexNames,
+  organizationUnits,
   organizations,
   permissions,
   rolePermissions,
@@ -163,6 +164,26 @@ void test('consulta RBAC retorna permissões globais e do contexto solicitado', 
         integrationEnabled: false,
       },
     ]);
+    await connection.database.insert(organizationUnits).values({
+      id: unitAId,
+      organizationId: organizationAId,
+      name: `Unidade A ${suffix}`,
+      nameNormalized: normalizeOrganizationSearchText(`Unidade A ${suffix}`),
+      code: `UNIT-A-${suffix.slice(0, 8).toUpperCase()}`,
+      type: 'service_center',
+      contactEmail: null,
+      contactPhoneE164: null,
+      addressStreet: 'Avenida Proteção',
+      addressNumber: '100',
+      addressComplement: null,
+      addressDistrict: 'Centro',
+      postalCode: '01310100',
+      stateCode: 'SP',
+      municipalityCode: '3550308',
+      longitude: -46.633_308,
+      latitude: -23.550_52,
+      isActive: true,
+    });
     await connection.database.insert(roles).values([
       {
         id: roleIds[0],
@@ -294,6 +315,9 @@ void test('consulta RBAC retorna permissões globais e do contexto solicitado', 
       .where(inArray(permissions.id, permissionIds));
     await connection.database.delete(roles).where(inArray(roles.id, roleIds));
     await connection.database
+      .delete(organizationUnits)
+      .where(eq(organizationUnits.id, unitAId));
+    await connection.database
       .delete(organizations)
       .where(inArray(organizations.id, [organizationAId, organizationBId]));
     await connection.database
@@ -317,6 +341,8 @@ void test('constraints rejeitam duplicidade, escopo incoerente e remoção refer
   const permissionId = createUuidV7();
   const organizationAId = createUuidV7();
   const organizationBId = createUuidV7();
+  const unitAId = createUuidV7();
+  const unitBId = createUuidV7();
   const suffix = createUuidV7().replaceAll('-', '');
   const roleCode = `role_${suffix}`;
   const permissionCode = `resource_${suffix}.view`;
@@ -389,6 +415,32 @@ void test('constraints rejeitam duplicidade, escopo incoerente e remoção refer
     );
     await client.query(
       `
+        INSERT INTO organization_units (
+          id, organization_id, name, name_normalized, code, type,
+          address_street, address_number, address_district, postal_code,
+          state_code, municipality_code, longitude, latitude, is_active
+        )
+        VALUES
+          ($1, $2, $3, $4, $5, 'service_center', 'Avenida Proteção', '100',
+           'Centro', '01310100', 'SP', '3550308', -46.633308, -23.55052, true),
+          ($6, $7, $8, $9, $10, 'service_center', 'Avenida Proteção', '200',
+           'Centro', '20040002', 'RJ', '3304557', -43.1729, -22.9068, true)
+      `,
+      [
+        unitAId,
+        organizationAId,
+        `Unidade A ${suffix}`,
+        normalizeOrganizationSearchText(`Unidade A ${suffix}`),
+        `UNIT-A-${suffix.slice(0, 8).toUpperCase()}`,
+        unitBId,
+        organizationBId,
+        `Unidade B ${suffix}`,
+        normalizeOrganizationSearchText(`Unidade B ${suffix}`),
+        `UNIT-B-${suffix.slice(0, 8).toUpperCase()}`,
+      ]
+    );
+    await client.query(
+      `
         INSERT INTO account_roles (id, account_id, role_id)
         VALUES ($1, $2, $3)
       `,
@@ -402,6 +454,36 @@ void test('constraints rejeitam duplicidade, escopo incoerente e remoção refer
       {
         code: '23505',
         constraint: authorizationConstraintNames.roleCodeUnique,
+      }
+    );
+    await rejectsAtSavepoint(
+      client,
+      `
+        INSERT INTO account_roles (
+          id, account_id, role_id, organization_id, organization_unit_id
+        )
+        VALUES ($1, $2, $3, $4, $5)
+      `,
+      [createUuidV7(), accountId, roleId, organizationAId, unitBId],
+      {
+        code: '23503',
+        constraint:
+          authorizationConstraintNames.accountRolesOrganizationUnitForeignKey,
+      }
+    );
+    await rejectsAtSavepoint(
+      client,
+      `
+        INSERT INTO account_roles (
+          id, account_id, role_id, organization_id, organization_unit_id
+        )
+        VALUES ($1, $2, $3, $4, $5)
+      `,
+      [createUuidV7(), accountId, roleId, organizationAId, createUuidV7()],
+      {
+        code: '23503',
+        constraint:
+          authorizationConstraintNames.accountRolesOrganizationUnitForeignKey,
       }
     );
     await rejectsAtSavepoint(
@@ -532,6 +614,15 @@ void test('constraints rejeitam duplicidade, escopo incoerente e remoção refer
         organizationBId,
       ]
     );
+    await client.query(
+      `
+        INSERT INTO account_roles (
+          id, account_id, role_id, organization_id, organization_unit_id
+        )
+        VALUES ($1, $2, $3, $4, $5)
+      `,
+      [createUuidV7(), accountId, roleId, organizationAId, unitAId]
+    );
     const contextualAssignments = await client.query<{
       readonly total: number;
     }>(
@@ -542,7 +633,7 @@ void test('constraints rejeitam duplicidade, escopo incoerente e remoção refer
       `,
       [accountId, roleId]
     );
-    assert.equal(contextualAssignments.rows[0]?.total, 3);
+    assert.equal(contextualAssignments.rows[0]?.total, 4);
 
     const systemRoleUpdate = await client.query(
       `
@@ -586,6 +677,16 @@ void test('constraints rejeitam duplicidade, escopo incoerente e remoção refer
       {
         code: '23503',
         constraint: authorizationConstraintNames.accountRolesAccountForeignKey,
+      }
+    );
+    await rejectsAtSavepoint(
+      client,
+      'DELETE FROM organization_units WHERE id = $1',
+      [unitAId],
+      {
+        code: '23503',
+        constraint:
+          authorizationConstraintNames.accountRolesOrganizationUnitForeignKey,
       }
     );
     await rejectsAtSavepoint(

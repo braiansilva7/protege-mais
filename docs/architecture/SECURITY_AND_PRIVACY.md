@@ -64,9 +64,10 @@ desenvolvimento contêm 19 códigos técnicos, sem PII, papéis ou atribuições
 migration de produção permanece sem dados e ainda não existe middleware de
 autorização. Atribuições podem ter escopo global, de organização ou de unidade;
 unidade sem organização é inválida e um papel inativo nunca deve conceder
-acesso. A atribuição organizacional já possui FK restritiva para `organizations`;
-a FK de unidade e a validação dos vínculos ainda serão adicionadas com as
-entidades correspondentes antes de qualquer uso funcional.
+acesso. A atribuição organizacional possui FK restritiva para `organizations`;
+a atribuição de unidade usa FK composta e não aceita combinar uma organização
+com unidade alheia. A validação dos vínculos ainda será adicionada antes de
+qualquer uso funcional.
 
 Papéis de sistema são estruturais: permanecem ativos e as mutações suportadas
 pela aplicação devem rejeitá-los. O contrato completo, inclusive herança de
@@ -81,6 +82,13 @@ operacional quando está ativa e não foi excluída logicamente. A habilitação
 integração é uma configuração separada e nunca reativa uma organização. O
 contrato completo está em
 [`../database/ORGANIZATIONS.md`](../database/ORGANIZATIONS.md).
+
+`organization_units` mantém contato, endereço estruturado e posição geográfica
+somente para operação institucional. A projeção padrão omite esses campos e o
+logger redige endereço, e-mail, telefone, longitude, latitude e `position`.
+Uma unidade só é operacional quando ela e sua organização estão ativas e não
+excluídas. O contrato completo está em
+[`../database/ORGANIZATION_UNITS.md`](../database/ORGANIZATION_UNITS.md).
 
 ## Emergência e filas
 

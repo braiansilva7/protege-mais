@@ -72,6 +72,7 @@ pnpm test
 pnpm --filter @protege-mais/plugins test:database
 pnpm --filter @protege-mais/plugins test:redis
 pnpm --filter @protege-mais/worker test:redis
+pnpm model:export
 pnpm model:reference:validate
 pnpm model:reference:diff
 pnpm format:check
@@ -89,7 +90,10 @@ operacionais, OpenAPI e shutdown. `test:database`, executado após
 persistência e projeção de contas, busca ativa de sessão por hash sem exposição,
 expiração, constraints, unicidade, revogação concorrente, planos dos índices,
 persistência e projeção segura de organizações, CNPJ numérico/alfanumérico,
-normalização, localidade, soft delete, trava otimista e busca ativa indexada,
+normalização, localidade, soft delete, trava otimista e busca ativa indexada;
+unidades comprovam relação 1:N, endereço e contatos canônicos, reserva
+contextual de código, coordenadas inválidas, posição gerada, operacionalidade
+do pai, consulta `ST_DWithin` e plano GiST,
 integridade referencial, atribuições de papel em múltiplas organizações,
 herança global/organizacional por contexto, proteção de papel de sistema,
 remoção referenciada, plano da consulta de permissões, reutilização de conta
@@ -101,7 +105,8 @@ fechamento contra PostgreSQL real. Os dois comandos
 `test:redis`, executados após `docker compose up -d --wait redis`, comprovam o
 cliente genérico e o pipeline real do Worker. A integração do Worker cobre
 retry/backoff reduzido, idempotência após reinício, falha terminal e shutdown
-durante processamento. Os comandos `model:reference` validam o checksum Atlas
+durante processamento. `model:export` comprova o DDL principal adaptado para
+`geography(Point,4326)`; os comandos `model:reference` validam o checksum Atlas
 e comprovam que o export Drizzle do fixture de convenções permanece sem drift;
 `build` gera os quatro apps. O teste de OpenAPI valida estrutura e referências,
 contrato operacional, exemplos, security e exposição da UI por ambiente. As

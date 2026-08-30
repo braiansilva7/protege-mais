@@ -1,7 +1,7 @@
 data "external_schema" "drizzle" {
   program = [
-    "./node_modules/.bin/drizzle-kit",
-    "export"
+    "node",
+    "scripts/export-atlas-schema.mjs"
   ]
 }
 

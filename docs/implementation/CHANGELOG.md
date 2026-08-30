@@ -3,6 +3,105 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-30 — PROT-020 — Criar organization_units
+
+Status: Concluído
+
+### Resultado
+
+O schema passa a representar unidades operacionais pertencentes a uma única
+organização, com identidade contextual, contatos opcionais, endereço brasileiro
+estruturado, ativação explícita, optimistic locking e soft delete. Longitude e
+latitude validadas geram sempre uma posição `geography(Point,4326)`; consultas
+`ST_DWithin` usam GiST e distâncias geodésicas permanecem em metros.
+
+O código é único dentro da organização e continua reservado após soft delete.
+Uma unidade só é operacional quando ela e sua organização estão ativas e não
+excluídas. `account_roles` agora usa FK composta para impedir unidade inexistente
+ou pertencente a outra organização, sem ativar autorização funcional.
+
+### Arquivos e dados
+
+- criado `packages/common/organization-units` com cinco testes e normalizações
+  idempotentes para nome, código, tipo, contatos, endereço, CEP, UF, município e
+  limites geográficos, incluindo rejeição de `NaN` e infinito;
+- criado `packages/models/organization-units.ts` com 23 colunas, UUID v7 da
+  aplicação, 13 checks, duas unicidades, FK restritiva, índice parcial de nome e
+  GiST de posição; a projeção segura omite contato, endereço, coordenadas,
+  posição e soft delete;
+- `position` é armazenada e gerada dos escalares; o mapper Drizzle valida EWKB,
+  Point e SRID 4326 ao converter a leitura do PostGIS;
+- `account_roles` recebeu a FK composta nomeada para
+  `(organization_id, organization_unit_id)` e índice inverso por unidade; as
+  integrações rejeitam par contextual divergente e hard delete referenciado;
+- criada a migration estrutural
+  `atlas/prod/20260830142030_create_organization_units.sql`, sem seed, dado de
+  domínio, UUID gerado pelo banco ou operação destrutiva;
+- criado `scripts/export-atlas-schema.mjs` para adaptar o typmod PostGIS na
+  fronteira Drizzle→Atlas e preparar somente o banco descartável `DB_ATLAS`; a
+  raiz passou a declarar o `pg` 8.22.0 já resolvido nos workspaces, sem upgrade
+  de versão;
+- adicionados seis testes do model e três integrações PostgreSQL de unidades;
+  as suítes de RBAC e logging foram ampliadas para coerência contextual e
+  redaction de `position`;
+- criado `docs/database/ORGANIZATION_UNITS.md` e aceito o `ADR-007`; README,
+  arquitetura atual, segurança, observabilidade, banco, enums, permissões,
+  qualidade, roadmap, índice documental e tickets foram sincronizados;
+- nenhum endpoint, repository, seed, papel, atribuição, membership, integração
+  externa ou dado pessoal real foi criado.
+
+### Validação
+
+- produção isolada em base descartável: sete migrations e 40 instruções
+  aplicadas até `20260830142030`; a segunda aplicação não encontrou arquivo
+  pendente e a base foi removida ao final;
+- `atlas migrate validate`, `status` e `diff` no ambiente `prod`: checksum
+  válido, sete arquivos executados, zero pendências e zero drift estrutural;
+- relação 1:N, código igual em organizações diferentes, reserva após soft
+  delete, FK do pai, FK contextual composta e remoções restritivas foram
+  comprovadas em PostgreSQL real;
+- normalização, tipo, contatos, endereço, CEP, UF/município, longitude/latitude,
+  `NaN`, infinito e escrita direta da coluna gerada inválidos foram rejeitados;
+- Point/SRID/longitude/latitude persistidos foram conferidos; `ST_DWithin`
+  separou unidades próximas e distantes e `EXPLAIN` usou
+  `organization_units_position_gix`;
+- `pnpm --filter @protege-mais/plugins test:database`: 20 testes reais
+  aprovados, incluindo contas, sessões, organizações, unidades, RBAC, seed,
+  enums, Drizzle/UTC, PostGIS e retomada;
+- `pnpm test`: 117 testes aprovados em sete workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm model:export` produziu `geography(Point,4326)` válido;
+  `model:reference:validate` e `model:reference:diff` confirmaram o fixture de
+  convenções sem drift;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados;
+  `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado em
+  Redis temporário isolado;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso
+  não bloqueante já conhecido do bundle Web maior que 500 kB;
+- `pnpm format:check`, `pnpm -r --if-present format:check`, `git diff --check` e
+  `docker compose config --quiet`: formatação, whitespace e Compose válidos.
+
+### Decisões e pendências
+
+- escalares validados são a única entrada espacial; `position` gerada impede
+  divergência e evita a coerção silenciosa de coordenadas fora da faixa pelo
+  PostGIS;
+- tipo de unidade permanece código técnico `snake_case`, sem enum ou labels de
+  negócio inventados; um catálogo futuro exige definição própria;
+- endereço é estruturado e obrigatório, exceto complemento; contato é opcional
+  e endereço, contato e localização permanecem fora da projeção e dos logs;
+- código e ownership são identidades contextuais duráveis; mudança de
+  organização ou reutilização após soft delete exige caso de uso e nova
+  decisão;
+- FKs garantem existência e coerência, não atividade, membership ou permissão;
+  essas decisões continuam nos tickets `PROT-021`, `PROT-030` a `PROT-032`;
+- a estratégia de produção é forward-only; eventual correção usa nova migration
+  e nunca remove automaticamente PostGIS, unidade ou histórico;
+- `PROT-021` é o próximo ticket liberado e criará `organization_members`;
+- o aviso não bloqueante de bundle Web maior que 500 kB permanece fora deste
+  ticket.
+
 ## 2026-08-30 — PROT-019 — Criar tabela organizations
 
 Status: Concluído

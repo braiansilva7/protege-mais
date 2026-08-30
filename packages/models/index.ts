@@ -76,3 +76,16 @@ export {
   type Organization,
   type PublicOrganization,
 } from './organizations.js';
+export {
+  isOrganizationUnitOperational,
+  organizationUnitConstraintNames,
+  organizationUnitIndexNames,
+  organizationUnitPublicSelection,
+  organizationUnits,
+  parseOrganizationUnitPosition,
+  serializePublicOrganizationUnit,
+  type NewOrganizationUnit,
+  type OrganizationUnit,
+  type OrganizationUnitPosition,
+  type PublicOrganizationUnit,
+} from './organization-units.js';

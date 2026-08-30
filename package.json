@@ -41,6 +41,7 @@
     "seed:dev": "ENV=dev pnpm run atlas:run:dev:docker",
     "migration:diff:local": "ENV=prod pnpm run atlas:diff:docker",
     "model:reference:export": "drizzle-kit export --config drizzle.reference.config.ts",
+    "model:export": "node scripts/export-atlas-schema.mjs",
     "model:reference:diff": "ENV=reference pnpm run atlas:diff:docker",
     "model:reference:validate": "ENV=reference pnpm run atlas:validate:docker",
     "seed:new:local": "ENV=dev docker compose run --rm -T atlas atlas migrate new --env dev"
@@ -55,6 +56,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-vue": "^10.10.0",
     "globals": "^17.11.0",
+    "pg": "^8.22.0",
     "prettier": "^3.9.0",
     "turbo": "^2.10.0",
     "typescript": "^6.0.3",

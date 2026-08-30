@@ -35,6 +35,9 @@ importers:
       globals:
         specifier: ^17.11.0
         version: 17.11.0
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
       prettier:
         specifier: ^3.9.0
         version: 3.9.6

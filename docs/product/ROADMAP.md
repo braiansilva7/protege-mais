@@ -91,5 +91,6 @@ mínima e revogação concorrente sem ativar os fluxos de autenticação. O
 funcional. O `PROT-018` adicionou o catálogo TypeScript e o seed inicial
 versionado de 19 permissões apenas para desenvolvimento. O `PROT-019` criou
 `organizations`, sua identidade institucional e a FK organizacional do RBAC.
-O próximo trabalho de implementação deve começar por `PROT-020`, que criará
-`organization_units`.
+O `PROT-020` criou `organization_units`, sua posição geográfica, identidade
+contextual e a FK composta do RBAC. O próximo trabalho de implementação deve
+começar por `PROT-021`, que criará os vínculos organizacionais das contas.

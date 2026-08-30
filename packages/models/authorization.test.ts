@@ -115,6 +115,7 @@ void test('RBAC nomeia unicidade, checks e chaves estrangeiras restritivas', () 
       authorizationConstraintNames.rolePermissionsPermissionForeignKey,
       authorizationConstraintNames.accountRolesAccountForeignKey,
       authorizationConstraintNames.accountRolesOrganizationForeignKey,
+      authorizationConstraintNames.accountRolesOrganizationUnitForeignKey,
       authorizationConstraintNames.accountRolesRoleForeignKey,
     ].sort()
   );
@@ -131,6 +132,7 @@ void test('RBAC nomeia unicidade, checks e chaves estrangeiras restritivas', () 
       authorizationConstraintNames.accountRolesAccountForeignKey,
       authorizationConstraintNames.accountRolesRoleForeignKey,
       authorizationConstraintNames.accountRolesOrganizationForeignKey,
+      authorizationConstraintNames.accountRolesOrganizationUnitForeignKey,
     ]
   );
 });
@@ -166,6 +168,7 @@ void test('atribuição contextual trata NULL como igual e possui índices de co
     [
       authorizationIndexNames.accountRolesRole,
       authorizationIndexNames.accountRolesContextLookup,
+      authorizationIndexNames.accountRolesOrganizationUnit,
     ].sort()
   );
 

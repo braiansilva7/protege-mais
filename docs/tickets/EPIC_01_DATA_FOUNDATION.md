@@ -244,7 +244,7 @@ institucional duplicado segue regra documentada; tipos/status inválidos falham.
 
 | Campo        | Valor              |
 | ------------ | ------------------ |
-| Status       | Pendente           |
+| Status       | Concluído          |
 | Prioridade   | P0                 |
 | Dependências | PROT-012, PROT-019 |
 

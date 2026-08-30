@@ -217,6 +217,11 @@ Retry, backoff, terminalidade e transições não são inferidos deste enum.
 - tipos diferentes não são intercambiáveis, mesmo quando possuem os mesmos
   labels.
 
+`organization_units.type` permanece um código técnico `varchar` porque o
+`PROT-020` não aprovou uma taxonomia fechada. Ele não reutiliza
+`organization_type` e só poderá virar enum quando labels e evolução próprios
+forem definidos.
+
 ## Estratégia de evolução
 
 1. Atualize a tuple em `packages/common`, reutilize-a no `pgEnum` e gere um

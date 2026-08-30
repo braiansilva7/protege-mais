@@ -4,8 +4,10 @@
 
 O `PROT-017` materializou a fundação relacional de RBAC. O `PROT-018` acrescenta
 um catálogo TypeScript de 19 permissões e um seed aditivo exclusivo de
-desenvolvimento. O `PROT-019` materializa `organizations` e protege o escopo
-organizacional com FK restritiva. Nenhum papel ou atribuição é criado. As
+desenvolvimento. O `PROT-019` materializou `organizations` e protegeu o escopo
+organizacional com FK restritiva. O `PROT-020` materializou
+`organization_units` e protege o escopo de unidade por uma FK composta com a
+organização. Nenhum papel ou atribuição é criado. As
 migrations de produção continuam estruturais e deixam os catálogos vazios; os
 tickets `PROT-030` a `PROT-032` implementarão a autorização funcional e a
 validação dos vínculos contextuais.
@@ -84,6 +86,8 @@ suas matrizes exigem definição própria e não são inferidos deste seed.
 erDiagram
     ACCOUNTS ||--o{ ACCOUNT_ROLES : receives
     ORGANIZATIONS ||--o{ ACCOUNT_ROLES : scopes
+    ORGANIZATIONS ||--o{ ORGANIZATION_UNITS : owns
+    ORGANIZATION_UNITS ||--o{ ACCOUNT_ROLES : scopes
     ROLES ||--o{ ACCOUNT_ROLES : assigned_as
     ROLES ||--o{ ROLE_PERMISSIONS : grants
     PERMISSIONS ||--o{ ROLE_PERMISSIONS : included_in
@@ -115,18 +119,27 @@ erDiagram
         boolean is_active
         timestamptz deleted_at
     }
+    ORGANIZATION_UNITS {
+        uuid id PK
+        uuid organization_id FK
+        varchar code UK
+        varchar type
+        geography position
+        boolean is_active
+        timestamptz deleted_at
+    }
     ACCOUNT_ROLES {
         uuid id PK
         uuid account_id FK
         uuid role_id FK
         uuid organization_id FK
-        uuid organization_unit_id
+        uuid organization_unit_id FK
         timestamptz created_at
     }
 ```
 
-A relação com organização existe desde o `PROT-019`. A relação com unidade será
-adicionada pelo `PROT-020`, sem reescrever migrations já compartilhadas.
+As relações com organização e unidade foram adicionadas em migrations forward
+pelos `PROT-019` e `PROT-020`, sem reescrever o histórico compartilhado.
 
 ## Dicionário e invariantes
 
@@ -161,7 +174,7 @@ adicionada pelo `PROT-020`, sem reescrever migrations já compartilhadas.
 ### `account_roles`
 
 - cada linha atribui um papel a uma conta em exatamente um contexto;
-- referências a conta, papel e organização usam `ON DELETE RESTRICT`;
+- referências a conta, papel, organização e unidade usam `ON DELETE RESTRICT`;
 - atribuições são imutáveis e não recebem soft delete; a retirada do acesso
   remove a associação explicitamente;
 - a unicidade usa `NULLS NOT DISTINCT` sobre conta, papel, organização e
@@ -182,12 +195,13 @@ organização, considera atribuições globais e dessa organização. A consulta
 sempre filtrar papéis inativos e retornar permissões distintas.
 
 `organization_id` referencia uma organização existente com exclusão restrita.
-Isso garante integridade, mas não concede acesso: organização inativa ou
-excluída logicamente não cria contexto operacional. `organization_unit_id`
-permanece um UUID reservado sem chave estrangeira; o `PROT-020` adicionará a
-referência em migration futura. O runtime só poderá autorizar acesso após
-validar existência, ativação, relação unidade-organização e vínculo ativo da
-conta.
+Quando `organization_unit_id` existe, a FK composta referencia exatamente
+`organization_units (organization_id, id)`: UUID inexistente ou unidade de
+outra organização falha. Com unidade `NULL`, `MATCH SIMPLE` preserva o contexto
+organizacional. Isso garante integridade, mas não concede acesso: organização
+ou unidade inativa/excluída não cria contexto operacional. O runtime só poderá
+autorizar acesso após validar atividade, vínculo ativo da conta, papel e
+permissão.
 
 ## Proteção de papéis de sistema
 
@@ -204,6 +218,8 @@ fronteira mantém o schema declarativo Drizzle/Atlas como fonte verificável.
 
 - `account_roles_context_lookup_idx` atende a busca por conta e contexto;
 - `account_roles_role_id_idx` atende referências e remoções de papel;
+- `account_roles_organization_unit_id_idx` atende referências e remoções de
+  unidade;
 - `role_permissions_permission_id_idx` atende o caminho inverso do catálogo;
 - chaves primárias e unicidades criam os índices dos joins por papel, permissão
   e atribuição contextual.
@@ -217,7 +233,7 @@ excepcional permanecem fora deste ticket.
 
 - `PROT-018`: seed inicial e catálogo TypeScript, concluídos;
 - `PROT-019`: organização e respectiva FK contextual, concluídas;
-- `PROT-020`: unidade e respectiva FK contextual;
+- `PROT-020`: unidade e respectiva FK contextual, concluídas;
 - `PROT-021`: vínculos da conta;
 - `PROT-030`: middleware de permissão;
 - `PROT-031` e `PROT-032`: escopos organizacional e de unidade;

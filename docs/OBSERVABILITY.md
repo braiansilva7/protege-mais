@@ -87,7 +87,7 @@ Nunca registrar, mesmo em `LOCAL` ou `debug`:
 - senha, hash, credencial, token, chave, segredo ou URL assinada;
 - CPF, CNPJ, telefone, e-mail, endereço ou dado médico;
 - relato, narrativa, risco, medida ou conteúdo de ocorrência;
-- latitude, longitude, coordenadas, localização ou local protegido;
+- latitude, longitude, coordenadas, `position`, localização ou local protegido;
 - arquivo, evidência, buffer, payload ou objeto de configuração;
 - mensagem, stack ou causa de erro de biblioteca/integração.
 

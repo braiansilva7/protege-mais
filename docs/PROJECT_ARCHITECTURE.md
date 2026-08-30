@@ -2,7 +2,7 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-019`. A arquitetura
+Este documento registra somente o que existe após o `PROT-020`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
@@ -10,17 +10,20 @@ O monorepo possui quatro apps executáveis e dez packages compartilhados. A
 persistência possui `accounts`, separada de perfis e protegida por constraints
 de identidade, `auth_sessions`, com credencial em hash, metadata minimizada e
 ciclo de expiração/revogação, `organizations`, com identidade institucional,
-localidade e ciclo de ativação/soft delete, e quatro tabelas que formam a base
-relacional do RBAC contextual. Projeções seguras excluem hashes, CNPJ e chaves
-internas. Ainda não existem fluxo de autenticação, autorização funcional,
+localidade e ciclo de ativação/soft delete, `organization_units`, com endereço,
+posição geográfica e ownership contextual, e quatro tabelas que formam a base
+relacional do RBAC contextual. Projeções seguras excluem hashes, CNPJ, contato,
+endereço, localização e chaves internas. Ainda não existem fluxo de
+autenticação, autorização funcional,
 rotas/repositórios de negócio ou dados operacionais. Um catálogo TypeScript
 contém as 19 permissões
 iniciais e o seed opcional de desenvolvimento insere somente esses códigos, sem
 papéis ou atribuições. Existem 14 tipos enum fundamentais, com `account_type`,
 `account_status` e `organization_type` já consumidos por tabelas.
-PostGIS está habilitado pela primeira migration estrutural e validado com SRID 4326. As convenções de persistência
-estão congeladas e comprovadas por um fixture Drizzle/Atlas isolado do schema
-de produção. Redis já é uma dependência compartilhada com namespace por
+PostGIS está habilitado pela primeira migration estrutural, validado com SRID
+4326 e consumido por pontos de unidade indexados com GiST. As convenções de
+persistência estão congeladas e comprovadas por um fixture Drizzle/Atlas isolado
+do schema de produção. Redis já é uma dependência compartilhada com namespace por
 ambiente, reconexão, timeouts e encerramento gracioso. As cinco filas base
 usam BullMQ, envelope v1, publicação idempotente, retry/backoff e falha
 controlada. A API possui pool PostgreSQL/Drizzle gerenciado, probes obrigatórios
@@ -58,18 +61,18 @@ protege-mais/
 │       ├── App.tsx
 │       └── index.ts
 ├── packages/
-│   ├── common/               # Enums, permissões, normalização, UUID e sanitização
+│   ├── common/               # Enums, permissões, normalizações, UUID e sanitização
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
 │   ├── middlewares/          # Middlewares compartilhados futuros
-│   ├── models/               # Accounts, sessões, organizações, RBAC e enums
+│   ├── models/               # Accounts, sessões, organizações/unidades, RBAC e enums
 │   ├── plugins/              # Banco, logging, Redis, filas e plugins Fastify
 │   ├── repositories/         # Persistência por domínio futura
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
 │   ├── services/             # Capacidades reutilizáveis futuras
 │   └── useCases/             # Contrato/registry de jobs e orquestração futura
 ├── atlas/
-│   ├── prod/                 # PostGIS, enums, identidade, organizações e RBAC
+│   ├── prod/                 # PostGIS, enums, identidade, unidades e RBAC
 │   └── seed/dev/             # Catálogo aditivo de permissões para desenvolvimento
 ├── drizzle.reference.config.ts # Export do fixture, fora de produção
 ├── eslint.config.mjs       # Lint compartilhado e tipado
@@ -312,10 +315,10 @@ tipos e nomes estáveis de constraints/índices. Os catálogos são globais;
 `UNIQUE NULLS NOT DISTINCT` para rejeitar duplicidades em qualquer contexto.
 Unidade sem organização é inválida, FKs existentes são restritivas e a busca
 por conta/contexto possui índice composto. `organization_id` referencia
-`organizations` com exclusão restrita; `organization_unit_id` permanece
-reservado até o `PROT-020`. O diagrama, o dicionário e as fronteiras de
-autorização estão em `docs/permissions/README.md`; o `ADR-005` registra a
-fundação de RBAC.
+`organizations` com exclusão restrita; uma FK composta combina
+`organization_id` e `organization_unit_id` e rejeita unidades inexistentes ou
+de outra organização. O diagrama, o dicionário e as fronteiras de autorização
+estão em `docs/permissions/README.md`; o `ADR-005` registra a fundação de RBAC.
 
 O entrypoint exporta ainda `organizations`, seus tipos, nomes estáveis de
 constraints/índices, predicado operacional e projeção pública sem CNPJ. Nomes
@@ -326,6 +329,15 @@ somente entre organizações ativas. Os normalizadores canônicos estão em
 `packages/common/organizations`, o dicionário está em
 `docs/database/ORGANIZATIONS.md` e o `ADR-006` registra as decisões de
 identidade e ciclo de vida.
+
+O entrypoint também exporta `organizationUnits`, seus tipos, nomes estáveis de
+constraints/índices, predicado operacional e projeção pública sem contato,
+endereço ou localização. Código é único dentro da organização e continua
+reservado após soft delete. Longitude/latitude validadas geram sempre
+`geography(Point,4326)`; o índice GiST atende proximidade em metros. Os
+normalizadores estão em `packages/common/organization-units`, o dicionário em
+`docs/database/ORGANIZATION_UNITS.md` e o `ADR-007` registra identidade,
+endereço, posição e adaptação do export Atlas.
 
 `packages/common/permissions` exporta `permissionCatalog`, `permissionCodes`,
 os tipos literais de recurso/código e um type guard. O catálogo possui 19
@@ -354,7 +366,8 @@ idempotente que diagnostica suporte e executa
 `20260826233758_create_accounts.sql`,
 `20260827001526_create_auth_sessions.sql` e
 `20260827004636_create_authorization_structure.sql` e
-`20260830134040_create_organizations.sql`. O diretório de
+`20260830134040_create_organizations.sql` e
+`20260830142030_create_organization_units.sql`. O diretório de
 desenvolvimento contém
 `20260827012543_initial_permission_catalog.sql`, que insere as 19 permissões com
 `ON CONFLICT (code) DO NOTHING`, sem papel ou atribuição. O apply não
@@ -364,6 +377,12 @@ usam `postgis/postgis:16-3.5-alpine`, iniciam em UTC, têm healthcheck, shutdown
 gracioso e rede local; a porta publicada do banco é restrita a loopback. O
 fluxo completo está em
 `docs/database/README.md`.
+
+O estado principal passa por `scripts/export-atlas-schema.mjs`. O adaptador
+mantém o Drizzle fixado, corrige a renderização exata de
+`geography(Point,4326)` e prepara a extensão somente em `DB_ATLAS`, descartável,
+antes de o Atlas avaliar o schema. Migrations continuam sendo o único caminho
+para alterar `DB_DATABASE_URL`.
 
 ## Comandos do monorepo
 
@@ -376,8 +395,8 @@ fluxo completo está em
 | `pnpm dev:worker`                                   | Inicia somente os consumers do Worker                |
 | `pnpm lint`                                         | Valida os quatro apps e os dez packages              |
 | `pnpm typecheck`                                    | Valida os quatro apps e os dez packages              |
-| `pnpm test`                                         | Testa config, organizações, RBAC, filas e OpenAPI    |
-| `pnpm --filter @protege-mais/plugins test:database` | Integra banco, organizações, RBAC, seed e PostGIS    |
+| `pnpm test`                                         | Testa config, unidades, RBAC, filas e OpenAPI        |
+| `pnpm --filter @protege-mais/plugins test:database` | Integra banco, unidades, RBAC, seed e PostGIS        |
 | `pnpm --filter @protege-mais/plugins test:redis`    | Integra Redis real, TTL e reconexão                  |
 | `pnpm --filter @protege-mais/worker test:redis`     | Integra filas, retry, idempotência, falha e shutdown |
 | `pnpm format:check`                                 | Confere a formatação do repositório                  |
@@ -386,6 +405,7 @@ fluxo completo está em
 | `pnpm migrate:local`                                | Aplica migrations estruturais Atlas localmente       |
 | `pnpm seed:local`                                   | Aplica estrutura e seed aditivo de desenvolvimento   |
 | `ENV=prod pnpm atlas:validate:docker`               | Valida o diretório estrutural e seu checksum         |
+| `pnpm model:export`                                 | Exibe o DDL de produção adaptado para PostGIS        |
 | `pnpm model:reference:export`                       | Exibe o DDL do fixture Drizzle                       |
 | `pnpm model:reference:validate`                     | Valida a migration isolada de convenções             |
 | `pnpm model:reference:diff`                         | Confirma zero drift no fixture                       |
@@ -409,8 +429,11 @@ o catálogo TypeScript e o seed de 19 permissões de desenvolvimento, sem papel,
 atribuição, dado pessoal ou mudança estrutural de produção. O `PROT-019`
 adicionou somente a identidade persistente de organizações e a FK
 organizacional já prevista no RBAC, sem dado, seed, rota, repository ou
-autorização funcional. A validação cria e remove somente uma base temporária
-com nome reservado; os volumes locais não são apagados. O volume Redis local contém
+autorização funcional. O `PROT-020` adicionou somente unidades organizacionais,
+normalizadores, posição geográfica e a FK contextual já prevista no RBAC, sem
+dado, seed, rota, repository, membership ou autorização funcional. A validação
+cria e remove somente uma base temporária com nome reservado; os volumes locais
+não são apagados. O volume Redis local contém
 somente metadados técnicos das filas e qualquer job fictício de teste é removido
 ao concluir a integração.
 

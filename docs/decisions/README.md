@@ -47,3 +47,4 @@ ou registro de implementação.
 - [ADR-004 — Unicidade e reutilização de identificadores ativos](ADR-004-active-account-identifier-reuse.md)
 - [ADR-005 — Fundação de RBAC contextual](ADR-005-contextual-rbac-foundation.md)
 - [ADR-006 — Identidade institucional e ciclo de vida de organizações](ADR-006-organization-identity-and-lifecycle.md)
+- [ADR-007 — Identidade, endereço e posição de unidades organizacionais](ADR-007-organization-unit-address-and-position.md)

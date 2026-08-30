@@ -17,6 +17,7 @@ import {
   updatedAtColumn,
   uuidV7PrimaryKey,
 } from './columns.js';
+import { organizationUnits } from './organization-units.js';
 import { organizations } from './organizations.js';
 
 export const authorizationConstraintNames = Object.freeze({
@@ -32,6 +33,8 @@ export const authorizationConstraintNames = Object.freeze({
   accountRolesAccountForeignKey: 'account_roles_account_id_fkey',
   accountRolesRoleForeignKey: 'account_roles_role_id_fkey',
   accountRolesOrganizationForeignKey: 'account_roles_organization_id_fkey',
+  accountRolesOrganizationUnitForeignKey:
+    'account_roles_organization_id_organization_unit_id_fkey',
   accountRolesContextUnique: 'account_roles_account_role_context_key',
   accountRolesScopeCheck: 'account_roles_scope_check',
 });
@@ -40,6 +43,7 @@ export const authorizationIndexNames = Object.freeze({
   rolePermissionsPermission: 'role_permissions_permission_id_idx',
   accountRolesRole: 'account_roles_role_id_idx',
   accountRolesContextLookup: 'account_roles_context_lookup_idx',
+  accountRolesOrganizationUnit: 'account_roles_organization_unit_id_idx',
 });
 
 export const roles = pgTable(
@@ -150,6 +154,13 @@ export const accountRoles = pgTable(
     })
       .onUpdate('no action')
       .onDelete('restrict'),
+    foreignKey({
+      name: authorizationConstraintNames.accountRolesOrganizationUnitForeignKey,
+      columns: [table.organizationId, table.organizationUnitId],
+      foreignColumns: [organizationUnits.organizationId, organizationUnits.id],
+    })
+      .onUpdate('no action')
+      .onDelete('restrict'),
     unique(authorizationConstraintNames.accountRolesContextUnique)
       .on(
         table.accountId,
@@ -164,6 +175,9 @@ export const accountRoles = pgTable(
       table.organizationId,
       table.organizationUnitId,
       table.roleId
+    ),
+    index(authorizationIndexNames.accountRolesOrganizationUnit).on(
+      table.organizationUnitId
     ),
     check(
       authorizationConstraintNames.accountRolesScopeCheck,

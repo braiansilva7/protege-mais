@@ -115,7 +115,9 @@ conflito concorrente; nenhuma escrita é repetida silenciosamente.
 `ON UPDATE NO ACTION` e `ON DELETE RESTRICT`. A FK impede contextos para uma
 organização inexistente e impede hard delete enquanto houver atribuição. Ela
 não substitui a verificação futura de organização operacional e membership.
-`organization_unit_id` permanece sem FK até o `PROT-020`.
+Desde o `PROT-020`, o par com `organization_unit_id` possui FK composta para
+impedir que uma atribuição combine a organização com unidade de outra
+instituição.
 
 CNPJ é um identificador cadastral público, mas não pertence à allowlist de
 logs nem deve aparecer em listas ou erros por conveniência. A projeção padrão
