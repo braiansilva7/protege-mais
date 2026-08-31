@@ -18,12 +18,18 @@
     "@fastify/swagger-ui": "^6.1.0",
     "@protege-mais/common": "workspace:*",
     "@protege-mais/config": "workspace:*",
+    "@protege-mais/interfaces": "workspace:*",
+    "@protege-mais/middlewares": "workspace:*",
     "@protege-mais/plugins": "workspace:*",
+    "@protege-mais/repositories": "workspace:*",
     "@protege-mais/schema": "workspace:*",
+    "@protege-mais/services": "workspace:*",
+    "@protege-mais/use-cases": "workspace:*",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.0.1",
     "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",
+    "tsyringe": "^4.10.0",
     "uuid": "^14.0.1"
   },
   "devDependencies": {

@@ -13,6 +13,7 @@ export {
 export {
   APP_ENVIRONMENTS,
   ConfigurationError,
+  JWT_HMAC_SECRET_MINIMUM_BYTES,
   LOG_LEVELS,
   createDatabaseEnvironment,
   createEncryptionEnvironment,

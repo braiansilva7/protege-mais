@@ -121,6 +121,27 @@ void test('Redis real aplica namespace, set/get e expiração', async () => {
     await connection.commands.setWithExpiration(key, 'temporary', 1);
     assert.equal(await connection.commands.get(key), 'temporary');
     await waitUntil(async () => (await connection.commands.get(key)) === null);
+
+    const rateLimitKey = `integration:counter:${Date.now()}`;
+    const firstIncrement = await connection.commands.incrementWithExpiration(
+      rateLimitKey,
+      5
+    );
+    const secondIncrement = await connection.commands.incrementWithExpiration(
+      rateLimitKey,
+      5
+    );
+    assert.equal(firstIncrement.value, 1);
+    assert.ok(firstIncrement.ttlSeconds >= 4);
+    assert.ok(firstIncrement.ttlSeconds <= 5);
+    assert.equal(secondIncrement.value, 2);
+    assert.ok(secondIncrement.ttlSeconds >= 1);
+    assert.ok(secondIncrement.ttlSeconds <= 5);
+    assert.equal(
+      await observer.get(`${connection.namespace}${rateLimitKey}`),
+      '2'
+    );
+    await connection.commands.delete(rateLimitKey);
   } finally {
     if (observer.isOpen) await observer.close();
     await connection.close();

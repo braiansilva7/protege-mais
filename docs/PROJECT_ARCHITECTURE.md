@@ -2,7 +2,7 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-022`. A arquitetura
+Este documento registra somente o que existe após o `PROT-023`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
@@ -14,10 +14,12 @@ localidade e ciclo de ativação/soft delete, `organization_units`, com endereç
 posição geográfica e ownership contextual, `organization_members`, com
 pertencimento organizacional/de unidade e vigência, e quatro tabelas que formam
 a base relacional do RBAC contextual. Projeções seguras excluem hashes, CNPJ,
-contato, endereço, localização, matrícula e chaves internas. O núcleo de
-autenticação local valida credenciais com Argon2id e resposta uniforme, mas
-ainda não existe rota de login, token, sessão funcional, autorização, outras
-rotas de negócio ou dados operacionais. Um catálogo TypeScript contém as 19
+contato, endereço, localização, matrícula e chaves internas. A rota pública de
+login valida credenciais com Argon2id e resposta uniforme sob rate limit Redis,
+falha fechada para contas com MFA e emite JWT de acesso de 15 minutos. O token
+carrega somente conta e sessão lógica; ainda não existe refresh token, sessão
+funcional persistida, middleware de autenticação, autorização, outras rotas de
+negócio ou dados operacionais. Um catálogo TypeScript contém as 19
 permissões iniciais e o
 seed opcional de desenvolvimento insere somente esses códigos, sem
 papéis ou atribuições. Existem 14 tipos enum fundamentais, com `account_type`,
@@ -43,8 +45,8 @@ protege-mais/
 ├── apps/
 │   ├── manager_api/          # Fastify: entrada HTTP
 │   │   └── src/
-│   │       ├── controllers/health/
-│   │       ├── plugins/swagger/
+│   │       ├── controllers/       # Health e autenticação HTTP
+│   │       ├── plugins/           # Composição auth e Swagger
 │   │       ├── routes/
 │   │       ├── types/
 │   │       ├── app.ts         # Composição testável do Fastify
@@ -66,12 +68,12 @@ protege-mais/
 │   ├── common/               # Enums, permissões, senha, normalizações e UUID
 │   ├── config/               # Configuração validada, tipada e imutável
 │   ├── interfaces/           # Contratos de entrada compartilhados
-│   ├── middlewares/          # Middlewares compartilhados futuros
+│   ├── middlewares/          # Rate limit de autenticação
 │   ├── models/               # Identidade, organizações, vínculos, RBAC e enums
 │   ├── plugins/              # Banco, logging, Redis, filas e plugins Fastify
 │   ├── repositories/         # Adaptadores de persistência por domínio
 │   ├── schema/               # Fonte oficial dos contratos HTTP e OpenAPI
-│   ├── services/             # Hash, auditoria e capacidades reutilizáveis
+│   ├── services/             # Hash, JWT, auditoria e capacidades reutilizáveis
 │   └── useCases/             # Credenciais, registry de jobs e orquestração
 ├── atlas/
 │   ├── prod/                 # PostGIS, enums, identidade, organizações, vínculos e RBAC
@@ -111,10 +113,12 @@ Entre packages, `plugins` consome erros de `common`, modelos de `models` e o
 tipo HTTP compartilhado de `schema`; também encapsula BullMQ sem expô-lo ao
 Worker ou aos casos de uso. `schema` depende somente do TypeBox e não depende
 de `common`; assim, contratos de transporte não criam ciclo com regras de erro.
-Na autenticação, `interfaces` declara portas, `services` implementa hash/auditoria,
-`repositories` adapta Drizzle e `useCases` orquestra essas abstrações sem
-importar banco, Argon2 ou transporte. `useCases` também define a execução e a
-classificação de falhas de jobs sem importar o plugin de filas.
+Na autenticação, `interfaces` declara portas, `services` implementa
+hash/auditoria/JWT, `repositories` adapta Drizzle, `middlewares` aplica o limite
+distribuído e `useCases` orquestra essas abstrações sem importar banco, Argon2,
+Redis ou transporte. A Manager API é a raiz de composição. `useCases` também
+define a execução e a classificação de falhas de jobs sem importar o plugin de
+filas.
 
 Os aliases compartilhados usam os nomes dos workspaces, por exemplo:
 
@@ -153,17 +157,18 @@ Dependências, builds e caches são ignorados pelo lint e formatter. O lockfile
 carrega o `.env` da raiz, preserva valores injetados pelo processo e expõe
 objetos congelados para Manager API, Worker, Web e Mobile. Banco, Redis, JWT,
 criptografia, S3 e SMTP possuem validadores separados. Banco é exigido pela API;
-Redis é exigido pela API e pelo Worker. A matriz está em
+Redis e `JWT_ACCESS_SECRET` são exigidos pela API, e Redis é exigido pelo Worker.
+A matriz está em
 `docs/CONFIGURATION.md`.
 
 ## Responsabilidade dos apps
 
-| App           | Responsabilidade atual                             | Não faz neste baseline              |
-| ------------- | -------------------------------------------------- | ----------------------------------- |
-| `manager_api` | Config, banco, Redis, probes, OpenAPI e `/api/v1`  | Regra de negócio, auth ou permissão |
-| `web`         | Valida config pública e serve o shell              | Chamada de API ou fluxo funcional   |
-| `mobile`      | Valida config pública e inicia o shell Expo        | Storage, API ou fluxo de proteção   |
-| `worker`      | Filas, processors, retry, logs e shutdown gracioso | Regra de negócio ou persistência    |
+| App           | Responsabilidade atual                              | Não faz neste baseline            |
+| ------------- | --------------------------------------------------- | --------------------------------- |
+| `manager_api` | Config, dependências, OpenAPI, login e entrada HTTP | Autorização ou regra de proteção  |
+| `web`         | Valida config pública e serve o shell               | Chamada de API ou fluxo funcional |
+| `mobile`      | Valida config pública e inicia o shell Expo         | Storage, API ou fluxo de proteção |
+| `worker`      | Filas, processors, retry, logs e shutdown gracioso  | Regra de negócio ou persistência  |
 
 ## Worker e filas
 
@@ -193,20 +198,21 @@ conexão Redis compartilhada. O catálogo, contrato completo e runbook estão em
 
 ## API
 
-O bootstrap valida ambiente, host, porta, log, CORS, banco e Redis antes de
-criar o Fastify. Depois registra, nesta ordem:
+O bootstrap valida ambiente, host, porta, log, CORS, banco, Redis e segredo JWT
+de acesso antes de criar o Fastify. Depois registra, nesta ordem:
 
 1. logging seguro e headers de correlação;
 2. handler global de erros e de rota inexistente;
 3. registry de readiness;
 4. cliente Redis e seu probe;
 5. pool PostgreSQL/Drizzle;
-6. parser multipart;
-7. CORS;
-8. i18n;
-9. Swagger;
-10. `GET /health` e `GET /ready`;
-11. agregador vazio sob `/api/v1`.
+6. composição de autenticação e rate limit;
+7. parser multipart;
+8. CORS;
+9. i18n;
+10. Swagger;
+11. `GET /health` e `GET /ready`;
+12. rotas versionadas, incluindo `POST /api/v1/auth/login`.
 
 `GET /health` verifica somente liveness e não consulta dependências.
 `GET /ready` executa todos os probes obrigatórios registrados e responde 503
@@ -248,15 +254,19 @@ catálogos passam por teste automático de paridade e textos vazios. O contrato 
 erros está em `docs/api/README.md` e a convenção de idiomas e chaves em
 `docs/api/INTERNATIONALIZATION.md`.
 
-Não há JWT, endpoint ou middleware de autenticação, usuário autenticado ou
-decisão de permissão no baseline. O núcleo `AuthenticateWithEmailAndPassword`
-existe fora da composição HTTP: normaliza e-mail, verifica Argon2id inclusive
-contra hash fictício quando a credencial não existe, exige conta ativa e
-confirma o último login por escrita condicional. Ele retorna somente ID e o
-indicador de MFA; o contrato completo está em `docs/authentication/README.md`.
-O catálogo técnico não é consultado pelo runtime e não há papéis ou atribuições
-iniciais. Endpoint, rate limit, token, sessão e autorização serão implementados
-em seus tickets próprios.
+`POST /api/v1/auth/login` é público e validado por schema. Seu pre-handler
+consome cinco tentativas por 60 segundos em um contador Redis com chave HMAC
+opaca e falha fechada. O caso de uso normaliza e-mail, verifica Argon2id
+inclusive contra hash fictício quando a credencial não existe, exige conta
+ativa, confirma o último login por escrita condicional e bloqueia MFA enquanto
+não houver challenge. Em sucesso, `jose` assina um JWT HS256 de 15 minutos com
+`sub`, `sid`, `iat`, `exp`, `iss`, `aud` e `token_use`; a resposta não expõe IDs
+ou estado interno. O contrato completo está em
+`docs/authentication/README.md`.
+
+Ainda não há refresh token, sessão funcional persistida, middleware de
+autenticação, usuário autenticado no request ou decisão de permissão. O catálogo
+técnico não é consultado pelo runtime e não há papéis ou atribuições iniciais.
 
 ## Logging e correlação
 
@@ -289,9 +299,10 @@ Worker usam a mesma fábrica e fecham a conexão em seus ciclos de vida.
 
 O Compose fornece Redis local com AOF, healthcheck e volume próprio, além de uma
 imagem própria para o Worker. A capacidade genérica oferece comandos mínimos de
-`get`, `set`, expiração e exclusão; a capacidade de filas usa o prefixo adicional
-`queues` e conexões próprias, inclusive bloqueantes. Usos permitidos e operação
-estão em `docs/REDIS.md` e `docs/WORKER_QUEUES.md`.
+`get`, `set`, expiração, exclusão e incremento/TTL atômico; este último sustenta
+o rate limit do login sem armazenar endereço bruto. A capacidade de filas usa o
+prefixo adicional `queues` e conexões próprias, inclusive bloqueantes. Usos
+permitidos e operação estão em `docs/REDIS.md` e `docs/WORKER_QUEUES.md`.
 
 ## Web e Mobile
 
@@ -421,7 +432,7 @@ para alterar `DB_DATABASE_URL`.
 | `pnpm dev:worker`                                   | Inicia somente os consumers do Worker                |
 | `pnpm lint`                                         | Valida os quatro apps e os dez packages              |
 | `pnpm typecheck`                                    | Valida os quatro apps e os dez packages              |
-| `pnpm test`                                         | Testa config, memberships, RBAC, filas e OpenAPI     |
+| `pnpm test`                                         | Testa config, login/JWT, RBAC, filas e OpenAPI       |
 | `pnpm --filter @protege-mais/plugins test:database` | Integra banco, memberships, RBAC, seed e PostGIS     |
 | `pnpm --filter @protege-mais/plugins test:redis`    | Integra Redis real, TTL e reconexão                  |
 | `pnpm --filter @protege-mais/worker test:redis`     | Integra filas, retry, idempotência, falha e shutdown |
@@ -463,7 +474,10 @@ normalizadores e integridade relacional, sem dado, seed, rota, repository,
 papel, atribuição ou autorização funcional. O `PROT-022` adicionou somente
 contratos, política, Argon2id, auditoria mínima, repositório e caso de uso de
 credenciais, sem migration, dado, rota, rate limit, token, sessão emitida ou
-autorização. A validação cria e remove somente uma base temporária com nome
+autorização. O `PROT-023` adicionou a rota pública, schemas, composição, rate
+limit e access token curto, sem migration, dado, refresh token, linha de sessão,
+middleware de autenticação ou autorização. A validação cria e remove somente uma
+base temporária com nome
 reservado; os volumes locais
 não são apagados. O volume Redis local contém
 somente metadados técnicos das filas e qualquer job fictício de teste é removido

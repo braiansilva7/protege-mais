@@ -1,7 +1,10 @@
 {
   "authentication": {
+    "invalidAccessToken": "Invalid access token.",
     "invalidCredentials": "Invalid email or password.",
-    "required": "Authentication is required."
+    "rateLimited": "Too many authentication attempts were made. Try again later.",
+    "required": "Authentication is required.",
+    "unavailable": "Authentication is temporarily unavailable."
   },
   "errors": {
     "application": "The request could not be processed.",
@@ -13,6 +16,7 @@
     "notFound": "Resource not found.",
     "request": "The request could not be processed.",
     "serviceUnavailable": "The service is temporarily unavailable.",
+    "tooManyRequests": "Too many requests were made.",
     "validation": "The submitted data is invalid."
   },
   "health": {

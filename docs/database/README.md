@@ -269,7 +269,8 @@ catálogo TypeScript e o seed de desenvolvimento possuem 19 códigos idênticos 
 nenhum papel inicial. O repositório de autenticação projeta somente os quatro
 campos necessários, inclui estados inelegíveis no trabalho de hash e faz a
 confirmação concorrente do login por UUID, hash e estado. O próximo ticket
-liberado é o `PROT-023`.
+liberado é o `PROT-024`; o identificador `sid` emitido no `PROT-023` ainda é
+somente lógico e não cria uma linha de `auth_sessions`.
 
 ---
 

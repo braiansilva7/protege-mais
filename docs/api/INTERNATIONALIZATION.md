@@ -80,8 +80,10 @@ o texto traduzido.
   genérico de request;
 - `health.ok`: processo operacional;
 - `health.notReady`: processo indisponível para receber tráfego;
-- `authentication.required` e `authentication.invalidCredentials`: mensagens
-  públicas comuns de autenticação.
+- `authentication.required`, `authentication.invalidCredentials`,
+  `authentication.invalidAccessToken`, `authentication.rateLimited` e
+  `authentication.unavailable`: mensagens públicas de autenticação;
+- `errors.tooManyRequests`: default comum para falhas HTTP 429.
 
-As chaves de autenticação não criam endpoints ou fluxos de login. Esses fluxos
-continuam pertencendo aos tickets de identidade e acesso.
+O login usa as chaves específicas sem variar mensagem por existência ou estado
+da conta. `code` e status permanecem iguais nos três idiomas.

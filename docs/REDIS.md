@@ -58,6 +58,15 @@ não é uma fronteira de segurança. Ambientes de produção devem permanecer
 isolados por credenciais, rede e, preferencialmente, instância próprias. Chaves
 e valores nunca entram em logs operacionais.
 
+O login usa
+`rate-limit:authentication:login:<digest-hmac-do-endereço>` por 60 segundos.
+O digest é opaco e separado por domínio; endereço bruto, e-mail e senha não
+entram no Redis. O comando `incrementWithExpiration` agrupa `INCR`, `EXPIRE NX`
+e `TTL` em uma transação, de modo que o primeiro incremento sempre receba
+expiração e concorrentes compartilhem a mesma janela fixa. Resultado
+incoerente ou falha do Redis bloqueia o login com 503, preservando o limite em
+vez de degradar para acesso irrestrito.
+
 ## Conexão, readiness e falhas
 
 O cliente usa timeout de conexão de 2 segundos, timeout por comando de 1
@@ -122,8 +131,9 @@ pnpm --filter @protege-mais/plugins test:redis
 pnpm --filter @protege-mais/worker test:redis
 ```
 
-A primeira suíte comprova namespace, `set/get`, expiração, indisponibilidade e
-retomada por reconexão. A segunda comprova fila/processor/use case, retry,
+A primeira suíte comprova namespace, `set/get`, expiração, contador atômico,
+indisponibilidade e retomada por reconexão. A segunda comprova
+fila/processor/use case, retry,
 backoff, falha terminal, idempotência após reinício e shutdown com job ativo. Os
 testes usam referências fictícias e removem seus jobs e chaves sem TTL ao
 concluir. Em inspeções operacionais, prefira `SCAN` limitado ao namespace; não

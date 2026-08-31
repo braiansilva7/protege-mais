@@ -23,6 +23,8 @@ function createTestRedisConnection(onClose = () => undefined): RedisConnection {
       setWithExpiration: () => Promise.resolve(),
       delete: () => Promise.resolve(0),
       expire: () => Promise.resolve(false),
+      incrementWithExpiration: () =>
+        Promise.resolve({ value: 1, ttlSeconds: 60 }),
     },
     connect: () => Promise.resolve(),
     start: () => undefined,

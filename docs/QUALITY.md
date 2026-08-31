@@ -81,7 +81,8 @@ pnpm build
 
 `lint` e `typecheck` percorrem os 14 workspaces pelo Turbo; `test` executa as
 suítes de configuração, classes comuns, normalização de conta, autenticação
-Argon2id, política de senha, organização e membership, sanitização de metadata
+Argon2id, JWT de acesso, login HTTP, rate limit, política de senha, organização
+e membership, sanitização de metadata
 de sessão, validação de CNPJ e localidade, enums,
 catálogo tipado de permissões, models, RBAC contextual, handler Fastify, i18n,
 PostgreSQL e Redis com conexões injetáveis, logging,
@@ -111,13 +112,15 @@ inválidos, Drizzle, UTC,
 PostGIS, SRID 4326, distância geodésica, indisponibilidade, recuperação e
 fechamento contra PostgreSQL real. Os dois comandos
 `test:redis`, executados após `docker compose up -d --wait redis`, comprovam o
-cliente genérico e o pipeline real do Worker. A integração do Worker cobre
+cliente genérico, inclusive incremento/TTL atômico do contador, e o pipeline
+real do Worker. A integração do Worker cobre
 retry/backoff reduzido, idempotência após reinício, falha terminal e shutdown
 durante processamento. `model:export` comprova o DDL principal adaptado para
 `geography(Point,4326)`; os comandos `model:reference` validam o checksum Atlas
 e comprovam que o export Drizzle do fixture de convenções permanece sem drift;
 `build` gera os quatro apps. O teste de OpenAPI valida estrutura e referências,
-contrato operacional, exemplos, security e exposição da UI por ambiente. As
+contrato operacional e do login, exemplos, security e exposição da UI por
+ambiente. As
 configurações compartilhadas fazem parte das dependências globais do cache do
 Turbo, portanto sua alteração invalida as tarefas afetadas. Objetos hostis e
 campos proibidos devem fazer parte dos testes sempre que um novo contexto de

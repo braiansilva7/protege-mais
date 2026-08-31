@@ -47,6 +47,10 @@ void test('rejeita chave e TTL inválidos antes de executar comandos', async () 
     () => connection.commands.setWithExpiration('cache:item', 'value', 0),
     RangeError
   );
+  await assert.rejects(
+    () => connection.commands.incrementWithExpiration('rate-limit:item', 0),
+    RangeError
+  );
   await connection.close();
 });
 
@@ -69,6 +73,11 @@ void test('plugin registra comandos, probe e fechamento Redis', async () => {
       },
       delete: (key) => Promise.resolve(values.delete(key) ? 1 : 0),
       expire: (key) => Promise.resolve(values.has(key)),
+      incrementWithExpiration: (key) => {
+        const value = Number(values.get(key) ?? '0') + 1;
+        values.set(key, String(value));
+        return Promise.resolve({ value, ttlSeconds: 60 });
+      },
     },
     connect: () => Promise.resolve(),
     start: () => {

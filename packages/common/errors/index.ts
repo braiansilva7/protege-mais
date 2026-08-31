@@ -134,6 +134,20 @@ export class BusinessRuleError extends ApplicationError {
   }
 }
 
+export class TooManyRequestsError extends ApplicationError {
+  public constructor(options: SpecializedErrorOptions = {}) {
+    super({
+      ...options,
+      code: options.code ?? 'TOO_MANY_REQUESTS',
+      message: options.message ?? 'Muitas solicitações foram realizadas.',
+      messageKey:
+        options.messageKey ??
+        (options.message === undefined ? 'errors.tooManyRequests' : undefined),
+      statusCode: 429,
+    });
+  }
+}
+
 export class InfrastructureError extends ApplicationError {
   public constructor(options: SpecializedErrorOptions = {}) {
     super({

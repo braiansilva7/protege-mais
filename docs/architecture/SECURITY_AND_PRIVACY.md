@@ -38,11 +38,21 @@ A allowlist aplicada, a defesa recursiva e as consultas seguras estão em
 - Conta ausente, hash ausente/inválido, senha incorreta e estado inelegível usam
   o mesmo erro e preservam trabalho caro comparável; o endpoint também exige
   rate limit.
-- Access token tem validade curta e finalidade explícita.
+- Access token tem validade de 15 minutos, `typ: at+jwt`, finalidade `access`,
+  issuer/audience fixos e somente IDs opacos de conta/sessão; contexto
+  organizacional e permissões não são congelados no payload.
 - Refresh token é armazenado como hash, rotacionado e revogável por sessão.
 - Reutilização de refresh token rotacionado deve causar resposta defensiva.
 - MFA e recuperação não podem revelar se uma conta existe.
 - Sessões permitem revogação individual e global.
+
+O login limita cinco tentativas por endereço de cliente a cada 60 segundos. O
+Redis recebe somente um HMAC opaco, nunca IP, e qualquer falha do contador fecha
+o endpoint com 503. Conta marcada com MFA também falha fechada sem access token
+até existir challenge funcional. O JWT usa HS256 somente dentro da Manager API,
+chave de ao menos 32 bytes e validação estrita de algoritmo, tipo, finalidade,
+tempo, issuer e audience. Token expirado, alterado ou assinado por outra chave
+recebe uma falha uniforme.
 
 O núcleo de credenciais consulta somente contas não excluídas, verifica o hash
 mesmo antes de avaliar o estado e só confirma `last_login_at` se hash, estado
@@ -50,8 +60,10 @@ ativo e soft delete não mudaram concorrentemente. Eventos
 `authentication.succeeded` e `authentication.failed` não recebem PII, ID da
 conta ou motivo. O contrato completo e suas limitações estão em
 [`../authentication/README.md`](../authentication/README.md), e a decisão
-criptográfica no
+de senha no
 [`ADR-009`](../decisions/ADR-009-local-password-authentication-and-argon2id.md).
+A assinatura e o ciclo curto do access token estão no
+[`ADR-010`](../decisions/ADR-010-short-lived-access-token.md).
 
 `auth_sessions` materializa somente a fundação persistente: token e IP em claro
 nunca são gravados, hashes ficam fora da projeção de saída e atividade exige
@@ -130,6 +142,8 @@ padrão. O contrato completo está em
   credencial;
 - cache, rate limit e locks não recebem dados pessoais ou sensíveis sem revisão
   explícita de finalidade, TTL e impacto de perda;
+- o rate limit de login usa digest HMAC opaco, TTL obrigatório e incremento
+  atômico; indisponibilidade bloqueia a autenticação;
 - Redis não substitui PostgreSQL, auditoria ou controle de autorização.
 
 Usos permitidos, formato das chaves e operação local estão em

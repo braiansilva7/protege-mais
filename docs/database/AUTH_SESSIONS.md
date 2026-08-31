@@ -6,10 +6,11 @@
 de um dispositivo vinculado a uma conta. A tabela permite localizar, expirar e
 revogar uma sessão sem armazenar refresh token ou endereço IP em claro.
 
-O `PROT-016` entrega somente model, migration, sanitização de metadata,
-projeção segura e invariantes de banco. Login, emissão de token, algoritmo de
-hash, rotação, detecção de reuso, logout, listagem/revogação HTTP e autenticação
-permanecem nos tickets `PROT-022` a `PROT-029`.
+O `PROT-016` entregou somente model, migration, sanitização de metadata,
+projeção segura e invariantes de banco. O `PROT-023` emite um `sid` UUID v7 no
+access token, mas ainda não cria esta linha. Algoritmo de hash do refresh,
+rotação, detecção de reuso, logout, listagem/revogação HTTP e middleware de
+autenticação permanecem nos tickets `PROT-024` a `PROT-029`.
 
 ## Colunas
 

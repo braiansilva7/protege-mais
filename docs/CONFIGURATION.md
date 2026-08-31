@@ -33,6 +33,7 @@ normalizada em maiúsculas.
 | `CORS_ORIGIN`                 | Obrigatória          | —                    | —           | —           | Uma ou mais origens HTTP(S), por vírgula |
 | `DATABASE_URL`                | Obrigatória          | —                    | —           | —           | URL `postgres://` ou `postgresql://`     |
 | `REDIS_URL`                   | Obrigatória          | Obrigatória          | —           | —           | URL `redis://` ou `rediss://`            |
+| `JWT_ACCESS_SECRET`           | Obrigatória          | —                    | —           | —           | Segredo HMAC com ao menos 32 bytes       |
 | `VITE_APP_ENVIRONMENT`        | —                    | —                    | Obrigatória | —           | Ambiente público do Web                  |
 | `VITE_API_URL`                | —                    | —                    | Obrigatória | —           | URL HTTP(S) pública da API               |
 | `EXPO_PUBLIC_APP_ENVIRONMENT` | —                    | —                    | —           | Obrigatória | Ambiente público do Mobile               |
@@ -60,7 +61,7 @@ capacidades só tornam suas chaves obrigatórias quando o app passa a carregá-l
 | ------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Banco        | `DATABASE_URL`                                                                     | Protocolos PostgreSQL                                               |
 | Redis        | `REDIS_URL`                                                                        | `redis://` ou `rediss://`, database numérico e sem query/fragment   |
-| JWT          | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`                                          | Não vazias, sem espaços externos e diferentes entre si              |
+| JWT          | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`                                          | Ao menos 32 bytes, sem espaços externos e diferentes entre si       |
 | Criptografia | `ENCRYPTION_KEY`                                                                   | Não vazia e sem espaços externos                                    |
 | S3           | `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`          | Endpoint HTTP(S), bucket compatível com S3 e credenciais não vazias |
 | SMTP         | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Host, porta, booleano estrito e remetente com e-mail válido         |
@@ -77,9 +78,15 @@ usados em campos secretos ou na credencial das URLs de banco e Redis.
 O hash de senha local não adiciona variável: algoritmo e parâmetros ficam
 versionados em código e no
 [`ADR-009`](decisions/ADR-009-local-password-authentication-and-argon2id.md).
-Pepper não foi adotado sem um ciclo aprovado de segredo e rotação. JWT,
-criptografia das capacidades futuras e seus segredos continuam definidos por
-seus tickets. Timeouts, namespace e operação do Redis estão em
+Pepper não foi adotado sem um ciclo aprovado de segredo e rotação. Desde o
+`PROT-023`, a Manager API carrega `JWT_ACCESS_SECRET` para assinar e validar
+tokens HS256 e derivar chaves opacas de rate limit com separação de domínio. O
+valor deve ser aleatório, injetado pelo secret manager e rotacionado por um
+procedimento que considere os tokens de 15 minutos ainda em circulação. Nunca
+o reutilize como `JWT_REFRESH_SECRET`; este último continua reservado ao
+`PROT-024`. A configuração isolada de JWT valida ambos quando chamada.
+Criptografia das demais capacidades futuras e seus segredos continuam definidos
+por seus tickets. Timeouts, namespace e operação do Redis estão em
 [`REDIS.md`](REDIS.md). O pool PostgreSQL recebe somente a URL
 já validada; limites, timeouts, sessões UTC e operação ficam em
 [`database/README.md`](database/README.md).

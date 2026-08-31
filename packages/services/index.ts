@@ -1,7 +1,17 @@
 export {
   Argon2idPasswordHashService,
+  InvalidAccessTokenError,
+  JoseAccessTokenService,
   StructuredAuthenticationAudit,
   SystemAuthenticationClock,
+  UuidV7AuthenticationSessionIdGenerator,
+  accessTokenAlgorithm,
+  accessTokenAudience,
+  accessTokenIssuer,
+  accessTokenLifetimeSeconds,
+  accessTokenPurpose,
+  accessTokenTypeHeader,
   argon2idPasswordHashParameters,
   authenticationDummyPasswordHash,
+  jwtHmacSecretMinimumBytes,
 } from './authentication/index.js';

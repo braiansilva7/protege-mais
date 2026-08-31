@@ -70,6 +70,11 @@ A autenticação local emite somente `authentication.succeeded` em `info` e
 aceita argumentos: e-mail, senha, hash, ID da conta, estado e motivo da rejeição
 não podem ser adicionados ao evento. Quando composto no HTTP, `requestId` e
 `correlationId` podem vir do logger filho da requisição sem alterar essa regra.
+O login HTTP acrescenta apenas o evento comum `http.request.completed` com a
+rota normalizada `/api/v1/auth/login`. Access token, session id, endereço de
+cliente, digest/chave do rate limit, contagem e `Retry-After` permanecem fora do
+log. Os testes serializam os registros e procuram o token e as credenciais para
+comprovar a ausência.
 
 ## Allowlist
 

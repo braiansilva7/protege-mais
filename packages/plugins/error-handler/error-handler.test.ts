@@ -8,6 +8,7 @@ import {
   ForbiddenError,
   InfrastructureError,
   NotFoundError,
+  TooManyRequestsError,
   UnauthorizedError,
   ValidationError,
 } from '@protege-mais/common';
@@ -49,6 +50,7 @@ function registerExpectedErrorRoutes(server: FastifyInstance) {
     ['/forbidden', () => new ForbiddenError()],
     ['/not-found', () => new NotFoundError()],
     ['/conflict', () => new ConflictError()],
+    ['/too-many-requests', () => new TooManyRequestsError()],
     ['/business-rule', () => new BusinessRuleError()],
   ] as const;
 
@@ -69,6 +71,7 @@ void test('responde erros previstos com status, código e requestId', async () =
     ['/forbidden', 'FORBIDDEN', 403],
     ['/not-found', 'NOT_FOUND', 404],
     ['/conflict', 'CONFLICT', 409],
+    ['/too-many-requests', 'TOO_MANY_REQUESTS', 429],
     ['/business-rule', 'BUSINESS_RULE_ERROR', 422],
   ] as const;
 

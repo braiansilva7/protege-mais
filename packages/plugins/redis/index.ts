@@ -25,6 +25,15 @@ export interface RedisCommands {
   ): Promise<void>;
   delete(key: string): Promise<number>;
   expire(key: string, ttlSeconds: number): Promise<boolean>;
+  incrementWithExpiration(
+    key: string,
+    ttlSeconds: number
+  ): Promise<RedisIncrementWithExpirationResult>;
+}
+
+export interface RedisIncrementWithExpirationResult {
+  readonly value: number;
+  readonly ttlSeconds: number;
 }
 
 export interface RedisConnection {
@@ -132,6 +141,29 @@ class ManagedRedisConnection implements RedisConnection {
         assertKey(key);
         assertTtl(ttlSeconds);
         return (await this.#client.expire(key, ttlSeconds)) === 1;
+      },
+      incrementWithExpiration: async (key: string, ttlSeconds: number) => {
+        assertKey(key);
+        assertTtl(ttlSeconds);
+        const [value, _expirationChanged, remainingTtl] = await this.#client
+          .multi()
+          .incr(key)
+          .expire(key, ttlSeconds, 'NX')
+          .ttl(key)
+          .exec();
+
+        if (
+          typeof value !== 'number' ||
+          !Number.isSafeInteger(value) ||
+          value < 1 ||
+          typeof remainingTtl !== 'number' ||
+          !Number.isSafeInteger(remainingTtl) ||
+          remainingTtl < 1
+        ) {
+          throw new Error('O contador Redis retornou estado inválido.');
+        }
+
+        return Object.freeze({ value, ttlSeconds: remainingTtl });
       },
     });
 

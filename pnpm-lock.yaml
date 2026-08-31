@@ -68,12 +68,27 @@ importers:
       '@protege-mais/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@protege-mais/interfaces':
+        specifier: workspace:*
+        version: link:../../packages/interfaces
+      '@protege-mais/middlewares':
+        specifier: workspace:*
+        version: link:../../packages/middlewares
       '@protege-mais/plugins':
         specifier: workspace:*
         version: link:../../packages/plugins
+      '@protege-mais/repositories':
+        specifier: workspace:*
+        version: link:../../packages/repositories
       '@protege-mais/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@protege-mais/services':
+        specifier: workspace:*
+        version: link:../../packages/services
+      '@protege-mais/use-cases':
+        specifier: workspace:*
+        version: link:../../packages/useCases
       fastify:
         specifier: ^5.8.5
         version: 5.10.0
@@ -86,6 +101,9 @@ importers:
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
+      tsyringe:
+        specifier: ^4.10.0
+        version: 4.10.0
       uuid:
         specifier: ^14.0.1
         version: 14.0.1
@@ -216,7 +234,21 @@ importers:
         specifier: workspace:*
         version: link:../common
 
-  packages/middlewares: {}
+  packages/middlewares:
+    dependencies:
+      '@protege-mais/common':
+        specifier: workspace:*
+        version: link:../common
+      '@protege-mais/interfaces':
+        specifier: workspace:*
+        version: link:../interfaces
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.13.3
+      tsx:
+        specifier: ^4.22.4
+        version: 4.23.1
 
   packages/models:
     dependencies:
@@ -339,6 +371,9 @@ importers:
       argon2:
         specifier: 0.45.1
         version: 0.45.1
+      jose:
+        specifier: 6.2.10
+        version: 6.2.10
     devDependencies:
       '@types/node':
         specifier: ^24.10.0
@@ -2979,6 +3014,9 @@ packages:
 
   jimp-compact@0.16.1:
     resolution: {integrity: sha512-dZ6Ra7u1G8c4Letq/B5EzAxj4tLFHL+cGtdpR+PVm4yzPDj+lCk+AbivWt1eOM+ikzkowtyV7qSqX6qr3t71Ww==}
+
+  jose@6.2.10:
+    resolution: {integrity: sha512-iiW7J9qRFlGxvCOIBDBDxFePQSn7ZMAnrYGhrrOo6siO/MIqwfyilLR27pkfDgUk+raLuzADS8A3S/KLBisc0g==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -6996,6 +7034,8 @@ snapshots:
       supports-color: 8.1.1
 
   jimp-compact@0.16.1: {}
+
+  jose@6.2.10: {}
 
   js-tokens@4.0.0: {}
 

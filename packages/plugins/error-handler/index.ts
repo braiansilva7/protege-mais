@@ -6,6 +6,7 @@ import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
+  TooManyRequestsError,
   UnauthorizedError,
   ValidationError,
 } from '@protege-mais/common';
@@ -62,6 +63,8 @@ function mapClientError(error: unknown): ApplicationError | undefined {
       return new NotFoundError({ cause: error });
     case 409:
       return new ConflictError({ cause: error });
+    case 429:
+      return new TooManyRequestsError({ cause: error });
     case 422:
       return new BusinessRuleError({ cause: error });
     default:

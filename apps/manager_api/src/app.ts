@@ -22,6 +22,11 @@ import {
   requestIdFromRequest,
   type LogDestination,
 } from '@protege-mais/plugins/logging';
+import type {
+  LoginAuthenticationUseCase,
+  LoginRateLimiter,
+} from '@protege-mais/interfaces';
+import authenticationPlugin from './plugins/authentication/index.js';
 import swaggerPlugin from './plugins/swagger/index.js';
 import healthRoutes from './routes/health.route.js';
 import routes, { apiV1Prefix } from './routes/index.js';
@@ -29,6 +34,8 @@ import routes, { apiV1Prefix } from './routes/index.js';
 export interface BuildServerOptions {
   readonly databaseConnection?: DatabaseConnection;
   readonly logDestination?: LogDestination;
+  readonly loginRateLimiter?: LoginRateLimiter;
+  readonly loginUseCase?: LoginAuthenticationUseCase;
   readonly redisConnection?: RedisConnection;
 }
 
@@ -66,6 +73,11 @@ export async function buildServer(
     databaseUrl: configuration.databaseUrl,
     applicationName: 'protege-mais:manager-api',
     connection: options.databaseConnection,
+  });
+  await app.register(authenticationPlugin, {
+    accessTokenSecret: configuration.jwtAccessSecret,
+    loginRateLimiter: options.loginRateLimiter,
+    loginUseCase: options.loginUseCase,
   });
   await app.register(registerMultipart);
   await app.register(registerCors, {

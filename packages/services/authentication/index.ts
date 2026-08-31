@@ -11,6 +11,19 @@ import type {
   PasswordHashService,
 } from '@protege-mais/interfaces';
 
+export {
+  InvalidAccessTokenError,
+  JoseAccessTokenService,
+  UuidV7AuthenticationSessionIdGenerator,
+  accessTokenAlgorithm,
+  accessTokenAudience,
+  accessTokenIssuer,
+  accessTokenLifetimeSeconds,
+  accessTokenPurpose,
+  accessTokenTypeHeader,
+  jwtHmacSecretMinimumBytes,
+} from './access-token.js';
+
 export const argon2idPasswordHashParameters = Object.freeze({
   hashLength: 32,
   memoryCost: 19_456,

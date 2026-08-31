@@ -8,6 +8,7 @@ import {
   InfrastructureError,
   NotFoundError,
   ServiceUnavailableError,
+  TooManyRequestsError,
   UnauthorizedError,
   ValidationError,
 } from './index.js';
@@ -20,6 +21,12 @@ void test('mapeia cada classe para código e status HTTP estáveis', () => {
     [new ForbiddenError(), 'FORBIDDEN', 'errors.forbidden', 403],
     [new NotFoundError(), 'NOT_FOUND', 'errors.notFound', 404],
     [new ConflictError(), 'CONFLICT', 'errors.conflict', 409],
+    [
+      new TooManyRequestsError(),
+      'TOO_MANY_REQUESTS',
+      'errors.tooManyRequests',
+      429,
+    ],
     [
       new BusinessRuleError(),
       'BUSINESS_RULE_ERROR',

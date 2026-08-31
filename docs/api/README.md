@@ -2,31 +2,43 @@
 
 ## Estado atual
 
-O baseline não possui rotas de autenticação, usuários, papéis ou negócio. O
-caso de uso local do `PROT-022` existe apenas como núcleo interno e ainda não é
-registrado pela Manager API.
+O baseline possui uma rota pública de login e ainda não possui rotas de
+usuários, papéis ou negócio.
 
-| Rota          | Autenticação | Estado                 | Observação                                     |
-| ------------- | ------------ | ---------------------- | ---------------------------------------------- |
-| `GET /health` | Não          | Disponível             | Liveness; retorna `{ "status": "ok" }`         |
-| `GET /ready`  | Não          | Disponível             | Readiness dos probes obrigatórios              |
-| `/swagger/*`  | Não          | `LOCAL`, `DEV` e `HMG` | UI, JSON e YAML do contrato OpenAPI 3.1        |
-| `/api/v1/*`   | —            | Sem rotas              | Prefixo exclusivo das rotas futuras de domínio |
+| Rota                      | Autenticação | Estado                 | Observação                                |
+| ------------------------- | ------------ | ---------------------- | ----------------------------------------- |
+| `GET /health`             | Não          | Disponível             | Liveness; retorna `{ "status": "ok" }`    |
+| `GET /ready`              | Não          | Disponível             | Readiness dos probes obrigatórios         |
+| `POST /api/v1/auth/login` | Não          | Disponível             | Credencial local e access token de 15 min |
+| `/swagger/*`              | Não          | `LOCAL`, `DEV` e `HMG` | UI, JSON e YAML do OpenAPI 3.1            |
 
-## Fronteira do login futuro
+## Login por e-mail e senha
 
-`AuthenticateWithEmailAndPassword` já normaliza e-mail, verifica Argon2id,
-aplica elegibilidade, confirma o último login de forma condicional e retorna o
-mesmo `InvalidCredentialsError` para toda credencial inválida. O `PROT-023`
-deve compor esse caso de uso sob `/api/v1`, declarar `security: []`, publicar
-schemas e respostas completas no OpenAPI e aplicar rate limit no contrato
-final.
+`POST /api/v1/auth/login` possui `security: []`, recebe exatamente `email` e
+`password` como strings e compõe `AuthenticateWithEmailAndPassword`. O núcleo
+normaliza o e-mail, verifica Argon2id, aplica elegibilidade e confirma o último
+login de forma condicional. A resposta 200 possui somente `accessToken`,
+`tokenType: "Bearer"` e `expiresIn: 900`; token, senha ou outro segredo não
+aparece nos exemplos do OpenAPI.
 
 Conta ausente, senha incorreta, hash ausente/inválido e conta bloqueada ou
 desabilitada não podem receber código, mensagem, headers ou estrutura
 diferentes. O fluxo detalhado está em
-[`../authentication/README.md`](../authentication/README.md). Não há endpoint a
-documentar antes dessa composição.
+[`../authentication/README.md`](../authentication/README.md).
+
+O endpoint aceita cinco tentativas por endereço de cliente em uma janela fixa
+de 60 segundos. O contador Redis usa identificador HMAC opaco, TTL obrigatório
+e incremento/expiração atômicos; endereço, e-mail e senha não entram na chave.
+A sexta tentativa retorna 429 `AUTHENTICATION_RATE_LIMITED` e `Retry-After` com
+os segundos restantes. Falha ou resposta incoerente do Redis bloqueia o login
+com 503 `AUTHENTICATION_UNAVAILABLE`, sem executar a verificação de credencial.
+
+Respostas declaradas: 200 para sucesso, 400 `VALIDATION_ERROR`, 401
+`INVALID_CREDENTIALS`, 429 `AUTHENTICATION_RATE_LIMITED`, 500
+`INTERNAL_SERVER_ERROR` e 503 `AUTHENTICATION_UNAVAILABLE`. A operação não é
+idempotente do ponto de vista do servidor: cada sucesso confirma
+`last_login_at` e emite um novo token. Ela não publica evento ou job durável,
+não cria refresh token e ainda não persiste uma sessão funcional.
 
 ## OpenAPI
 
@@ -127,12 +139,13 @@ chaves estão em [`INTERNATIONALIZATION.md`](INTERNATIONALIZATION.md).
 | `ForbiddenError`          |    403 | `FORBIDDEN`             |
 | `NotFoundError`           |    404 | `NOT_FOUND`             |
 | `ConflictError`           |    409 | `CONFLICT`              |
+| `TooManyRequestsError`    |    429 | `TOO_MANY_REQUESTS`     |
 | `BusinessRuleError`       |    422 | `BUSINESS_RULE_ERROR`   |
 | `InfrastructureError`     |    500 | `INFRASTRUCTURE_ERROR`  |
 | `ServiceUnavailableError` |    503 | `SERVICE_UNAVAILABLE`   |
 | Erro desconhecido         |    500 | `INTERNAL_SERVER_ERROR` |
 
-Erros do Fastify que já possuem status 400, 401, 403, 404, 409 ou 422 são
+Erros do Fastify que já possuem status 400, 401, 403, 404, 409, 422 ou 429 são
 convertidos para a classe correspondente. Outros erros HTTP de cliente mantêm
 o status e usam `REQUEST_ERROR`. Erros de aplicação 5xx, como readiness,
 preservam sua classe e seu código público; falha desconhecida continua virando o

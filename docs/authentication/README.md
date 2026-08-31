@@ -2,16 +2,23 @@
 
 ## Estado atual
 
-O `PROT-022` entrega o núcleo reutilizável de autenticação por e-mail e senha:
+O `PROT-022` entregou o núcleo reutilizável de autenticação por e-mail e senha:
 normalização da chave de busca, verificação Argon2id, elegibilidade da conta,
 atualização concorrente de `last_login_at` e eventos de sucesso ou falha sem
-PII. Ainda não existe rota HTTP de login, emissão de token, criação/troca de
-senha ou sessão funcional. Esses fluxos começam no `PROT-023` e devem compor os
-contratos aqui definidos, sem duplicar a regra de credenciais.
+PII. O `PROT-023` o compôs em `POST /api/v1/auth/login`, sob rate limit
+distribuído, e passou a emitir um JWT de acesso curto. Ainda não existe
+criação/troca de senha, refresh token ou sessão funcional persistida.
 
 O rate limit é obrigatório no contrato HTTP final. Ele não pertence ao caso de
 uso porque o núcleo também será reutilizado fora do transporte HTTP e não deve
 depender de IP, Redis ou Fastify.
+
+`LoginWithEmailAndPassword` chama esse núcleo e, somente depois de uma
+credencial válida, cria um identificador UUID v7 de sessão lógica e emite o
+access token. Esse identificador ainda não é uma linha de `auth_sessions`; sua
+persistência e associação a refresh token pertencem ao `PROT-024`. Conta com
+`mfaEnabled` não recebe token antes de existir o challenge do `PROT-028`: o
+fluxo falha fechado com a mesma resposta `INVALID_CREDENTIALS`.
 
 ## Fluxo de autenticação
 
@@ -49,13 +56,58 @@ mesmo `InvalidCredentialsError`:
 }
 ```
 
-A futura fronteira HTTP traduzirá a mensagem pelo mecanismo global e incluirá
-somente os campos públicos já aprovados para erros. Motivo interno, estado da
+O handler HTTP traduz a mensagem pelo mecanismo global e inclui somente os
+campos públicos já aprovados para erros. Motivo interno, estado da
 conta, hash, e-mail e senha nunca fazem parte da exceção, da resposta ou do
 evento. A equivalência de resposta e a presença de trabalho Argon2id reduzem
 enumeração; não oferecem garantia de tempo constante contra variação de host,
 pool, banco ou scheduler. O rate limit do endpoint continua uma defesa
 obrigatória em profundidade.
+
+## Access token
+
+O access token é assinado e validado por `jose` `6.2.10`. O contrato atual usa
+HMAC SHA-256 (`HS256`) dentro da única fronteira Manager API, com chave de ao
+menos 32 bytes carregada exclusivamente de `JWT_ACCESS_SECRET`. O header exige
+`typ: at+jwt`; nenhum algoritmo alternativo é aceito.
+
+| Claim       | Valor ou finalidade                                     |
+| ----------- | ------------------------------------------------------- |
+| `sub`       | UUID v7 da conta                                        |
+| `sid`       | UUID v7 da sessão lógica                                |
+| `iat`       | instante de emissão em Unix time                        |
+| `exp`       | `iat + 900` segundos                                    |
+| `iss`       | `urn:protege-mais:authentication`                       |
+| `aud`       | `urn:protege-mais:manager-api`                          |
+| `token_use` | `access`, impedindo confusão com outras credenciais JWT |
+
+O verificador fixa algoritmo, tipo, issuer, audience, finalidade e tolerância
+de relógio zero. Rejeita token vazio ou excessivo, expirado, emitido no futuro,
+alterado, assinado com outra chave, com UUIDs inválidos ou validade diferente
+de 15 minutos. Toda rejeição usa `INVALID_ACCESS_TOKEN`; a validação será
+conectada a rotas protegidas somente pelo `PROT-029`.
+
+O payload não carrega e-mail, telefone, nome, IP, segredo, papel, permissão,
+organização ou unidade. Autorização contextual deve consultar o estado vigente,
+sem congelá-lo durante os 15 minutos do token. Até o `PROT-024`, não existe
+refresh nem revogação imediata dessa sessão lógica; reduzir a validade limita,
+mas não elimina, essa janela.
+
+## Rate limit do login
+
+Antes de verificar a credencial, a rota consome um contador Redis por endereço
+de cliente: cinco tentativas em janela fixa de 60 segundos. O endereço é
+transformado por HMAC-SHA-256 com separação de domínio; somente o digest opaco
+entra na chave `rate-limit:authentication:login:<digest>`. O namespace do
+ambiente é aplicado pelo plugin Redis.
+
+`INCR`, criação condicional do TTL e leitura do TTL acontecem na mesma transação
+Redis. A sexta tentativa retorna 429 com `Retry-After`; indisponibilidade ou
+resposta incoerente do contador retorna 503 e não chama o caso de uso. O limite
+não recebe e-mail ou senha, não registra endereço bruto e não substitui proteções
+de borda. A API ainda não confia automaticamente em headers de proxy; uma
+topologia reversa deve configurar essa fronteira explicitamente antes do
+deploy.
 
 ## Política aprovada de senha
 
@@ -104,10 +156,11 @@ revisão deliberada.
 
 ## Composição e auditoria
 
-As fronteiras vivem em `@protege-mais/interfaces`; o adaptador Drizzle, o
-serviço Argon2id e o caso de uso recebem dependências explicitamente por
-construtor. A futura composição da Manager API deve registrar uma instância por
-processo usando o `DatabaseRw`, o logger seguro e o relógio do sistema.
+As fronteiras vivem em `@protege-mais/interfaces`; o adaptador Drizzle, os
+serviços Argon2id/JWT e os casos de uso recebem dependências explicitamente por
+construtor. A Manager API cria um container filho por instância Fastify e
+registra `DatabaseRw`, contador Redis, logger seguro, relógio, gerador UUID v7 e
+os serviços, sem estado global mutável compartilhado entre testes.
 
 Os únicos eventos atuais são:
 
@@ -122,8 +175,6 @@ de auditoria prevista em tickets posteriores.
 
 ## Fronteiras dos próximos tickets
 
-- `PROT-023`: rota de login, schema/OpenAPI, rate limit, composição do caso de
-  uso e emissão de access token;
 - `PROT-024`: criação, rotação e revogação funcional da sessão/refresh token;
 - `PROT-027`: recuperação e troca de senha, incluindo blocklist;
 - `PROT-028`: desafio e confirmação do segundo fator quando `mfaEnabled` for

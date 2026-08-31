@@ -35,7 +35,7 @@ Estados permitidos: `Pendente`, `Em andamento`, `Bloqueado` e `Concluído`.
 | [PROT-020](EPIC_01_DATA_FOUNDATION.md#prot-020)    | Criar organization_units                   | P0         | PROT-012, PROT-019           | Concluído |
 | [PROT-021](EPIC_01_DATA_FOUNDATION.md#prot-021)    | Criar organization_members                 | P0         | PROT-015, PROT-019, PROT-020 | Concluído |
 | [PROT-022](EPIC_02_IDENTITY_ACCESS.md#prot-022)    | Autenticar por e-mail e senha              | P0         | PROT-005, PROT-015, PROT-016 | Concluído |
-| [PROT-023](EPIC_02_IDENTITY_ACCESS.md#prot-023)    | Emitir access token                        | P0         | PROT-022                     | Pendente  |
+| [PROT-023](EPIC_02_IDENTITY_ACCESS.md#prot-023)    | Emitir access token                        | P0         | PROT-022                     | Concluído |
 | [PROT-024](EPIC_02_IDENTITY_ACCESS.md#prot-024)    | Rotacionar refresh token                   | P0         | PROT-016, PROT-023           | Pendente  |
 | [PROT-025](EPIC_02_IDENTITY_ACCESS.md#prot-025)    | Implementar logout                         | P0         | PROT-024                     | Pendente  |
 | [PROT-026](EPIC_02_IDENTITY_ACCESS.md#prot-026)    | Revogar sessões                            | P0         | PROT-024                     | Pendente  |

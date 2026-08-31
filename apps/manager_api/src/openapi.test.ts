@@ -22,6 +22,7 @@ const baseConfiguration: ManagerApiEnvironment = Object.freeze({
   port: 3000,
   corsOrigins: Object.freeze(['http://localhost:5173']),
   databaseUrl: 'postgresql://test:test@127.0.0.1:5432/protege_mais_test',
+  jwtAccessSecret: 'test-access-secret-with-at-least-thirty-two-bytes',
   redisUrl: 'redis://127.0.0.1:6379/0',
   logLevel: 'silent',
 });
@@ -35,6 +36,8 @@ function createReadyRedisConnection(): RedisConnection {
       setWithExpiration: () => Promise.resolve(),
       delete: () => Promise.resolve(0),
       expire: () => Promise.resolve(false),
+      incrementWithExpiration: () =>
+        Promise.resolve({ value: 1, ttlSeconds: 60 }),
     },
     connect: () => Promise.resolve(),
     start: () => undefined,
@@ -294,7 +297,7 @@ void test('gera OpenAPI 3.1 estruturalmente válido e preserva o contrato operac
       },
       {
         openapi: '3.1.0',
-        paths: ['/health', '/ready'],
+        paths: ['/api/v1/auth/login', '/health', '/ready'],
         schemas: ['ErrorResponse', 'OperationalStatus'],
         securitySchemes: ['bearerAuth'],
         health: {
@@ -318,6 +321,62 @@ void test('gera OpenAPI 3.1 estruturalmente válido e preserva o contrato operac
       JSON.stringify(examples),
       /authorization|bearer\s+\S+|password|private.?key|secret|senha|token/i
     );
+  } finally {
+    await app.close();
+  }
+});
+
+void test('documenta login público, body fechado e todas as respostas previstas', async () => {
+  const app = await buildOpenApiServer();
+
+  try {
+    await app.ready();
+    const document = asObject(app.swagger(), 'OpenAPI');
+    const operation = openApiOperation(document, '/api/v1/auth/login', 'post');
+    const requestBody = asObject(
+      property(operation, 'requestBody', 'POST /api/v1/auth/login'),
+      'login.requestBody'
+    );
+    const requestContent = asObject(
+      property(requestBody, 'content', 'login.requestBody'),
+      'login.requestBody.content'
+    );
+    const requestMediaType = asObject(
+      property(requestContent, 'application/json', 'login.requestBody.content'),
+      'login.requestBody.application/json'
+    );
+    const requestSchema = asObject(
+      property(
+        requestMediaType,
+        'schema',
+        'login.requestBody.application/json'
+      ),
+      'login.requestBody.schema'
+    );
+    const responses = asObject(
+      property(operation, 'responses', 'POST /api/v1/auth/login'),
+      'login.responses'
+    );
+
+    assert.equal(operation.operationId, 'loginWithEmailAndPassword');
+    assert.deepEqual(operation.tags, [apiTags.authentication]);
+    assert.deepEqual(operation.security, []);
+    assert.equal(requestSchema.additionalProperties, false);
+    assert.deepEqual(requestSchema.required, ['email', 'password']);
+    assert.deepEqual(Object.keys(responses).sort(), [
+      '200',
+      '400',
+      '401',
+      '429',
+      '500',
+      '503',
+    ]);
+    for (const statusCode of ['400', '401', '429', '500', '503']) {
+      assert.equal(
+        responseReference(document, '/api/v1/auth/login', 'post', statusCode),
+        '#/components/schemas/ErrorResponse'
+      );
+    }
   } finally {
     await app.close();
   }

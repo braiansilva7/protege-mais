@@ -1,5 +1,4 @@
 import {
-  UnauthorizedError,
   isAuthenticationEmailLookupCandidate,
   normalizeAccountEmail,
 } from '@protege-mais/common';
@@ -11,19 +10,13 @@ import {
   type AuthenticationClock,
   type PasswordHashService,
 } from '@protege-mais/interfaces';
+import { InvalidCredentialsError } from './errors.js';
+
+export { InvalidCredentialsError } from './errors.js';
+export { LoginWithEmailAndPassword } from './login.js';
 
 export const invalidAuthenticationEmailLookupKey =
   'invalid-authentication-email';
-
-export class InvalidCredentialsError extends UnauthorizedError {
-  public constructor() {
-    super({
-      code: 'INVALID_CREDENTIALS',
-      message: 'E-mail ou senha inválidos.',
-      messageKey: 'authentication.invalidCredentials',
-    });
-  }
-}
 
 export class AuthenticateWithEmailAndPassword {
   public constructor(

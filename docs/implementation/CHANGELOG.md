@@ -3,6 +3,89 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-31 — PROT-023 — Emitir access token
+
+Status: Concluído
+
+### Resultado
+
+A Manager API passa a expor `POST /api/v1/auth/login`, reutilizando o núcleo
+Argon2id sem enfraquecer sua resposta não enumerável. O endpoint é público no
+OpenAPI, valida o contrato antes dos handlers, limita cinco tentativas por
+endereço a cada 60 segundos e falha fechado quando o contador Redis não está
+disponível.
+
+Uma credencial válida recebe somente um JWT de acesso de 15 minutos. Algoritmo,
+tipo, finalidade, issuer e audience são fixos; o payload contém apenas UUIDs
+opacos de conta/sessão e tempos. Organização, unidade, papel, permissão, PII e
+segredos não entram no token. Conta com MFA falha fechado até existir challenge
+funcional.
+
+### Arquivos e contratos
+
+- adicionado `jose` `6.2.10` somente a `packages/services`, sem atualizar
+  versões de dependências existentes;
+- criado `JoseAccessTokenService` com emissão/verificação HS256, `typ: at+jwt`,
+  validade de 900 segundos, issuer/audience/finalidade obrigatórios e rejeição
+  uniforme de tokens expirados, alterados ou assinados por outra chave;
+- criados contratos de token, sessão lógica, login e rate limit em
+  `packages/interfaces`; UUID v7 é validado para `sub` e `sid`;
+- criado `LoginWithEmailAndPassword`, que autentica primeiro, bloqueia MFA sem
+  challenge e só então gera `sid` e access token;
+- criado `FixedWindowLoginRateLimiter` com chave HMAC opaca, cinco tentativas,
+  janela de 60 segundos, 429 com `Retry-After` e 503 em falha/incoerência;
+- o adaptador Redis ganhou transação `INCR` + `EXPIRE NX` + `TTL`; IP, e-mail,
+  senha, chave e valor permanecem fora do Redis e dos logs;
+- a Manager API ganhou raiz de composição de autenticação com container filho,
+  controller e rota `POST /api/v1/auth/login` sob `/api/v1`;
+- adicionados schemas TypeBox de request/response, tag `authentication`,
+  `security: []` e respostas 200, 400, 401, 429, 500 e 503 ao OpenAPI;
+- `JWT_ACCESS_SECRET` passou a ser obrigatório na Manager API e exige ao menos
+  32 bytes; `JWT_REFRESH_SECRET` continua reservado ao próximo ticket;
+- adicionadas traduções equivalentes em `pt-BR`, `en` e `es`, a classe comum
+  de erro 429 e 19 cenários automatizados novos;
+- aceito o `ADR-010`; autenticação, API, arquitetura, segurança, configuração,
+  Redis, banco, observabilidade, qualidade, roadmap, README e tickets foram
+  sincronizados;
+- nenhuma migration, tabela, coluna, seed, dado, refresh token, linha de
+  `auth_sessions`, middleware de autenticação ou autorização foi criado.
+
+### Validação
+
+- `pnpm test`: 161 testes aprovados em nove workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm --filter @protege-mais/plugins test:database`: 26 testes reais
+  aprovados, incluindo autenticação Argon2id e concorrência do último login;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados,
+  agora incluindo incremento/TTL atômico, namespace e retomada;
+- `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado com
+  retry, deduplicação e shutdown;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso não
+  bloqueante já conhecido do bundle Web maior que 500 kB;
+- `pnpm format`, `pnpm format:check`,
+  `pnpm -r --if-present format:check`, `git diff --check` e
+  `docker compose config --quiet`: formatação, whitespace e Compose válidos;
+- `pnpm audit --prod`: nenhum achado em `jose`; permanecem 13 achados do
+  baseline (10 altos e três moderados), cuja atualização exige ticket próprio.
+
+### Decisões e pendências
+
+- o `ADR-010` aprova HS256 enquanto emissor e verificador permanecem na Manager
+  API. Uma nova fronteira de serviço exige reavaliar assinatura assimétrica,
+  `kid` e rotação;
+- o `sid` ainda é somente lógico. Não existe refresh ou revogação imediata; a
+  validade de 15 minutos limita a janela residual;
+- o rate limit usa `request.ip` sem confiar automaticamente em headers de
+  proxy. A topologia de produção deve aprovar a fronteira de proxy antes do
+  deploy;
+- `PROT-024` é o próximo ticket liberado e deve persistir a sessão, emitir
+  refresh token rotacionável e tratar reuso/revogação;
+- middleware Bearer, MFA funcional, permissão e contexto permanecem em seus
+  tickets; o access token sozinho não autoriza operações;
+- os 13 advisories do baseline e o aviso de bundle Web permanecem fora deste
+  ticket.
+
 ## 2026-08-30 — PROT-022 — Autenticar por e-mail e senha
 
 Status: Concluído

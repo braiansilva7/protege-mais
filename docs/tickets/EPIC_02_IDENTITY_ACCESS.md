@@ -37,11 +37,11 @@ temporização razoavelmente uniforme e rate limit no contrato final.
 
 ### Emitir access token
 
-| Campo        | Valor    |
-| ------------ | -------- |
-| Status       | Pendente |
-| Prioridade   | P0       |
-| Dependências | PROT-022 |
+| Campo        | Valor     |
+| ------------ | --------- |
+| Status       | Concluído |
+| Prioridade   | P0        |
+| Dependências | PROT-022  |
 
 **Objetivo:** emitir access token curto, verificável e com finalidade definida.
 

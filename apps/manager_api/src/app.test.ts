@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import { Writable } from 'node:stream';
 import { test } from 'node:test';
 import { Pool } from 'pg';
 import type { ManagerApiEnvironment } from '@protege-mais/config';
@@ -9,7 +10,8 @@ import type {
   RedisConnection,
 } from '@protege-mais/plugins';
 import type { ErrorResponse } from '@protege-mais/schema';
-import { buildServer } from './app.js';
+import { InvalidCredentialsError } from '@protege-mais/use-cases';
+import { buildServer, type BuildServerOptions } from './app.js';
 import { registerShutdownSignals } from './lifecycle.js';
 
 const testConfiguration: ManagerApiEnvironment = Object.freeze({
@@ -18,6 +20,7 @@ const testConfiguration: ManagerApiEnvironment = Object.freeze({
   port: 3000,
   corsOrigins: Object.freeze(['http://localhost:5173']),
   databaseUrl: 'postgresql://test:test@127.0.0.1:5432/protege_mais_test',
+  jwtAccessSecret: 'test-access-secret-with-at-least-thirty-two-bytes',
   redisUrl: 'redis://127.0.0.1:6379/0',
   logLevel: 'silent',
 });
@@ -42,6 +45,11 @@ function createTestRedisConnection(
       },
       delete: (key) => Promise.resolve(values.delete(key) ? 1 : 0),
       expire: (key) => Promise.resolve(values.has(key)),
+      incrementWithExpiration: (key) => {
+        const value = Number(values.get(key) ?? '0') + 1;
+        values.set(key, String(value));
+        return Promise.resolve({ value, ttlSeconds: 60 });
+      },
     },
     connect: () => Promise.resolve(),
     start: () => undefined,
@@ -78,12 +86,32 @@ function createTestDatabaseConnection(
 
 function buildTestServer(
   redisConnection = createTestRedisConnection(),
-  databaseConnection = createTestDatabaseConnection()
+  databaseConnection = createTestDatabaseConnection(),
+  options: Omit<
+    BuildServerOptions,
+    'databaseConnection' | 'redisConnection'
+  > = {}
 ) {
   return buildServer(testConfiguration, {
+    ...options,
     redisConnection,
     databaseConnection,
   });
+}
+
+function captureLogs() {
+  const chunks: string[] = [];
+  const destination = new Writable({
+    write(chunk, _encoding, callback) {
+      chunks.push(String(chunk));
+      callback();
+    },
+  });
+
+  return {
+    destination,
+    serialized: () => chunks.join(''),
+  };
 }
 
 void test('separa liveness e readiness fora do prefixo de negócio', async () => {
@@ -231,6 +259,234 @@ void test('aceita, gera e devolve IDs de correlação seguros', async () => {
       generated.headers['x-correlation-id'],
       generated.headers['x-request-id']
     );
+  } finally {
+    await app.close();
+  }
+});
+
+void test('expõe login público, emite somente o contrato aprovado e não registra o token', async () => {
+  const loginInputs: unknown[] = [];
+  const limitedAddresses: string[] = [];
+  const accessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6ImF0K2p3dCJ9.test.signature';
+  const logs = captureLogs();
+  const app = await buildTestServer(
+    createTestRedisConnection(),
+    createTestDatabaseConnection(),
+    {
+      logDestination: logs.destination,
+      loginRateLimiter: {
+        consume: (clientAddress) => {
+          limitedAddresses.push(clientAddress);
+          return Promise.resolve({
+            remainingAttempts: 4,
+            retryAfterSeconds: 60,
+          });
+        },
+      },
+      loginUseCase: {
+        execute: (input) => {
+          loginInputs.push(input);
+          return Promise.resolve({
+            accessToken,
+            tokenType: 'Bearer',
+            expiresIn: 900,
+          });
+        },
+      },
+    }
+  );
+
+  try {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: {
+        email: 'user@example.test',
+        password: 'senha integral sem normalização HTTP',
+      },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), {
+      accessToken,
+      tokenType: 'Bearer',
+      expiresIn: 900,
+    });
+    assert.deepEqual(loginInputs, [
+      {
+        email: 'user@example.test',
+        password: 'senha integral sem normalização HTTP',
+      },
+    ]);
+    assert.equal(limitedAddresses.length, 1);
+    assert.notEqual(limitedAddresses[0], '');
+  } finally {
+    await app.close();
+  }
+
+  assert.doesNotMatch(logs.serialized(), new RegExp(accessToken));
+  assert.doesNotMatch(logs.serialized(), /user@example\.test|senha integral/u);
+});
+
+void test('rejeita body estruturalmente inválido antes do rate limit e do caso de uso', async () => {
+  let limitCalls = 0;
+  let loginCalls = 0;
+  const app = await buildTestServer(
+    createTestRedisConnection(),
+    createTestDatabaseConnection(),
+    {
+      loginRateLimiter: {
+        consume: () => {
+          limitCalls += 1;
+          return Promise.resolve({
+            remainingAttempts: 4,
+            retryAfterSeconds: 60,
+          });
+        },
+      },
+      loginUseCase: {
+        execute: () => {
+          loginCalls += 1;
+          return Promise.resolve({
+            accessToken: 'unused',
+            tokenType: 'Bearer',
+            expiresIn: 900,
+          });
+        },
+      },
+    }
+  );
+
+  try {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: {
+        email: 'user@example.test',
+      },
+    });
+
+    assert.equal(response.statusCode, 400);
+    assert.equal(response.json<ErrorResponse>().code, 'VALIDATION_ERROR');
+    assert.equal(limitCalls, 0);
+    assert.equal(loginCalls, 0);
+  } finally {
+    await app.close();
+  }
+});
+
+void test('aplica rate limit distribuído sem diferenciar credenciais inválidas', async () => {
+  const app = await buildTestServer(
+    createTestRedisConnection(),
+    createTestDatabaseConnection(),
+    {
+      loginUseCase: {
+        execute: () => Promise.reject(new InvalidCredentialsError()),
+      },
+    }
+  );
+  const invalidResponses: ErrorResponse[] = [];
+
+  try {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/login',
+        headers: { 'accept-language': 'en' },
+        payload: {
+          email:
+            attempt % 2 === 0 ? 'missing@example.test' : 'blocked@example.test',
+          password: 'invalid credential attempt',
+        },
+      });
+
+      assert.equal(response.statusCode, 401);
+      invalidResponses.push(response.json<ErrorResponse>());
+    }
+
+    assert.equal(
+      new Set(invalidResponses.map(({ code, message }) => `${code}:${message}`))
+        .size,
+      1
+    );
+    assert.equal(invalidResponses[0]?.code, 'INVALID_CREDENTIALS');
+
+    const limited = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      headers: { 'accept-language': 'en' },
+      payload: {
+        email: 'another@example.test',
+        password: 'invalid credential attempt',
+      },
+    });
+    const body = limited.json<ErrorResponse>();
+
+    assert.equal(limited.statusCode, 429);
+    assert.equal(limited.headers['retry-after'], '60');
+    assert.equal(body.code, 'AUTHENTICATION_RATE_LIMITED');
+    assert.equal(
+      body.message,
+      'Too many authentication attempts were made. Try again later.'
+    );
+    assert.deepEqual(Object.keys(body).sort(), [
+      'code',
+      'message',
+      'requestId',
+    ]);
+  } finally {
+    await app.close();
+  }
+});
+
+void test('falha fechada e sanitizada quando o contador de login está indisponível', async () => {
+  const readyRedis = createTestRedisConnection();
+  const unavailableRedis: RedisConnection = {
+    ...readyRedis,
+    commands: {
+      ...readyRedis.commands,
+      incrementWithExpiration: () =>
+        Promise.reject(new Error('redis-private-diagnostic')),
+    },
+  };
+  let loginCalls = 0;
+  const app = await buildTestServer(
+    unavailableRedis,
+    createTestDatabaseConnection(),
+    {
+      loginUseCase: {
+        execute: () => {
+          loginCalls += 1;
+          return Promise.resolve({
+            accessToken: 'unused',
+            tokenType: 'Bearer',
+            expiresIn: 900,
+          });
+        },
+      },
+    }
+  );
+
+  try {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      headers: { 'accept-language': 'es' },
+      payload: {
+        email: 'user@example.test',
+        password: 'credential attempt',
+      },
+    });
+    const body = response.json<ErrorResponse>();
+
+    assert.equal(response.statusCode, 503);
+    assert.equal(body.code, 'AUTHENTICATION_UNAVAILABLE');
+    assert.equal(
+      body.message,
+      'La autenticación no está disponible temporalmente.'
+    );
+    assert.doesNotMatch(response.body, /redis-private-diagnostic/u);
+    assert.equal(loginCalls, 0);
   } finally {
     await app.close();
   }

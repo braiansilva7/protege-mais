@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test authentication/authentication.test.ts",
+    "test": "tsx --test authentication/*.test.ts",
     "format": "prettier --write . --ignore-path ../../.prettierignore",
     "format:check": "prettier --check . --ignore-path ../../.prettierignore"
   },
@@ -17,7 +17,8 @@
   "dependencies": {
     "@protege-mais/common": "workspace:*",
     "@protege-mais/interfaces": "workspace:*",
-    "argon2": "0.45.1"
+    "argon2": "0.45.1",
+    "jose": "6.2.10"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

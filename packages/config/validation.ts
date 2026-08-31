@@ -10,6 +10,7 @@ export const LOG_LEVELS = [
   'fatal',
   'silent',
 ] as const;
+export const JWT_HMAC_SECRET_MINIMUM_BYTES = 32;
 
 export type AppEnvironment = (typeof APP_ENVIRONMENTS)[number];
 export type LogLevel = (typeof LOG_LEVELS)[number];
@@ -22,6 +23,7 @@ export interface ManagerApiEnvironment {
   readonly port: number;
   readonly corsOrigins: readonly string[];
   readonly databaseUrl: string;
+  readonly jwtAccessSecret: string;
   readonly redisUrl: string;
   readonly logLevel: LogLevel;
 }
@@ -347,6 +349,22 @@ function secret(
   return rawValue;
 }
 
+function jwtHmacSecret(
+  source: EnvironmentSource,
+  key: string,
+  environment: AppEnvironment
+): string {
+  const value = secret(source, key, environment);
+
+  if (
+    new TextEncoder().encode(value).byteLength < JWT_HMAC_SECRET_MINIMUM_BYTES
+  ) {
+    throw new ConfigurationError(key, 'INVALID');
+  }
+
+  return value;
+}
+
 function boolean(source: EnvironmentSource, key: string): boolean {
   const value = required(source, key).toLowerCase();
   if (value === 'true') return true;
@@ -378,6 +396,7 @@ export function createManagerApiEnvironment(
     ),
     corsOrigins: origins(source, 'CORS_ORIGIN'),
     databaseUrl: databaseUrl(source, environment),
+    jwtAccessSecret: jwtHmacSecret(source, 'JWT_ACCESS_SECRET', environment),
     redisUrl: redisUrl(source, environment),
     logLevel: logLevel(source, environment),
   };
@@ -437,8 +456,12 @@ export function createJwtEnvironment(
   source: EnvironmentSource
 ): JwtEnvironment {
   const environment = appEnvironment(source);
-  const accessSecret = secret(source, 'JWT_ACCESS_SECRET', environment);
-  const refreshSecret = secret(source, 'JWT_REFRESH_SECRET', environment);
+  const accessSecret = jwtHmacSecret(source, 'JWT_ACCESS_SECRET', environment);
+  const refreshSecret = jwtHmacSecret(
+    source,
+    'JWT_REFRESH_SECRET',
+    environment
+  );
   if (accessSecret === refreshSecret) {
     throw new ConfigurationError(
       ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'],

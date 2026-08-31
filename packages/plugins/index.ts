@@ -93,6 +93,7 @@ export {
   type RedisCommands,
   type RedisConnection,
   type RedisConnectionOptions,
+  type RedisIncrementWithExpirationResult,
   type RedisLogger,
   type RedisPluginOptions,
 } from './redis/index.js';

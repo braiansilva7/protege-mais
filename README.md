@@ -58,6 +58,9 @@ autorização funcional.
 O `PROT-022` criou o núcleo de autenticação local com Argon2id, resposta não
 enumerável, atualização concorrente segura do último login e auditoria sem PII,
 sem expor ainda uma rota ou emitir tokens/sessões.
+O `PROT-023` expôs o login público sob rate limit distribuído e passou a emitir
+JWTs de acesso de 15 minutos com finalidade, issuer, audience e sessão lógica
+explícitos, sem congelar contexto de autorização no token.
 
 ## Pré-requisitos
 
@@ -119,7 +122,8 @@ pnpm build
 ```
 
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
-cobrem configuração, erros, i18n, autenticação local, PostgreSQL, Redis,
+cobrem configuração, erros, i18n, autenticação local, JWT de acesso, login
+HTTP, rate limit, PostgreSQL, Redis,
 registry de readiness,
 endpoints operacionais, OpenAPI, logging, redaction, correlação, filas e
 shutdown, além das convenções, enums, contas, sessões, RBAC e catálogo de
@@ -138,8 +142,10 @@ As regras de TypeScript, ESLint, Prettier e uso excepcional de `any` estão em
 
 - `GET /health` — liveness do processo, sem consultar dependências;
 - `GET /ready` — readiness das dependências obrigatórias registradas;
+- `POST /api/v1/auth/login` — autentica e-mail/senha sob rate limit e devolve
+  somente um access token curto;
 - `/swagger/` — UI do OpenAPI em `LOCAL`, `DEV` e `HMG`; bloqueada em `PROD`;
-- `/api/v1` — reservado para futuras rotas de negócio, atualmente vazio.
+- `/api/v1` — prefixo exclusivo das rotas de domínio.
 
 Falhas HTTP usam o contrato comum `{ code, message, requestId }`; `message` é
 traduzida sem alterar `code`, enquanto stack, causa e detalhes de validação não
@@ -152,8 +158,8 @@ convenção completa do OpenAPI está em
 permitidos/proibidos e consultas operacionais estão em
 [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
-O núcleo de autenticação ainda não é alcançável por HTTP. Seu fluxo, política
-de senha, contrato uniforme e fronteiras dos próximos tickets estão em
+O fluxo de autenticação, a política de senha, o contrato uniforme, o access
+token e as fronteiras de sessão/refresh estão em
 [`docs/authentication/README.md`](docs/authentication/README.md).
 
 PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
@@ -184,8 +190,8 @@ em [`docs/permissions/README.md`](docs/permissions/README.md).
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-023`:
+O próximo ticket liberado é `PROT-024`:
 
 ```text
-Implemente o ticket PROT-023 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-024 seguindo toda a documentação do projeto.
 ```

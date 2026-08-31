@@ -1,7 +1,10 @@
 {
   "authentication": {
+    "invalidAccessToken": "Token de acceso no válido.",
     "invalidCredentials": "Correo electrónico o contraseña no válidos.",
-    "required": "Se requiere autenticación."
+    "rateLimited": "Se realizaron demasiados intentos de autenticación. Inténtelo de nuevo más tarde.",
+    "required": "Se requiere autenticación.",
+    "unavailable": "La autenticación no está disponible temporalmente."
   },
   "errors": {
     "application": "No se pudo procesar la solicitud.",
@@ -13,6 +16,7 @@
     "notFound": "Recurso no encontrado.",
     "request": "No se pudo procesar la solicitud.",
     "serviceUnavailable": "El servicio no está disponible temporalmente.",
+    "tooManyRequests": "Se realizaron demasiadas solicitudes.",
     "validation": "Los datos enviados no son válidos."
   },
   "health": {

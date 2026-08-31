@@ -8,6 +8,13 @@ export {
 export { healthSchema } from './health/health/index.js';
 export { readinessSchema } from './health/readiness/index.js';
 export {
+  loginRequestSchema,
+  loginResponseSchema,
+  loginSchema,
+  type LoginRequest,
+  type LoginResponse,
+} from './authentication/login/index.js';
+export {
   apiTags,
   bearerAuthSecurity,
   bearerAuthSecuritySchemeName,

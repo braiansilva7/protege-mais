@@ -6,12 +6,13 @@ export {
   InfrastructureError,
   NotFoundError,
   ServiceUnavailableError,
+  TooManyRequestsError,
   UnauthorizedError,
   ValidationError,
   type ApplicationErrorOptions,
   type SpecializedErrorOptions,
 } from './errors/index.js';
-export { createUuidV7 } from './functions/uuid.js';
+export { createUuidV7, isUuidV7 } from './functions/uuid.js';
 export { normalizeAccountEmail } from './accounts/index.js';
 export {
   authenticationEmailMaximumLength,

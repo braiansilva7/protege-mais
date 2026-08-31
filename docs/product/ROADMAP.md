@@ -98,6 +98,7 @@ contextual e a FK composta do RBAC. O `PROT-021` criou
 `organization_members`, com memberships organizacionais/de unidade coerentes e
 independentes de papel, concluindo a fundação de dados. O `PROT-022` criou o
 número mínimo de contratos, serviço Argon2id, repositório e caso de uso para
-validar credenciais sem enumeração, ainda sem rota ou token. O próximo trabalho
-de implementação deve começar por `PROT-023`, que integrará o endpoint, rate
-limit e access token.
+validar credenciais sem enumeração. O `PROT-023` integrou o login público sob
+rate limit distribuído e a emissão/validação de access token curto. O próximo
+trabalho de implementação deve começar por `PROT-024`, que persistirá a sessão
+e implementará refresh token rotacionável e revogável.

@@ -40,6 +40,7 @@ const managerSource: EnvironmentSource = {
   CORS_ORIGIN: 'http://localhost:5173,http://localhost:5173/',
   DATABASE_URL: 'postgresql://user:password@localhost:5432/protege_mais',
   REDIS_URL: 'redis://localhost:6379/0',
+  JWT_ACCESS_SECRET: 'local-access-secret-with-thirty-two-bytes',
   LOG_LEVEL: 'debug',
 };
 
@@ -64,6 +65,7 @@ void test('cria configurações mínimas, tipadas e imutáveis para cada app', (
     port: 3000,
     corsOrigins: ['http://localhost:5173'],
     databaseUrl: managerSource.DATABASE_URL,
+    jwtAccessSecret: managerSource.JWT_ACCESS_SECRET,
     redisUrl: managerSource.REDIS_URL,
     logLevel: 'debug',
   });
@@ -258,6 +260,30 @@ void test('apps exigem Redis e produção rejeita credencial de exemplo', () => 
   );
 });
 
+void test('Manager API exige segredo JWT de acesso com ao menos 32 bytes', () => {
+  expectConfigurationError(
+    () =>
+      createManagerApiEnvironment({
+        ...managerSource,
+        JWT_ACCESS_SECRET: undefined,
+      }),
+    'JWT_ACCESS_SECRET',
+    'MISSING'
+  );
+
+  const shortSecret = 'short-access-secret';
+  expectConfigurationError(
+    () =>
+      createManagerApiEnvironment({
+        ...managerSource,
+        JWT_ACCESS_SECRET: shortSecret,
+      }),
+    'JWT_ACCESS_SECRET',
+    'INVALID',
+    shortSecret
+  );
+});
+
 void test('rejeita segredos JWT vazios, iguais e placeholders em produção', () => {
   expectConfigurationError(
     () =>
@@ -274,8 +300,8 @@ void test('rejeita segredos JWT vazios, iguais e placeholders em produção', ()
     () =>
       createJwtEnvironment({
         APP_ENVIRONMENT: 'DEV',
-        JWT_ACCESS_SECRET: 'same-secret',
-        JWT_REFRESH_SECRET: 'same-secret',
+        JWT_ACCESS_SECRET: 'same-secret-with-at-least-thirty-two-bytes',
+        JWT_REFRESH_SECRET: 'same-secret-with-at-least-thirty-two-bytes',
       }),
     'JWT_REFRESH_SECRET',
     'INVALID'

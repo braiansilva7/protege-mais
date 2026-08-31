@@ -73,9 +73,10 @@ tradução continuam em `packages/plugins`.
 Tags devem vir de `apiTags`, com descrição correspondente em `openApiTags`. O
 esquema HTTP Bearer chamado `bearerAuth` está em
 `components.securitySchemes`. Ele documenta o formato JWT sem incluir token. A
-autenticação ainda não está implementada e não há endpoint protegido no
-baseline; as futuras rotas protegidas devem usar `bearerAuthSecurity` junto com
-o middleware entregue pelos tickets de identidade e acesso.
+rota pública `POST /api/v1/auth/login` usa a tag `authentication` e
+`security: []`; ainda não há endpoint protegido no baseline. As futuras rotas
+protegidas devem usar `bearerAuthSecurity` junto com o middleware entregue pelos
+tickets de identidade e acesso.
 
 Exemplos devem ser inteiramente fictícios. Nunca inclua token, senha, chave,
 credencial, URL com credencial, CPF, contato ou outro dado pessoal real no
@@ -109,5 +110,6 @@ pnpm --filter @protege-mais/manager-api test
 
 A suíte serializa e reabre o JSON, valida a estrutura OpenAPI, unicidade de
 `operationId`, responses e referências locais, compara o contrato operacional,
-confere o security requirement de uma operação protegida, procura segredos nos
+confere que o login é público, tem body fechado e declara 200/400/401/429/500/503,
+valida o security requirement de uma operação protegida, procura segredos nos
 exemplos e testa a política de exposição em `LOCAL` e `PROD`.
