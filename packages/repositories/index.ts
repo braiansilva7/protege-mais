@@ -1,1 +1,4 @@
-export { DrizzleAccountAuthenticationRepository } from './authentication/index.js';
+export {
+  DrizzleAccountAuthenticationRepository,
+  DrizzleAuthenticationSessionRepository,
+} from './authentication/index.js';

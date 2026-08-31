@@ -3,6 +3,82 @@
 Este arquivo registra somente mudanças efetivamente realizadas. Planos futuros
 ficam no roadmap e nos tickets.
 
+## 2026-08-31 — PROT-024 — Rotacionar refresh token
+
+Status: Concluído
+
+### Resultado
+
+Login e renovação passam a manter uma sessão persistida por dispositivo sem
+armazenar a credencial pura. O login emite o par access/refresh somente depois
+de gravar `auth_sessions`; `POST /api/v1/auth/refresh` troca o hash em transação,
+registra o último uso e conserva a expiração absoluta de 30 dias.
+
+Um refresh predecessor com assinatura e relação válidas revoga a sessão inteira.
+Duas requisições concorrentes não confirmam dois sucessores: uma rotaciona e a
+outra detecta reuso, revogando também o sucessor da primeira. Token ou sessão
+inválida, expirada, revogada ou inelegível usa a mesma resposta 401
+`INVALID_REFRESH_TOKEN`.
+
+### Arquivos e dados
+
+- criado `JoseRefreshTokenService` com HS256, `typ: rt+jwt`, issuer, audience e
+  finalidade exclusivos, `jti` aleatório de 256 bits e expiração absoluta;
+- criado `Sha256RefreshTokenHashService`; somente
+  `sha256:<digest-base64url>` do JWT completo entra no banco;
+- adicionados contratos, repositório Drizzle e casos de uso para criar a sessão
+  no login e rotacioná-la com `SELECT ... FOR UPDATE`;
+- o login agora exige `deviceIdentifier`, aceita `deviceName`, sanitiza o
+  User-Agent e devolve `accessToken`, `refreshToken`, `expiresIn` e
+  `refreshExpiresIn`; `ip_hash` permanece nulo por falta de política aprovada;
+- adicionada a rota pública `POST /api/v1/auth/refresh`, seu schema TypeBox,
+  contrato OpenAPI e traduções equivalentes em `pt-BR`, `en` e `es`;
+- respostas com tokens definem `Cache-Control: no-store` e `Pragma: no-cache`;
+- `JWT_REFRESH_SECRET` passou a ser obrigatório na Manager API, com ao menos 32
+  bytes e valor diferente de `JWT_ACCESS_SECRET`;
+- adicionados eventos sem argumentos para sucesso, falha e reuso, e ampliada a
+  redaction de token, hash, sessão, dispositivo, User-Agent, `jti` e `tokenId`;
+- aceito o `ADR-011`; autenticação, API, arquitetura, segurança, configuração,
+  banco, observabilidade, qualidade, roadmap, README e tickets foram
+  sincronizados, incluindo o diagrama de rotação;
+- nenhuma migration, tabela, coluna, seed, dado ou versão de dependência foi
+  adicionada; a tabela criada no `PROT-016` já comportava o contrato.
+
+### Validação
+
+- `pnpm test`: 174 testes aprovados em nove workspaces;
+- `pnpm lint` e `pnpm typecheck`: 14 tarefas de workspace concluídas sem
+  warnings ou erros;
+- `pnpm --filter @protege-mais/plugins test:database`: 29 testes reais
+  aprovados, incluindo criação, rotação, reuso, expiração e duas renovações
+  concorrentes;
+- `pnpm --filter @protege-mais/plugins test:redis`: dois testes reais aprovados;
+- `pnpm --filter @protege-mais/worker test:redis`: pipeline real aprovado;
+- `pnpm build`: Manager API, Worker, Web e Mobile gerados; permanece o aviso não
+  bloqueante já conhecido do bundle Web maior que 500 kB;
+- `pnpm format`, `pnpm -r --if-present format:check`, `git diff --check` e
+  `docker compose config --quiet`: formatação, whitespace e Compose válidos;
+- `pnpm migrate:local`, `ENV=prod pnpm atlas:validate:docker` e
+  `ENV=prod pnpm atlas:status:docker`: diretório válido, nove migrations
+  aplicadas e nenhuma pendente;
+- `pnpm model:export`, `pnpm model:reference:validate` e
+  `pnpm model:reference:diff`: export principal válido e fixture sem drift;
+- `pnpm audit --prod`: permanecem 13 achados do baseline, dez altos e três
+  moderados; a correção exige atualização coordenada de dependências fora deste
+  ticket.
+
+### Decisões e pendências
+
+- o `ADR-011` aprova relação assinada no refresh JWT, hash corrente único,
+  expiração não deslizante e revogação defensiva de toda a sessão por reuso;
+- retry concorrente do mesmo refresh exige novo login por desenho. Clientes
+  devem substituir a credencial de forma atômica e nunca repetir a anterior;
+- logout, revogação administrativa/global, middleware Bearer, MFA funcional e
+  armazenamento nos clientes permanecem em seus tickets;
+- `PROT-025` é o próximo ticket liberado;
+- os 13 advisories do baseline e o aviso de bundle Web permanecem fora deste
+  ticket.
+
 ## 2026-08-31 — PROT-023 — Emitir access token
 
 Status: Concluído

@@ -9,3 +9,13 @@ export class InvalidCredentialsError extends UnauthorizedError {
     });
   }
 }
+
+export class InvalidRefreshTokenError extends UnauthorizedError {
+  public constructor() {
+    super({
+      code: 'INVALID_REFRESH_TOKEN',
+      message: 'Refresh token inválido.',
+      messageKey: 'authentication.invalidRefreshToken',
+    });
+  }
+}

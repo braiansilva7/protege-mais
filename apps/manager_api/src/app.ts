@@ -25,6 +25,7 @@ import {
 import type {
   LoginAuthenticationUseCase,
   LoginRateLimiter,
+  RefreshAuthenticationSessionUseCase,
 } from '@protege-mais/interfaces';
 import authenticationPlugin from './plugins/authentication/index.js';
 import swaggerPlugin from './plugins/swagger/index.js';
@@ -36,6 +37,7 @@ export interface BuildServerOptions {
   readonly logDestination?: LogDestination;
   readonly loginRateLimiter?: LoginRateLimiter;
   readonly loginUseCase?: LoginAuthenticationUseCase;
+  readonly refreshUseCase?: RefreshAuthenticationSessionUseCase;
   readonly redisConnection?: RedisConnection;
 }
 
@@ -78,6 +80,8 @@ export async function buildServer(
     accessTokenSecret: configuration.jwtAccessSecret,
     loginRateLimiter: options.loginRateLimiter,
     loginUseCase: options.loginUseCase,
+    refreshTokenSecret: configuration.jwtRefreshSecret,
+    refreshUseCase: options.refreshUseCase,
   });
   await app.register(registerMultipart);
   await app.register(registerCors, {

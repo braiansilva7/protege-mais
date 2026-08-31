@@ -2,6 +2,7 @@
   "authentication": {
     "invalidAccessToken": "Invalid access token.",
     "invalidCredentials": "Invalid email or password.",
+    "invalidRefreshToken": "Invalid refresh token.",
     "rateLimited": "Too many authentication attempts were made. Try again later.",
     "required": "Authentication is required.",
     "unavailable": "Authentication is temporarily unavailable."

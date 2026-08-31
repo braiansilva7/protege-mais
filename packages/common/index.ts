@@ -24,8 +24,12 @@ export {
   normalizeAuthenticationPassword,
 } from './authentication/index.js';
 export {
+  authSessionDeviceIdentifierMaximumLength,
+  authSessionDeviceIdentifierPatternSource,
   authSessionDeviceNameMaximumLength,
+  authSessionRefreshTokenMaximumLength,
   authSessionUserAgentMaximumLength,
+  isValidAuthSessionDeviceIdentifier,
   sanitizeAuthSessionDeviceName,
   sanitizeAuthSessionUserAgent,
 } from './auth-sessions/index.js';

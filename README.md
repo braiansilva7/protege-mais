@@ -5,9 +5,9 @@ Fundação técnica do **Protege Mais**.
 O legado foi removido pelo `PROT-000`, a estrutura do monorepo foi consolidada
 pelo `PROT-001`, a qualidade comum foi entregue pelo `PROT-002` e as variáveis
 de ambiente foram centralizadas pelo `PROT-003`. O `PROT-004` acrescentou o
-padrão global de erros da API. Neste baseline ainda não existem dados
-operacionais, autorização funcional ou rotas de negócio. API, Worker, Web e
-Mobile permanecem como shells mínimos para evolução incremental.
+padrão global de erros da API. Ainda não existem dados operacionais ou
+autorização funcional; Web e Mobile permanecem como shells mínimos para
+evolução incremental.
 
 O `PROT-005` consolidou a internacionalização do backend em `pt-BR`, `en` e
 `es`, com negociação por `Accept-Language`, fallback e catálogos equivalentes.
@@ -61,6 +61,9 @@ sem expor ainda uma rota ou emitir tokens/sessões.
 O `PROT-023` expôs o login público sob rate limit distribuído e passou a emitir
 JWTs de acesso de 15 minutos com finalidade, issuer, audience e sessão lógica
 explícitos, sem congelar contexto de autorização no token.
+O `PROT-024` transformou o `sid` em sessão persistida, passou a emitir refresh
+token rotacionável com expiração absoluta de 30 dias e adicionou detecção de
+reuso que revoga defensivamente a sessão.
 
 ## Pré-requisitos
 
@@ -122,8 +125,8 @@ pnpm build
 ```
 
 Lint e typecheck cobrem os quatro apps e os dez packages. Os testes atuais
-cobrem configuração, erros, i18n, autenticação local, JWT de acesso, login
-HTTP, rate limit, PostgreSQL, Redis,
+cobrem configuração, erros, i18n, autenticação local, JWTs de acesso/refresh,
+login, rotação HTTP, rate limit, PostgreSQL, Redis,
 registry de readiness,
 endpoints operacionais, OpenAPI, logging, redaction, correlação, filas e
 shutdown, além das convenções, enums, contas, sessões, RBAC e catálogo de
@@ -143,7 +146,9 @@ As regras de TypeScript, ESLint, Prettier e uso excepcional de `any` estão em
 - `GET /health` — liveness do processo, sem consultar dependências;
 - `GET /ready` — readiness das dependências obrigatórias registradas;
 - `POST /api/v1/auth/login` — autentica e-mail/senha sob rate limit e devolve
-  somente um access token curto;
+  o par inicial vinculado ao dispositivo;
+- `POST /api/v1/auth/refresh` — rotaciona a credencial renovável de uso único e
+  devolve um novo par;
 - `/swagger/` — UI do OpenAPI em `LOCAL`, `DEV` e `HMG`; bloqueada em `PROD`;
 - `/api/v1` — prefixo exclusivo das rotas de domínio.
 
@@ -158,8 +163,8 @@ convenção completa do OpenAPI está em
 permitidos/proibidos e consultas operacionais estão em
 [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
-O fluxo de autenticação, a política de senha, o contrato uniforme, o access
-token e as fronteiras de sessão/refresh estão em
+O fluxo de autenticação, a política de senha, os tokens e a rotação de sessão
+estão em
 [`docs/authentication/README.md`](docs/authentication/README.md).
 
 PostgreSQL/PostGIS e Atlas formam a fundação oficial de persistência. O schema
@@ -190,8 +195,8 @@ em [`docs/permissions/README.md`](docs/permissions/README.md).
 - Arquitetura-alvo:
   [`docs/architecture/TARGET_ARCHITECTURE.md`](docs/architecture/TARGET_ARCHITECTURE.md)
 
-O próximo ticket liberado é `PROT-024`:
+O próximo ticket liberado é `PROT-025`:
 
 ```text
-Implemente o ticket PROT-024 seguindo toda a documentação do projeto.
+Implemente o ticket PROT-025 seguindo toda a documentação do projeto.
 ```

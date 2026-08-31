@@ -1,11 +1,26 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  authSessionDeviceIdentifierMaximumLength,
   authSessionDeviceNameMaximumLength,
   authSessionUserAgentMaximumLength,
+  isValidAuthSessionDeviceIdentifier,
   sanitizeAuthSessionDeviceName,
   sanitizeAuthSessionUserAgent,
 } from './index.js';
+
+void test('valida o identificador técnico e opaco do dispositivo', () => {
+  assert.equal(isValidAuthSessionDeviceIdentifier('device:android-01'), true);
+  assert.equal(isValidAuthSessionDeviceIdentifier('A'), true);
+  assert.equal(isValidAuthSessionDeviceIdentifier('-invalid'), false);
+  assert.equal(isValidAuthSessionDeviceIdentifier('device invalid'), false);
+  assert.equal(
+    isValidAuthSessionDeviceIdentifier(
+      `a${'b'.repeat(authSessionDeviceIdentifierMaximumLength)}`
+    ),
+    false
+  );
+});
 
 void test('sanitiza metadados textuais de sessão', () => {
   assert.equal(

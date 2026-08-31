@@ -1,5 +1,21 @@
+export const authSessionDeviceIdentifierMaximumLength = 128;
+export const authSessionDeviceIdentifierPatternSource =
+  '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$';
 export const authSessionDeviceNameMaximumLength = 120;
+export const authSessionRefreshTokenMaximumLength = 4_096;
 export const authSessionUserAgentMaximumLength = 512;
+
+const authSessionDeviceIdentifierPattern = new RegExp(
+  authSessionDeviceIdentifierPatternSource,
+  'u'
+);
+
+export function isValidAuthSessionDeviceIdentifier(value: string): boolean {
+  return (
+    value.length <= authSessionDeviceIdentifierMaximumLength &&
+    authSessionDeviceIdentifierPattern.test(value)
+  );
+}
 
 function sanitizeAuthSessionText(
   value: string | null | undefined,

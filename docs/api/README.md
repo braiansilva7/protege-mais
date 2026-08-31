@@ -2,24 +2,30 @@
 
 ## Estado atual
 
-O baseline possui uma rota pública de login e ainda não possui rotas de
-usuários, papéis ou negócio.
+O baseline possui rotas públicas para iniciar e renovar sessão e ainda não
+possui rotas de usuários, papéis ou outros domínios.
 
-| Rota                      | Autenticação | Estado                 | Observação                                |
-| ------------------------- | ------------ | ---------------------- | ----------------------------------------- |
-| `GET /health`             | Não          | Disponível             | Liveness; retorna `{ "status": "ok" }`    |
-| `GET /ready`              | Não          | Disponível             | Readiness dos probes obrigatórios         |
-| `POST /api/v1/auth/login` | Não          | Disponível             | Credencial local e access token de 15 min |
-| `/swagger/*`              | Não          | `LOCAL`, `DEV` e `HMG` | UI, JSON e YAML do OpenAPI 3.1            |
+| Rota                        | Autenticação | Estado                 | Observação                                 |
+| --------------------------- | ------------ | ---------------------- | ------------------------------------------ |
+| `GET /health`               | Não          | Disponível             | Liveness; retorna `{ "status": "ok" }`     |
+| `GET /ready`                | Não          | Disponível             | Readiness dos probes obrigatórios          |
+| `POST /api/v1/auth/login`   | Não          | Disponível             | Credencial local e criação de sessão       |
+| `POST /api/v1/auth/refresh` | Não          | Disponível             | Rotação de refresh e novo access de 15 min |
+| `/swagger/*`                | Não          | `LOCAL`, `DEV` e `HMG` | UI, JSON e YAML do OpenAPI 3.1             |
 
 ## Login por e-mail e senha
 
-`POST /api/v1/auth/login` possui `security: []`, recebe exatamente `email` e
-`password` como strings e compõe `AuthenticateWithEmailAndPassword`. O núcleo
-normaliza o e-mail, verifica Argon2id, aplica elegibilidade e confirma o último
-login de forma condicional. A resposta 200 possui somente `accessToken`,
-`tokenType: "Bearer"` e `expiresIn: 900`; token, senha ou outro segredo não
-aparece nos exemplos do OpenAPI.
+`POST /api/v1/auth/login` possui `security: []`, recebe `email`, `password`,
+`deviceIdentifier` e `deviceName` opcional. O núcleo normaliza o e-mail,
+verifica Argon2id, aplica elegibilidade e confirma o último login de forma
+condicional. Em seguida cria `auth_sessions` com hash do refresh, vínculo
+técnico do dispositivo, nome e User-Agent sanitizados. `ip_hash` permanece nulo.
+
+A resposta 200 possui `accessToken`, `refreshToken`, `tokenType: "Bearer"`,
+`expiresIn: 900` e `refreshExpiresIn: 2592000`. Os valores de token nunca
+aparecem em exemplo, log ou persistência em claro. Login e refresh definem
+`Cache-Control: no-store` e `Pragma: no-cache` para impedir armazenamento da
+resposta por caches.
 
 Conta ausente, senha incorreta, hash ausente/inválido e conta bloqueada ou
 desabilitada não podem receber código, mensagem, headers ou estrutura
@@ -37,8 +43,27 @@ Respostas declaradas: 200 para sucesso, 400 `VALIDATION_ERROR`, 401
 `INVALID_CREDENTIALS`, 429 `AUTHENTICATION_RATE_LIMITED`, 500
 `INTERNAL_SERVER_ERROR` e 503 `AUTHENTICATION_UNAVAILABLE`. A operação não é
 idempotente do ponto de vista do servidor: cada sucesso confirma
-`last_login_at` e emite um novo token. Ela não publica evento ou job durável,
-não cria refresh token e ainda não persiste uma sessão funcional.
+`last_login_at`, cria uma sessão independente e emite outro par. Ela não publica
+evento ou job durável.
+
+## Rotação de refresh token
+
+`POST /api/v1/auth/refresh` possui `security: []` e recebe somente
+`refreshToken`. Assinatura, tipo, finalidade, issuer, audience, UUIDs, tempos e
+expiração são validados antes de consultar o banco. Uma transação bloqueia a
+sessão elegível, troca o hash corrente, registra `last_used_at` e incrementa a
+versão; a expiração absoluta original não é ampliada.
+
+Cada sucesso invalida o refresh apresentado e retorna o mesmo contrato de par
+do login. Token inválido, alterado, expirado, revogado, sessão/conta inelegível
+e reuso retornam 401 `INVALID_REFRESH_TOKEN` com a mesma estrutura. Um token
+anterior autenticado revoga a sessão inteira, inclusive o sucessor corrente.
+Duas requisições simultâneas produzem no máximo uma rotação; a perdedora aciona
+a mesma política defensiva.
+
+Respostas declaradas: 200, 400 `VALIDATION_ERROR`, 401
+`INVALID_REFRESH_TOKEN` e 500 `INTERNAL_SERVER_ERROR`. Logout, revogação HTTP e
+middleware Bearer permanecem nos tickets posteriores.
 
 ## OpenAPI
 

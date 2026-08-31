@@ -99,6 +99,7 @@ contextual e a FK composta do RBAC. O `PROT-021` criou
 independentes de papel, concluindo a fundação de dados. O `PROT-022` criou o
 número mínimo de contratos, serviço Argon2id, repositório e caso de uso para
 validar credenciais sem enumeração. O `PROT-023` integrou o login público sob
-rate limit distribuído e a emissão/validação de access token curto. O próximo
-trabalho de implementação deve começar por `PROT-024`, que persistirá a sessão
-e implementará refresh token rotacionável e revogável.
+rate limit distribuído e a emissão/validação de access token curto. O
+`PROT-024` persistiu a sessão, adicionou refresh token rotacionável e revogação
+defensiva por reuso. O próximo trabalho de implementação deve começar por
+`PROT-025`, que implementará logout.

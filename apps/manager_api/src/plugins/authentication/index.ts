@@ -6,25 +6,37 @@ import {
   type AccountAuthenticationRepository,
   type AuthenticationAudit,
   type AuthenticationClock,
+  type AuthenticationSessionAudit,
   type AuthenticationSessionIdGenerator,
+  type AuthenticationSessionRepository,
   type CredentialAuthenticationUseCase,
   type LoginAuthenticationUseCase,
   type LoginRateLimitCounter,
   type LoginRateLimiter,
   type PasswordHashService,
+  type RefreshAuthenticationSessionUseCase,
+  type RefreshTokenHashService,
+  type RefreshTokenService,
 } from '@protege-mais/interfaces';
 import { FixedWindowLoginRateLimiter } from '@protege-mais/middlewares';
-import { DrizzleAccountAuthenticationRepository } from '@protege-mais/repositories';
+import {
+  DrizzleAccountAuthenticationRepository,
+  DrizzleAuthenticationSessionRepository,
+} from '@protege-mais/repositories';
 import {
   Argon2idPasswordHashService,
   JoseAccessTokenService,
+  JoseRefreshTokenService,
+  Sha256RefreshTokenHashService,
   StructuredAuthenticationAudit,
+  StructuredAuthenticationSessionAudit,
   SystemAuthenticationClock,
   UuidV7AuthenticationSessionIdGenerator,
 } from '@protege-mais/services';
 import {
   AuthenticateWithEmailAndPassword,
   LoginWithEmailAndPassword,
+  RefreshAuthenticationSession,
 } from '@protege-mais/use-cases';
 import { container } from 'tsyringe';
 
@@ -32,6 +44,8 @@ export interface AuthenticationPluginOptions {
   readonly accessTokenSecret: string;
   readonly loginRateLimiter?: LoginRateLimiter;
   readonly loginUseCase?: LoginAuthenticationUseCase;
+  readonly refreshTokenSecret: string;
+  readonly refreshUseCase?: RefreshAuthenticationSessionUseCase;
 }
 
 function authenticationPlugin(
@@ -54,6 +68,10 @@ function authenticationPlugin(
     authenticationDependencyTokens.audit,
     { useValue: new StructuredAuthenticationAudit(fastify.log) }
   );
+  dependencies.register<AuthenticationSessionAudit>(
+    authenticationDependencyTokens.sessionAudit,
+    { useValue: new StructuredAuthenticationSessionAudit(fastify.log) }
+  );
   dependencies.register<AuthenticationClock>(
     authenticationDependencyTokens.clock,
     { useValue: new SystemAuthenticationClock() }
@@ -61,6 +79,20 @@ function authenticationPlugin(
   dependencies.register<AccessTokenService>(
     authenticationDependencyTokens.accessTokenService,
     { useValue: new JoseAccessTokenService(options.accessTokenSecret) }
+  );
+  dependencies.register<RefreshTokenService>(
+    authenticationDependencyTokens.refreshTokenService,
+    { useValue: new JoseRefreshTokenService(options.refreshTokenSecret) }
+  );
+  dependencies.register<RefreshTokenHashService>(
+    authenticationDependencyTokens.refreshTokenHashService,
+    { useValue: new Sha256RefreshTokenHashService() }
+  );
+  dependencies.register<AuthenticationSessionRepository>(
+    authenticationDependencyTokens.sessionRepository,
+    {
+      useValue: new DrizzleAuthenticationSessionRepository(fastify.DatabaseRw),
+    }
   );
   dependencies.register<AuthenticationSessionIdGenerator>(
     authenticationDependencyTokens.sessionIdGenerator,
@@ -91,7 +123,24 @@ function authenticationPlugin(
             authenticationDependencyTokens.authenticateWithEmailAndPassword
           ),
           scope.resolve(authenticationDependencyTokens.accessTokenService),
+          scope.resolve(authenticationDependencyTokens.refreshTokenService),
+          scope.resolve(authenticationDependencyTokens.refreshTokenHashService),
+          scope.resolve(authenticationDependencyTokens.sessionRepository),
           scope.resolve(authenticationDependencyTokens.sessionIdGenerator),
+          scope.resolve(authenticationDependencyTokens.clock)
+        ),
+    }
+  );
+  dependencies.register<RefreshAuthenticationSessionUseCase>(
+    authenticationDependencyTokens.refreshAuthenticationSession,
+    {
+      useFactory: (scope) =>
+        new RefreshAuthenticationSession(
+          scope.resolve(authenticationDependencyTokens.accessTokenService),
+          scope.resolve(authenticationDependencyTokens.refreshTokenService),
+          scope.resolve(authenticationDependencyTokens.refreshTokenHashService),
+          scope.resolve(authenticationDependencyTokens.sessionRepository),
+          scope.resolve(authenticationDependencyTokens.sessionAudit),
           scope.resolve(authenticationDependencyTokens.clock)
         ),
     }
@@ -119,6 +168,13 @@ function authenticationPlugin(
     options.loginRateLimiter ??
       dependencies.resolve<LoginRateLimiter>(
         authenticationDependencyTokens.loginRateLimiter
+      )
+  );
+  fastify.decorate(
+    'refreshAuthenticationSession',
+    options.refreshUseCase ??
+      dependencies.resolve<RefreshAuthenticationSessionUseCase>(
+        authenticationDependencyTokens.refreshAuthenticationSession
       )
   );
 }

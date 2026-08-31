@@ -81,9 +81,10 @@ o texto traduzido.
 - `health.ok`: processo operacional;
 - `health.notReady`: processo indisponível para receber tráfego;
 - `authentication.required`, `authentication.invalidCredentials`,
-  `authentication.invalidAccessToken`, `authentication.rateLimited` e
-  `authentication.unavailable`: mensagens públicas de autenticação;
+  `authentication.invalidAccessToken`, `authentication.invalidRefreshToken`,
+  `authentication.rateLimited` e `authentication.unavailable`: mensagens
+  públicas de autenticação;
 - `errors.tooManyRequests`: default comum para falhas HTTP 429.
 
-O login usa as chaves específicas sem variar mensagem por existência ou estado
-da conta. `code` e status permanecem iguais nos três idiomas.
+Login e refresh usam as chaves específicas sem variar mensagem por existência
+ou estado da conta/sessão. `code` e status permanecem iguais nos três idiomas.

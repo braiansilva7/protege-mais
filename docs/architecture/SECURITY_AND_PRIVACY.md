@@ -41,18 +41,23 @@ A allowlist aplicada, a defesa recursiva e as consultas seguras estão em
 - Access token tem validade de 15 minutos, `typ: at+jwt`, finalidade `access`,
   issuer/audience fixos e somente IDs opacos de conta/sessão; contexto
   organizacional e permissões não são congelados no payload.
-- Refresh token é armazenado como hash, rotacionado e revogável por sessão.
-- Reutilização de refresh token rotacionado deve causar resposta defensiva.
+- Refresh token tem chave, tipo, audience e finalidade separados do access,
+  expira em até 30 dias e somente seu SHA-256 é persistido.
+- Cada refresh rotaciona atomicamente o hash sem ampliar a expiração absoluta.
+  Reutilização autenticada revoga defensivamente a sessão inteira.
 - MFA e recuperação não podem revelar se uma conta existe.
 - Sessões permitem revogação individual e global.
 
 O login limita cinco tentativas por endereço de cliente a cada 60 segundos. O
 Redis recebe somente um HMAC opaco, nunca IP, e qualquer falha do contador fecha
 o endpoint com 503. Conta marcada com MFA também falha fechada sem access token
-até existir challenge funcional. O JWT usa HS256 somente dentro da Manager API,
-chave de ao menos 32 bytes e validação estrita de algoritmo, tipo, finalidade,
-tempo, issuer e audience. Token expirado, alterado ou assinado por outra chave
-recebe uma falha uniforme.
+até existir challenge funcional. Os JWTs usam HS256 somente dentro da Manager
+API, chaves distintas de ao menos 32 bytes e validação estrita de algoritmo,
+tipo, finalidade, tempo, issuer e audience. Token expirado, alterado ou assinado
+por outra chave recebe uma falha uniforme. O login persiste somente o hash do
+refresh; nome de dispositivo e User-Agent são sanitizados, e IP não é armazenado
+sem política aprovada. Respostas que contêm o par de tokens desabilitam cache
+com `Cache-Control: no-store` e `Pragma: no-cache`.
 
 O núcleo de credenciais consulta somente contas não excluídas, verifica o hash
 mesmo antes de avaliar o estado e só confirma `last_login_at` se hash, estado
@@ -64,11 +69,14 @@ de senha no
 [`ADR-009`](../decisions/ADR-009-local-password-authentication-and-argon2id.md).
 A assinatura e o ciclo curto do access token estão no
 [`ADR-010`](../decisions/ADR-010-short-lived-access-token.md).
+Rotação, expiração absoluta e resposta a reuso estão no
+[`ADR-011`](../decisions/ADR-011-refresh-token-rotation-and-reuse.md).
 
-`auth_sessions` materializa somente a fundação persistente: token e IP em claro
-nunca são gravados, hashes ficam fora da projeção de saída e atividade exige
-ausência de revogação e prazo futuro. Algoritmo, rotação e resposta a reuso
-continuam nos tickets de autenticação. O contrato completo está em
+`auth_sessions` materializa a credencial corrente: token e IP em claro nunca
+são gravados, hashes ficam fora da projeção de saída e atividade exige ausência
+de revogação e prazo futuro. A rotação serializa concorrentes por sessão,
+registra o último uso e revoga um sucessor quando um predecessor reaparece. O
+contrato completo está em
 [`../database/AUTH_SESSIONS.md`](../database/AUTH_SESSIONS.md).
 
 ## Autorização contextual

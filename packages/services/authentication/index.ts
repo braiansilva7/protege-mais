@@ -8,6 +8,7 @@ import type {
   AuthenticationAudit,
   AuthenticationClock,
   AuthenticationEventLogger,
+  AuthenticationSessionAudit,
   PasswordHashService,
 } from '@protege-mais/interfaces';
 
@@ -23,6 +24,17 @@ export {
   accessTokenTypeHeader,
   jwtHmacSecretMinimumBytes,
 } from './access-token.js';
+export {
+  JoseRefreshTokenService,
+  Sha256RefreshTokenHashService,
+  refreshTokenAlgorithm,
+  refreshTokenAudience,
+  refreshTokenHashPrefix,
+  refreshTokenLifetimeSeconds,
+  refreshTokenMaximumLength,
+  refreshTokenPurpose,
+  refreshTokenTypeHeader,
+} from './refresh-token.js';
 
 export const argon2idPasswordHashParameters = Object.freeze({
   hashLength: 32,
@@ -122,6 +134,31 @@ export class StructuredAuthenticationAudit implements AuthenticationAudit {
     this.logger.warn(
       { event: 'authentication.failed' },
       'Credencial local rejeitada.'
+    );
+  }
+}
+
+export class StructuredAuthenticationSessionAudit implements AuthenticationSessionAudit {
+  public constructor(private readonly logger: AuthenticationEventLogger) {}
+
+  public recordRefreshSuccess(): void {
+    this.logger.info(
+      { event: 'authentication.refresh.succeeded' },
+      'Sessão de autenticação renovada.'
+    );
+  }
+
+  public recordRefreshFailure(): void {
+    this.logger.warn(
+      { event: 'authentication.refresh.failed' },
+      'Renovação da sessão rejeitada.'
+    );
+  }
+
+  public recordRefreshReuse(): void {
+    this.logger.warn(
+      { event: 'authentication.refresh.reuse_detected' },
+      'Reuso de credencial renovável detectado; sessão revogada.'
     );
   }
 }

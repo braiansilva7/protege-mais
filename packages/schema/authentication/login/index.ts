@@ -10,14 +10,14 @@ export { loginResponseSchema, type LoginResponse } from './response.schema.js';
 export const loginSchema = {
   summary: 'Autenticar por e-mail e senha',
   description:
-    'Valida uma credencial local sob rate limit e emite um JWT de acesso curto, sem refresh token.',
+    'Valida uma credencial local sob rate limit, persiste a sessão vinculada ao dispositivo e emite um par rotacionável.',
   operationId: 'loginWithEmailAndPassword',
   tags: [apiTags.authentication],
   security: [],
   body: loginRequestSchema,
   response: {
     200: Type.Composite([loginResponseSchema], {
-      description: 'Credencial válida e access token emitido.',
+      description: 'Credencial válida, sessão criada e par de tokens emitido.',
     }),
     400: Type.Ref(errorResponseSchema, {
       description:

@@ -24,6 +24,7 @@ export interface ManagerApiEnvironment {
   readonly corsOrigins: readonly string[];
   readonly databaseUrl: string;
   readonly jwtAccessSecret: string;
+  readonly jwtRefreshSecret: string;
   readonly redisUrl: string;
   readonly logLevel: LogLevel;
 }
@@ -397,9 +398,16 @@ export function createManagerApiEnvironment(
     corsOrigins: origins(source, 'CORS_ORIGIN'),
     databaseUrl: databaseUrl(source, environment),
     jwtAccessSecret: jwtHmacSecret(source, 'JWT_ACCESS_SECRET', environment),
+    jwtRefreshSecret: jwtHmacSecret(source, 'JWT_REFRESH_SECRET', environment),
     redisUrl: redisUrl(source, environment),
     logLevel: logLevel(source, environment),
   };
+  if (result.jwtAccessSecret === result.jwtRefreshSecret) {
+    throw new ConfigurationError(
+      ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'],
+      'INVALID'
+    );
+  }
   return freeze(result);
 }
 

@@ -2,7 +2,7 @@
 
 ## Estado
 
-Este documento registra somente o que existe após o `PROT-023`. A arquitetura
+Este documento registra somente o que existe após o `PROT-024`. A arquitetura
 futura permanece em `docs/architecture/TARGET_ARCHITECTURE.md` e não deve ser
 confundida com funcionalidade já entregue.
 
@@ -16,10 +16,12 @@ pertencimento organizacional/de unidade e vigência, e quatro tabelas que formam
 a base relacional do RBAC contextual. Projeções seguras excluem hashes, CNPJ,
 contato, endereço, localização, matrícula e chaves internas. A rota pública de
 login valida credenciais com Argon2id e resposta uniforme sob rate limit Redis,
-falha fechada para contas com MFA e emite JWT de acesso de 15 minutos. O token
-carrega somente conta e sessão lógica; ainda não existe refresh token, sessão
-funcional persistida, middleware de autenticação, autorização, outras rotas de
-negócio ou dados operacionais. Um catálogo TypeScript contém as 19
+falha fechada para contas com MFA, cria a sessão e emite um par de JWTs com
+access token de 15 minutos e refresh token rotacionável de até 30 dias. A rota
+de refresh troca o hash atomicamente, preserva a expiração absoluta e revoga a
+sessão quando detecta reuso. Ainda não existem middleware de autenticação,
+autorização, outras rotas de negócio ou dados operacionais. Um catálogo
+TypeScript contém as 19
 permissões iniciais e o
 seed opcional de desenvolvimento insere somente esses códigos, sem
 papéis ou atribuições. Existem 14 tipos enum fundamentais, com `account_type`,
@@ -260,13 +262,21 @@ opaca e falha fechada. O caso de uso normaliza e-mail, verifica Argon2id
 inclusive contra hash fictício quando a credencial não existe, exige conta
 ativa, confirma o último login por escrita condicional e bloqueia MFA enquanto
 não houver challenge. Em sucesso, `jose` assina um JWT HS256 de 15 minutos com
-`sub`, `sid`, `iat`, `exp`, `iss`, `aud` e `token_use`; a resposta não expõe IDs
-ou estado interno. O contrato completo está em
+`sub`, `sid`, `iat`, `exp`, `iss`, `aud` e `token_use`. O mesmo login cria uma
+linha em `auth_sessions`, armazena somente SHA-256 do refresh JWT assinado por
+segredo e audience exclusivos e devolve o par de tokens sem expor IDs ou estado
+interno.
+
+`POST /api/v1/auth/refresh` valida o contexto assinado, bloqueia a sessão e a
+conta com `SELECT ... FOR UPDATE` e troca o hash corrente. A expiração absoluta
+de 30 dias não desliza. Um predecessor criptograficamente válido revoga a sessão
+na mesma transação; estados inválidos usam uma resposta não enumerável. O
+contrato completo está em
 `docs/authentication/README.md`.
 
-Ainda não há refresh token, sessão funcional persistida, middleware de
-autenticação, usuário autenticado no request ou decisão de permissão. O catálogo
-técnico não é consultado pelo runtime e não há papéis ou atribuições iniciais.
+Ainda não há middleware de autenticação, usuário autenticado no request ou
+decisão de permissão. O catálogo técnico não é consultado pelo runtime e não
+há papéis ou atribuições iniciais.
 
 ## Logging e correlação
 
@@ -326,7 +336,8 @@ O mesmo entrypoint exporta `authSessions`, seus tipos, nomes de constraints e
 token, hash de IP e ID da conta. A tabela usa FK com exclusão restrita, hash
 globalmente único, timestamps de expiração/uso/revogação, versionamento otimista
 e checks de ciclo de vida. `packages/common` sanitiza nome de dispositivo e
-User-Agent. O contrato completo está em
+User-Agent. O login persiste o hash inicial, e o repositório de autenticação
+serializa rotação e reuso defensivo em transação. O contrato completo está em
 `docs/database/AUTH_SESSIONS.md`.
 
 `packages/repositories/authentication` lê somente ID, hash, estado e indicador
@@ -476,8 +487,10 @@ contratos, política, Argon2id, auditoria mínima, repositório e caso de uso de
 credenciais, sem migration, dado, rota, rate limit, token, sessão emitida ou
 autorização. O `PROT-023` adicionou a rota pública, schemas, composição, rate
 limit e access token curto, sem migration, dado, refresh token, linha de sessão,
-middleware de autenticação ou autorização. A validação cria e remove somente uma
-base temporária com nome
+middleware de autenticação ou autorização. O `PROT-024` adicionou refresh JWT,
+criação da sessão, rotação atômica e detecção defensiva de reuso sem migration,
+novo dado estrutural, middleware de autenticação ou autorização. A validação
+cria e remove somente uma base temporária com nome
 reservado; os volumes locais
 não são apagados. O volume Redis local contém
 somente metadados técnicos das filas e qualquer job fictício de teste é removido

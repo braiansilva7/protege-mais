@@ -2,6 +2,7 @@
   "authentication": {
     "invalidAccessToken": "Token de acesso inválido.",
     "invalidCredentials": "E-mail ou senha inválidos.",
+    "invalidRefreshToken": "Refresh token inválido.",
     "rateLimited": "Muitas tentativas de autenticação foram realizadas. Tente novamente mais tarde.",
     "required": "Autenticação necessária.",
     "unavailable": "A autenticação está temporariamente indisponível."

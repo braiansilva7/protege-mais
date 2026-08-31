@@ -1,7 +1,9 @@
 export {
   AuthenticateWithEmailAndPassword,
   InvalidCredentialsError,
+  InvalidRefreshTokenError,
   LoginWithEmailAndPassword,
+  RefreshAuthenticationSession,
   invalidAuthenticationEmailLookupKey,
 } from './authentication/index.js';
 export {

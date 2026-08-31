@@ -22,7 +22,9 @@ RBAC. O `PROT-021` acrescentou `organization_members`, seus contextos
 organizacional/de unidade, vigência e integridade sem duplicar papéis. O
 `PROT-022` acrescentou o adaptador Drizzle de autenticação e a escrita
 condicional do último login, sem mudar schema ou migrations. O schema de
-produção possui nove tabelas e 14 tipos enum nativos e continua sem dados.
+produção possui nove tabelas e 14 tipos enum nativos e continua sem dados. O
+`PROT-024` passou a criar e rotacionar sessões pelo mesmo adaptador, também sem
+mudar schema ou migrations.
 
 `packages/models/index.ts` é a única entrada do schema Drizzle de produção e
 exporta helpers, `pgEnum`, `accounts`, `authSessions`, `organizations`,
@@ -268,9 +270,10 @@ e papel continua em `account_roles`. O
 catálogo TypeScript e o seed de desenvolvimento possuem 19 códigos idênticos e
 nenhum papel inicial. O repositório de autenticação projeta somente os quatro
 campos necessários, inclui estados inelegíveis no trabalho de hash e faz a
-confirmação concorrente do login por UUID, hash e estado. O próximo ticket
-liberado é o `PROT-024`; o identificador `sid` emitido no `PROT-023` ainda é
-somente lógico e não cria uma linha de `auth_sessions`.
+confirmação concorrente do login por UUID, hash e estado. O login agora cria a
+linha de `auth_sessions`; o refresh usa o `sid` assinado para bloquear a linha e
+trocar o hash ou revogar a sessão diante de predecessor reutilizado. O próximo
+ticket liberado é o `PROT-025`.
 
 ---
 

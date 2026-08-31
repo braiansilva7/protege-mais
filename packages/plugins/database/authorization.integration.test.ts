@@ -297,7 +297,10 @@ void test('consulta RBAC retorna permissões globais e do contexto solicitado', 
       );
       assert.match(
         plan.rows.map((row) => row['QUERY PLAN']).join('\n'),
-        new RegExp(authorizationIndexNames.accountRolesContextLookup, 'u')
+        new RegExp(
+          `${authorizationIndexNames.accountRolesContextLookup}|${authorizationConstraintNames.accountRolesContextUnique}`,
+          'u'
+        )
       );
     } finally {
       await client.query('ROLLBACK');

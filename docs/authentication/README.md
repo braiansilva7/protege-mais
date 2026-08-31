@@ -6,19 +6,22 @@ O `PROT-022` entregou o núcleo reutilizável de autenticação por e-mail e sen
 normalização da chave de busca, verificação Argon2id, elegibilidade da conta,
 atualização concorrente de `last_login_at` e eventos de sucesso ou falha sem
 PII. O `PROT-023` o compôs em `POST /api/v1/auth/login`, sob rate limit
-distribuído, e passou a emitir um JWT de acesso curto. Ainda não existe
-criação/troca de senha, refresh token ou sessão funcional persistida.
+distribuído, e passou a emitir um JWT de acesso curto. O `PROT-024` integrou a
+criação de `auth_sessions`, o refresh token rotacionável e
+`POST /api/v1/auth/refresh`. Criação/troca de senha, logout, gestão de sessões e
+middleware Bearer continuam pendentes.
 
 O rate limit é obrigatório no contrato HTTP final. Ele não pertence ao caso de
 uso porque o núcleo também será reutilizado fora do transporte HTTP e não deve
 depender de IP, Redis ou Fastify.
 
 `LoginWithEmailAndPassword` chama esse núcleo e, somente depois de uma
-credencial válida, cria um identificador UUID v7 de sessão lógica e emite o
-access token. Esse identificador ainda não é uma linha de `auth_sessions`; sua
-persistência e associação a refresh token pertencem ao `PROT-024`. Conta com
-`mfaEnabled` não recebe token antes de existir o challenge do `PROT-028`: o
-fluxo falha fechado com a mesma resposta `INVALID_CREDENTIALS`.
+credencial válida, cria um identificador UUID v7, emite os dois tokens e
+persiste uma linha de `auth_sessions` antes de responder. A linha recebe apenas
+o hash do refresh e metadata sanitizada; se a conta perder elegibilidade antes
+do insert, nenhum token é entregue. Conta com `mfaEnabled` não recebe token
+antes de existir o challenge do `PROT-028`: o fluxo falha fechado com a mesma
+resposta `INVALID_CREDENTIALS`.
 
 ## Fluxo de autenticação
 
@@ -74,7 +77,7 @@ menos 32 bytes carregada exclusivamente de `JWT_ACCESS_SECRET`. O header exige
 | Claim       | Valor ou finalidade                                     |
 | ----------- | ------------------------------------------------------- |
 | `sub`       | UUID v7 da conta                                        |
-| `sid`       | UUID v7 da sessão lógica                                |
+| `sid`       | UUID v7 da sessão persistida                            |
 | `iat`       | instante de emissão em Unix time                        |
 | `exp`       | `iat + 900` segundos                                    |
 | `iss`       | `urn:protege-mais:authentication`                       |
@@ -89,9 +92,81 @@ conectada a rotas protegidas somente pelo `PROT-029`.
 
 O payload não carrega e-mail, telefone, nome, IP, segredo, papel, permissão,
 organização ou unidade. Autorização contextual deve consultar o estado vigente,
-sem congelá-lo durante os 15 minutos do token. Até o `PROT-024`, não existe
-refresh nem revogação imediata dessa sessão lógica; reduzir a validade limita,
-mas não elimina, essa janela.
+sem congelá-lo durante os 15 minutos do token. A conferência da sessão no uso do
+access token permanece para o middleware do `PROT-029`.
+
+## Refresh token e sessão
+
+O refresh token também é JWT HS256, mas usa exclusivamente
+`JWT_REFRESH_SECRET`, `typ: rt+jwt`, audience
+`urn:protege-mais:manager-api:token-refresh` e `token_use: refresh`. A chave é
+distinta da chave de access. O payload contém somente `sub`, `sid`, `jti`
+aleatório de 256 bits, `iat`, `exp`, issuer, audience e finalidade.
+
+A validade inicial é de 30 dias. Ela é absoluta: toda rotação conserva o mesmo
+`exp`, portanto atividade contínua não cria uma sessão indefinida. A resposta
+de login ou refresh é:
+
+```json
+{
+  "accessToken": "<segredo omitido>",
+  "refreshToken": "<segredo omitido>",
+  "tokenType": "Bearer",
+  "expiresIn": 900,
+  "refreshExpiresIn": 2592000
+}
+```
+
+Os marcadores acima são apenas documentação e nunca exemplos OpenAPI. Login e
+refresh respondem `Cache-Control: no-store` e `Pragma: no-cache`. O valor real
+do refresh recebe SHA-256; somente `sha256:<digest-base64url>` é persistido. O
+token puro existe na memória necessária à requisição e na resposta TLS sem
+cache, sem entrar em banco, Redis, erro ou log.
+
+O login exige `deviceIdentifier` técnico opaco, aceita `deviceName` opcional e
+captura o User-Agent observado. Nome e User-Agent são sanitizados e limitados;
+o identificador não é fingerprint de hardware. `ip_hash` permanece nulo porque
+algoritmo, chave, finalidade e retenção ainda não foram aprovados.
+
+## Rotação e comprometimento
+
+`POST /api/v1/auth/refresh` valida criptograficamente o token antes de tocar o
+banco. A rotação abre uma transação, bloqueia a sessão e sua conta elegível,
+compara o hash corrente e atualiza hash, `last_used_at`, `updated_at` e `version`
+no mesmo commit. O novo refresh e o access token conservam `sid`; o refresh
+anterior deixa de ser válido imediatamente.
+
+O `sid`, a conta e a expiração assinados mantêm a relação com a sessão mesmo
+depois que o hash muda. Se um token anterior com assinatura válida reaparecer,
+a aplicação não tenta escolher qual participante é legítimo: revoga toda a
+sessão e emite o evento `authentication.refresh.reuse_detected`. Em duas
+requisições simultâneas com o mesmo token, no máximo uma troca vence; a segunda
+revoga a sessão, invalidando também o sucessor entregue pela primeira.
+
+Token malformado, alterado, expirado, assinado com outra chave, sessão ausente,
+revogada ou vinculada a conta inelegível e reuso compartilham 401
+`INVALID_REFRESH_TOKEN`. Nenhum motivo ou ID é exposto. A política e suas
+alternativas estão no
+[`ADR-011`](../decisions/ADR-011-refresh-token-rotation-and-reuse.md).
+
+```mermaid
+sequenceDiagram
+  participant C as Cliente
+  participant A as Manager API
+  participant D as PostgreSQL
+
+  C->>A: login + dispositivo
+  A->>D: cria sessão com hash(refresh A)
+  A-->>C: access A + refresh A
+  C->>A: refresh A
+  A->>D: lock e hash(A) -> hash(B)
+  A-->>C: access B + refresh B
+  C->>A: refresh A reutilizado
+  A->>D: lock, detecta predecessor e revoga sessão
+  A-->>C: 401 INVALID_REFRESH_TOKEN
+  C->>A: refresh B
+  A-->>C: 401 INVALID_REFRESH_TOKEN
+```
 
 ## Rate limit do login
 
@@ -162,10 +237,13 @@ construtor. A Manager API cria um container filho por instância Fastify e
 registra `DatabaseRw`, contador Redis, logger seguro, relógio, gerador UUID v7 e
 os serviços, sem estado global mutável compartilhado entre testes.
 
-Os únicos eventos atuais são:
+Os eventos atuais são:
 
 - `authentication.succeeded`, em nível `info`;
-- `authentication.failed`, em nível `warn`.
+- `authentication.failed`, em nível `warn`;
+- `authentication.refresh.succeeded`, em nível `info`;
+- `authentication.refresh.failed`, em nível `warn`;
+- `authentication.refresh.reuse_detected`, em nível `warn`.
 
 O contrato de auditoria não aceita argumentos, impedindo e-mail, ID da conta ou
 motivo da falha por construção. O logger da requisição poderá acrescentar
@@ -175,7 +253,8 @@ de auditoria prevista em tickets posteriores.
 
 ## Fronteiras dos próximos tickets
 
-- `PROT-024`: criação, rotação e revogação funcional da sessão/refresh token;
+- `PROT-025`: logout idempotente da sessão atual;
+- `PROT-026`: listagem e revogação individual/global de sessões;
 - `PROT-027`: recuperação e troca de senha, incluindo blocklist;
 - `PROT-028`: desafio e confirmação do segundo fator quando `mfaEnabled` for
   verdadeiro.

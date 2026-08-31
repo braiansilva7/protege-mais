@@ -2,6 +2,7 @@ import type { AppDatabase, DatabaseConnection } from '@protege-mais/plugins';
 import type {
   LoginAuthenticationUseCase,
   LoginRateLimiter,
+  RefreshAuthenticationSessionUseCase,
 } from '@protege-mais/interfaces';
 import type { Pool } from 'pg';
 
@@ -13,5 +14,6 @@ declare module 'fastify' {
     databaseConnection: DatabaseConnection;
     loginRateLimiter: LoginRateLimiter;
     loginWithEmailAndPassword: LoginAuthenticationUseCase;
+    refreshAuthenticationSession: RefreshAuthenticationSessionUseCase;
   }
 }

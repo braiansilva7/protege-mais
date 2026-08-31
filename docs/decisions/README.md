@@ -51,3 +51,4 @@ ou registro de implementação.
 - [ADR-008 — Contexto e ciclo de vida do vínculo organizacional](ADR-008-organization-membership-context-and-lifecycle.md)
 - [ADR-009 — Autenticação local e Argon2id](ADR-009-local-password-authentication-and-argon2id.md)
 - [ADR-010 — Access token curto e restrito à Manager API](ADR-010-short-lived-access-token.md)
+- [ADR-011 — Rotação e detecção de reuso do refresh token](ADR-011-refresh-token-rotation-and-reuse.md)

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { LoginRateLimitExceededError } from '@protege-mais/middlewares';
-import { loginSchema } from '@protege-mais/schema';
+import { loginSchema, refreshAuthenticationSchema } from '@protege-mais/schema';
 import { authenticationController } from '../controllers/authentication/index.js';
 
 export default function authenticationRoutes(server: FastifyInstance) {
@@ -17,5 +17,10 @@ export default function authenticationRoutes(server: FastifyInstance) {
       }
     },
     handler: authenticationController.login,
+  });
+
+  server.post('/auth/refresh', {
+    schema: refreshAuthenticationSchema,
+    handler: authenticationController.refresh,
   });
 }

@@ -70,11 +70,16 @@ A autenticação local emite somente `authentication.succeeded` em `info` e
 aceita argumentos: e-mail, senha, hash, ID da conta, estado e motivo da rejeição
 não podem ser adicionados ao evento. Quando composto no HTTP, `requestId` e
 `correlationId` podem vir do logger filho da requisição sem alterar essa regra.
-O login HTTP acrescenta apenas o evento comum `http.request.completed` com a
-rota normalizada `/api/v1/auth/login`. Access token, session id, endereço de
+O ciclo de sessão usa eventos sem argumentos:
+`authentication.refresh.succeeded`, `authentication.refresh.failed` e
+`authentication.refresh.reuse_detected`. Eles distinguem somente o resultado
+operacional; conta, sessão, dispositivo e motivo detalhado não são aceitos pelo
+contrato. As rotas HTTP acrescentam apenas `http.request.completed` com os
+templates `/api/v1/auth/login` e `/api/v1/auth/refresh`. Access token, refresh
+token, hash, `sid`, identificador/nome de dispositivo, User-Agent, endereço de
 cliente, digest/chave do rate limit, contagem e `Retry-After` permanecem fora do
-log. Os testes serializam os registros e procuram o token e as credenciais para
-comprovar a ausência.
+log. Os testes serializam os registros e procuram tokens, sessão, dispositivo e
+credenciais para comprovar a ausência.
 
 ## Allowlist
 
@@ -95,7 +100,8 @@ revisão da política e teste de não vazamento.
 Nunca registrar, mesmo em `LOCAL` ou `debug`:
 
 - body, params, query, headers, cookies ou URL bruta;
-- senha, hash, credencial, token, chave, segredo ou URL assinada;
+- senha, hash, credencial, token, chave, segredo, ID de sessão/dispositivo ou
+  URL assinada;
 - CPF, CNPJ, telefone, e-mail, endereço, matrícula, cargo ou dado médico;
 - relato, narrativa, risco, medida ou conteúdo de ocorrência;
 - latitude, longitude, coordenadas, `position`, localização ou local protegido;

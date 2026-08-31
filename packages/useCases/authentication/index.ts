@@ -12,8 +12,9 @@ import {
 } from '@protege-mais/interfaces';
 import { InvalidCredentialsError } from './errors.js';
 
-export { InvalidCredentialsError } from './errors.js';
+export { InvalidCredentialsError, InvalidRefreshTokenError } from './errors.js';
 export { LoginWithEmailAndPassword } from './login.js';
+export { RefreshAuthenticationSession } from './refresh-session.js';
 
 export const invalidAuthenticationEmailLookupKey =
   'invalid-authentication-email';

@@ -10,7 +10,10 @@ import type {
   RedisConnection,
 } from '@protege-mais/plugins';
 import type { ErrorResponse } from '@protege-mais/schema';
-import { InvalidCredentialsError } from '@protege-mais/use-cases';
+import {
+  InvalidCredentialsError,
+  InvalidRefreshTokenError,
+} from '@protege-mais/use-cases';
 import { buildServer, type BuildServerOptions } from './app.js';
 import { registerShutdownSignals } from './lifecycle.js';
 
@@ -21,6 +24,7 @@ const testConfiguration: ManagerApiEnvironment = Object.freeze({
   corsOrigins: Object.freeze(['http://localhost:5173']),
   databaseUrl: 'postgresql://test:test@127.0.0.1:5432/protege_mais_test',
   jwtAccessSecret: 'test-access-secret-with-at-least-thirty-two-bytes',
+  jwtRefreshSecret: 'test-refresh-secret-with-at-least-thirty-two-bytes',
   redisUrl: 'redis://127.0.0.1:6379/0',
   logLevel: 'silent',
 });
@@ -268,6 +272,8 @@ void test('expõe login público, emite somente o contrato aprovado e não regis
   const loginInputs: unknown[] = [];
   const limitedAddresses: string[] = [];
   const accessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6ImF0K2p3dCJ9.test.signature';
+  const refreshToken =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6InJ0K2p3dCJ9.test.signature';
   const logs = captureLogs();
   const app = await buildTestServer(
     createTestRedisConnection(),
@@ -288,8 +294,10 @@ void test('expõe login público, emite somente o contrato aprovado e não regis
           loginInputs.push(input);
           return Promise.resolve({
             accessToken,
+            refreshToken,
             tokenType: 'Bearer',
             expiresIn: 900,
+            refreshExpiresIn: 2_592_000,
           });
         },
       },
@@ -303,19 +311,29 @@ void test('expõe login público, emite somente o contrato aprovado e não regis
       payload: {
         email: 'user@example.test',
         password: 'senha integral sem normalização HTTP',
+        deviceIdentifier: 'browser:test-device',
+        deviceName: 'Navegador de teste',
       },
+      headers: { 'user-agent': 'Test Browser/1.0' },
     });
 
     assert.equal(response.statusCode, 200);
+    assert.equal(response.headers['cache-control'], 'no-store');
+    assert.equal(response.headers.pragma, 'no-cache');
     assert.deepEqual(response.json(), {
       accessToken,
+      refreshToken,
       tokenType: 'Bearer',
       expiresIn: 900,
+      refreshExpiresIn: 2_592_000,
     });
     assert.deepEqual(loginInputs, [
       {
         email: 'user@example.test',
         password: 'senha integral sem normalização HTTP',
+        deviceIdentifier: 'browser:test-device',
+        deviceName: 'Navegador de teste',
+        userAgent: 'Test Browser/1.0',
       },
     ]);
     assert.equal(limitedAddresses.length, 1);
@@ -325,6 +343,7 @@ void test('expõe login público, emite somente o contrato aprovado e não regis
   }
 
   assert.doesNotMatch(logs.serialized(), new RegExp(accessToken));
+  assert.doesNotMatch(logs.serialized(), new RegExp(refreshToken));
   assert.doesNotMatch(logs.serialized(), /user@example\.test|senha integral/u);
 });
 
@@ -349,8 +368,10 @@ void test('rejeita body estruturalmente inválido antes do rate limit e do caso 
           loginCalls += 1;
           return Promise.resolve({
             accessToken: 'unused',
+            refreshToken: 'unused-refresh',
             tokenType: 'Bearer',
             expiresIn: 900,
+            refreshExpiresIn: 2_592_000,
           });
         },
       },
@@ -370,6 +391,93 @@ void test('rejeita body estruturalmente inválido antes do rate limit e do caso 
     assert.equal(response.json<ErrorResponse>().code, 'VALIDATION_ERROR');
     assert.equal(limitCalls, 0);
     assert.equal(loginCalls, 0);
+  } finally {
+    await app.close();
+  }
+});
+
+void test('rotaciona refresh em rota pública sem registrar nenhuma credencial', async () => {
+  const presentedToken = 'presented-refresh-token-private-prot-024';
+  const successorToken = 'successor-refresh-token-private-prot-024';
+  const accessToken = 'successor-access-token-private-prot-024';
+  const inputs: unknown[] = [];
+  const logs = captureLogs();
+  const app = await buildTestServer(
+    createTestRedisConnection(),
+    createTestDatabaseConnection(),
+    {
+      logDestination: logs.destination,
+      refreshUseCase: {
+        execute: (input) => {
+          inputs.push(input);
+          return Promise.resolve({
+            accessToken,
+            refreshToken: successorToken,
+            tokenType: 'Bearer',
+            expiresIn: 900,
+            refreshExpiresIn: 2_505_600,
+          });
+        },
+      },
+    }
+  );
+
+  try {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/refresh',
+      payload: { refreshToken: presentedToken },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.headers['cache-control'], 'no-store');
+    assert.equal(response.headers.pragma, 'no-cache');
+    assert.deepEqual(response.json(), {
+      accessToken,
+      refreshToken: successorToken,
+      tokenType: 'Bearer',
+      expiresIn: 900,
+      refreshExpiresIn: 2_505_600,
+    });
+    assert.deepEqual(inputs, [{ refreshToken: presentedToken }]);
+  } finally {
+    await app.close();
+  }
+
+  assert.doesNotMatch(
+    logs.serialized(),
+    /presented-refresh-token|successor-refresh-token|successor-access-token/u
+  );
+});
+
+void test('refresh inválido usa erro uniforme e traduzido sem enumerar sessão', async () => {
+  const app = await buildTestServer(
+    createTestRedisConnection(),
+    createTestDatabaseConnection(),
+    {
+      refreshUseCase: {
+        execute: () => Promise.reject(new InvalidRefreshTokenError()),
+      },
+    }
+  );
+
+  try {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/refresh',
+      headers: { 'accept-language': 'en' },
+      payload: { refreshToken: 'invalid-refresh-token' },
+    });
+    const body = response.json<ErrorResponse>();
+
+    assert.equal(response.statusCode, 401);
+    assert.equal(body.code, 'INVALID_REFRESH_TOKEN');
+    assert.equal(body.message, 'Invalid refresh token.');
+    assert.deepEqual(Object.keys(body).sort(), [
+      'code',
+      'message',
+      'requestId',
+    ]);
   } finally {
     await app.close();
   }
@@ -397,6 +505,7 @@ void test('aplica rate limit distribuído sem diferenciar credenciais inválidas
           email:
             attempt % 2 === 0 ? 'missing@example.test' : 'blocked@example.test',
           password: 'invalid credential attempt',
+          deviceIdentifier: 'browser:invalid-attempt',
         },
       });
 
@@ -418,6 +527,7 @@ void test('aplica rate limit distribuído sem diferenciar credenciais inválidas
       payload: {
         email: 'another@example.test',
         password: 'invalid credential attempt',
+        deviceIdentifier: 'browser:limited-attempt',
       },
     });
     const body = limited.json<ErrorResponse>();
@@ -459,8 +569,10 @@ void test('falha fechada e sanitizada quando o contador de login está indispon�
           loginCalls += 1;
           return Promise.resolve({
             accessToken: 'unused',
+            refreshToken: 'unused-refresh',
             tokenType: 'Bearer',
             expiresIn: 900,
+            refreshExpiresIn: 2_592_000,
           });
         },
       },
@@ -475,6 +587,7 @@ void test('falha fechada e sanitizada quando o contador de login está indispon�
       payload: {
         email: 'user@example.test',
         password: 'credential attempt',
+        deviceIdentifier: 'browser:unavailable-attempt',
       },
     });
     const body = response.json<ErrorResponse>();

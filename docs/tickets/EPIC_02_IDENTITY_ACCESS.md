@@ -64,7 +64,7 @@ inspeção de claims.
 
 | Campo        | Valor              |
 | ------------ | ------------------ |
-| Status       | Pendente           |
+| Status       | Concluído          |
 | Prioridade   | P0                 |
 | Dependências | PROT-016, PROT-023 |
 

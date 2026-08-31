@@ -11,7 +11,12 @@ export const authenticationDependencyTokens = Object.freeze({
   loginRateLimiter: 'LoginRateLimiter',
   loginWithEmailAndPassword: 'LoginWithEmailAndPassword',
   passwordHashService: 'PasswordHashService',
+  refreshAuthenticationSession: 'RefreshAuthenticationSession',
+  refreshTokenHashService: 'RefreshTokenHashService',
+  refreshTokenService: 'RefreshTokenService',
+  sessionAudit: 'AuthenticationSessionAudit',
   sessionIdGenerator: 'AuthenticationSessionIdGenerator',
+  sessionRepository: 'AuthenticationSessionRepository',
 });
 
 export interface AuthenticateWithEmailAndPasswordInput {
@@ -57,16 +62,104 @@ export interface AuthenticationSessionIdGenerator {
   generate(): string;
 }
 
+export interface LoginWithEmailAndPasswordInput extends AuthenticateWithEmailAndPasswordInput {
+  readonly deviceIdentifier: string;
+  readonly deviceName?: string;
+  readonly userAgent?: string;
+}
+
 export interface LoginWithEmailAndPasswordResult {
   readonly accessToken: string;
+  readonly refreshToken: string;
   readonly tokenType: 'Bearer';
   readonly expiresIn: number;
+  readonly refreshExpiresIn: number;
 }
 
 export interface LoginAuthenticationUseCase {
   execute(
-    input: AuthenticateWithEmailAndPasswordInput
+    input: LoginWithEmailAndPasswordInput
   ): Promise<LoginWithEmailAndPasswordResult>;
+}
+
+export interface IssueRefreshTokenInput {
+  readonly accountId: string;
+  readonly sessionId: string;
+  readonly issuedAt: Date;
+  readonly expiresAt?: Date;
+}
+
+export interface IssuedRefreshToken {
+  readonly token: string;
+  readonly expiresAt: Date;
+  readonly expiresInSeconds: number;
+}
+
+export interface VerifiedRefreshToken {
+  readonly accountId: string;
+  readonly sessionId: string;
+  readonly tokenId: string;
+  readonly issuedAt: Date;
+  readonly expiresAt: Date;
+}
+
+export interface RefreshTokenService {
+  issue(input: IssueRefreshTokenInput): Promise<IssuedRefreshToken>;
+  verify(
+    token: string,
+    currentDate?: Date
+  ): Promise<VerifiedRefreshToken | null>;
+}
+
+export interface RefreshTokenHashService {
+  hash(token: string): string;
+}
+
+export interface CreateAuthenticationSessionInput {
+  readonly id: string;
+  readonly accountId: string;
+  readonly refreshTokenHash: string;
+  readonly deviceIdentifier: string;
+  readonly deviceName: string | null;
+  readonly userAgent: string | null;
+  readonly expiresAt: Date;
+  readonly createdAt: Date;
+}
+
+export interface RotateAuthenticationSessionInput {
+  readonly sessionId: string;
+  readonly accountId: string;
+  readonly presentedRefreshTokenHash: string;
+  readonly successorRefreshTokenHash: string;
+  readonly expectedExpiresAt: Date;
+  readonly usedAt: Date;
+}
+
+export type RotateAuthenticationSessionResult =
+  'invalid' | 'reused' | 'rotated';
+
+export interface AuthenticationSessionRepository {
+  create(input: CreateAuthenticationSessionInput): Promise<boolean>;
+  rotate(
+    input: RotateAuthenticationSessionInput
+  ): Promise<RotateAuthenticationSessionResult>;
+}
+
+export interface RefreshAuthenticationSessionInput {
+  readonly refreshToken: string;
+}
+
+export interface RefreshAuthenticationSessionUseCase {
+  execute(
+    input: RefreshAuthenticationSessionInput
+  ): Promise<LoginWithEmailAndPasswordResult>;
+}
+
+/** Os métodos não recebem contexto para impedir token e IDs por construção. */
+export interface AuthenticationSessionAudit {
+  recordRefreshSuccess(): void;
+  recordRefreshFailure(): void;
+  recordRefreshReuse(): void;
 }
 
 export interface LoginRateLimitIncrement {

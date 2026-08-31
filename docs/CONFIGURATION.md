@@ -34,6 +34,7 @@ normalizada em maiúsculas.
 | `DATABASE_URL`                | Obrigatória          | —                    | —           | —           | URL `postgres://` ou `postgresql://`     |
 | `REDIS_URL`                   | Obrigatória          | Obrigatória          | —           | —           | URL `redis://` ou `rediss://`            |
 | `JWT_ACCESS_SECRET`           | Obrigatória          | —                    | —           | —           | Segredo HMAC com ao menos 32 bytes       |
+| `JWT_REFRESH_SECRET`          | Obrigatória          | —                    | —           | —           | HMAC distinto, com ao menos 32 bytes     |
 | `VITE_APP_ENVIRONMENT`        | —                    | —                    | Obrigatória | —           | Ambiente público do Web                  |
 | `VITE_API_URL`                | —                    | —                    | Obrigatória | —           | URL HTTP(S) pública da API               |
 | `EXPO_PUBLIC_APP_ENVIRONMENT` | —                    | —                    | —           | Obrigatória | Ambiente público do Mobile               |
@@ -80,11 +81,12 @@ versionados em código e no
 [`ADR-009`](decisions/ADR-009-local-password-authentication-and-argon2id.md).
 Pepper não foi adotado sem um ciclo aprovado de segredo e rotação. Desde o
 `PROT-023`, a Manager API carrega `JWT_ACCESS_SECRET` para assinar e validar
-tokens HS256 e derivar chaves opacas de rate limit com separação de domínio. O
-valor deve ser aleatório, injetado pelo secret manager e rotacionado por um
-procedimento que considere os tokens de 15 minutos ainda em circulação. Nunca
-o reutilize como `JWT_REFRESH_SECRET`; este último continua reservado ao
-`PROT-024`. A configuração isolada de JWT valida ambos quando chamada.
+tokens HS256 e derivar chaves opacas de rate limit com separação de domínio.
+Desde o `PROT-024`, também carrega `JWT_REFRESH_SECRET` para o refresh JWT. Os
+valores devem ser aleatórios, injetados pelo secret manager, ter ao menos 32
+bytes e ser diferentes. A rotação operacional do primeiro considera access
+tokens de 15 minutos; a do segundo considera sessões de até 30 dias e deve
+definir uma janela de transição antes de trocar a chave.
 Criptografia das demais capacidades futuras e seus segredos continuam definidos
 por seus tickets. Timeouts, namespace e operação do Redis estão em
 [`REDIS.md`](REDIS.md). O pool PostgreSQL recebe somente a URL

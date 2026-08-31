@@ -6,11 +6,11 @@
 de um dispositivo vinculado a uma conta. A tabela permite localizar, expirar e
 revogar uma sessão sem armazenar refresh token ou endereço IP em claro.
 
-O `PROT-016` entregou somente model, migration, sanitização de metadata,
-projeção segura e invariantes de banco. O `PROT-023` emite um `sid` UUID v7 no
-access token, mas ainda não cria esta linha. Algoritmo de hash do refresh,
-rotação, detecção de reuso, logout, listagem/revogação HTTP e middleware de
-autenticação permanecem nos tickets `PROT-024` a `PROT-029`.
+O `PROT-016` entregou model, migration, sanitização de metadata, projeção segura
+e invariantes de banco. O `PROT-024` passou a criar esta linha no login e a
+rotacionar o hash por `POST /api/v1/auth/refresh`. Logout, listagem/revogação
+HTTP e middleware de autenticação permanecem nos tickets `PROT-025`, `PROT-026`
+e `PROT-029`.
 
 ## Colunas
 
@@ -36,18 +36,19 @@ posterior.
 
 ## Segredos e metadados
 
-`refresh_token_hash` recebe somente o resultado codificado do algoritmo que
-será aprovado no `PROT-024`. O limite e o check atuais são independentes do
-algoritmo: valor vazio ou com whitespace é rejeitado. A tabela não consegue
-transformar nem distinguir um token puro; a fronteira futura é obrigada a
-calcular o hash antes da escrita e nunca registrar o valor recebido.
+`refresh_token_hash` recebe `sha256:<digest-base64url>` do JWT completo. O token
+possui assinatura, identificador aleatório de 256 bits e comprimento limitado
+antes do hash. Valor vazio ou com whitespace é rejeitado. A tabela não consegue
+transformar nem distinguir token puro; repositório e caso de uso calculam o
+digest antes de toda escrita e nunca registram o valor recebido.
 
 `ip_hash` segue a mesma regra de fronteira e é nullable quando não existe uma
 origem confiável. Não persistir IP bruto, prefixos de rede alternativos ou
 headers de proxy neste ticket. Algoritmo, chave, finalidade e retenção do hash
 serão definidos antes de uso em produção.
 
-`device_identifier` é uma chave técnica opaca, não fingerprint de hardware.
+`device_identifier` vem obrigatoriamente do login e é uma chave técnica opaca,
+não fingerprint de hardware.
 Aceita letras, números, `.`, `_`, `:`, `-`, começa por alfanumérico e possui no
 máximo 128 caracteres. Não é globalmente único porque um dispositivo pode ter
 mais de uma sessão conforme o fluxo futuro.
@@ -90,11 +91,11 @@ O check `auth_sessions_lifecycle_check` garante:
 - `revoked_at`, quando presente, não antecede a criação;
 - o último uso não ocorre depois da revogação.
 
-## Busca e revogação atômica
+## Busca, rotação e revogação atômica
 
 `auth_sessions_refresh_token_hash_uidx` torna o hash globalmente único e atende
-a busca pontual. A consulta ainda aplica as condições de atividade e seleciona
-somente a projeção segura:
+a busca pontual administrativa/diagnóstica sem expor o valor. A consulta ainda
+aplica as condições de atividade e seleciona somente a projeção segura:
 
 ```sql
 SELECT id, device_identifier, device_name, user_agent,
@@ -128,6 +129,23 @@ Uma linha alterada significa sucesso; zero significa expirada, já revogada ou
 conflito concorrente. A aplicação não repete silenciosamente nem reabre a sessão.
 Revogação global e rota HTTP permanecem no `PROT-026`.
 
+O refresh funcional não busca pelo valor puro nem apenas pelo hash. Depois de
+validar assinatura, tipo, finalidade, issuer, audience e tempos, ele usa o
+`sid`, conta e expiração assinados para localizar a linha ativa. A transação:
+
+1. bloqueia a sessão e a conta elegível com `SELECT ... FOR UPDATE`;
+2. compara o SHA-256 apresentado ao hash corrente;
+3. se forem iguais, troca o hash, define `last_used_at`, atualiza
+   `updated_at` e incrementa `version`;
+4. se diferirem, o token assinado é um predecessor e a mesma transação define
+   `revoked_at`, atualiza `updated_at` e incrementa `version`.
+
+O lock serializa somente concorrentes da sessão. Duas requisições com o mesmo
+refresh não conseguem confirmar dois sucessores: uma troca o hash e a outra
+observa o predecessor, revogando a sessão. Conta bloqueada/desabilitada ou
+excluída, sessão expirada/revogada e token sem relação retornam o mesmo resultado
+inválido ao caso de uso.
+
 ## Integridade referencial e retenção
 
 `auth_sessions_account_id_fkey` usa `ON UPDATE NO ACTION` e
@@ -155,13 +173,19 @@ ou ID de sessão entra na allowlist comum de logs. Erros PostgreSQL são tratado
 por SQLSTATE e nome de constraint/índice, nunca por mensagem ou detail do
 driver.
 
-## Rotação futura
+## Política de rotação
 
-A unicidade atual impede duas sessões com o mesmo hash corrente. O `PROT-024`
-definirá geração, hash, troca atômica e informação necessária para detectar
-reuso de um token anterior. Se a política exigir família, predecessor ou
-histórico de hashes, ela será acrescentada por migration forward; o `PROT-016`
-não ativa um fluxo de refresh incompleto.
+A unicidade impede duas sessões com o mesmo hash corrente. O refresh JWT carrega
+`sub`, `sid`, `jti`, tempos e finalidade sob assinatura de chave exclusiva;
+assim, um predecessor mantém relação verificável com a sessão sem tabela de
+histórico. A validade inicial é de 30 dias e não desliza durante rotação.
+
+Reuso revoga a sessão inteira porque o servidor não sabe qual participante
+possui a credencial legítima. Todos os estados inválidos usam
+`INVALID_REFRESH_TOKEN` externamente. Se auditoria ou retenção futura exigir
+família/histórico durável, ela será adicionada por migration forward. A decisão
+completa está no
+[`ADR-011`](../decisions/ADR-011-refresh-token-rotation-and-reuse.md).
 
 ---
 

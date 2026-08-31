@@ -15,6 +15,11 @@ export {
   type LoginResponse,
 } from './authentication/login/index.js';
 export {
+  refreshAuthenticationRequestSchema,
+  refreshAuthenticationSchema,
+  type RefreshAuthenticationRequest,
+} from './authentication/refresh/index.js';
+export {
   apiTags,
   bearerAuthSecurity,
   bearerAuthSecuritySchemeName,

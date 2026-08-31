@@ -8,8 +8,9 @@ pertencem aos tickets consumidores.
 
 O `PROT-015` criou o model, a migration, a normalização compartilhada e uma
 projeção de saída que exclui segredos. O `PROT-022` adicionou o repositório
-mínimo e o algoritmo para autenticação local. Ainda não existem rota de
-cadastro/login, integração com provider, fator MFA funcional ou autorização.
+mínimo e o algoritmo para autenticação local; `PROT-023` e `PROT-024`
+integraram login, access/refresh tokens e sessão. Ainda não existem rota de
+cadastro, integração com provider, fator MFA funcional ou autorização.
 
 ## Colunas
 
@@ -107,7 +108,7 @@ O fluxo e a política estão em
 [`../authentication/README.md`](../authentication/README.md).
 
 Criação e troca de senha, verificação de e-mail/telefone, MFA, hard delete,
-retenção e anonimização permanecem fora do `PROT-022`.
+retenção e anonimização permanecem fora do escopo entregue.
 
 `auth_sessions` referencia `accounts` com `ON DELETE RESTRICT`: o soft delete
 preserva a conta e o histórico, enquanto hard delete é impedido se houver sessão.

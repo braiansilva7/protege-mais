@@ -2,6 +2,7 @@
   "authentication": {
     "invalidAccessToken": "Token de acceso no válido.",
     "invalidCredentials": "Correo electrónico o contraseña no válidos.",
+    "invalidRefreshToken": "Refresh token no válido.",
     "rateLimited": "Se realizaron demasiados intentos de autenticación. Inténtelo de nuevo más tarde.",
     "required": "Se requiere autenticación.",
     "unavailable": "La autenticación no está disponible temporalmente."
